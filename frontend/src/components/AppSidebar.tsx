@@ -16,6 +16,7 @@ import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import API from "../../axios-client";
 
 const drawerWidth = 260;
 
@@ -37,10 +38,16 @@ const bottomItems = [
 export default function AppSidebar() {
   const navigate = useNavigate();
 
-  function handleLogout() {
-    localStorage.removeItem("auth_token");
-    navigate("/", { replace: true });
-  }
+  const handleLogout = async () => {
+    await API.post("/auth/logout")
+      .then(() => {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("current_user");
+        navigate("/", { replace: true });
+      })
+      .catch((error) => console.log(error));
+  };
+
   return (
     <Drawer
       variant="permanent"

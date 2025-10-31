@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->ulid('uid')->unique();
             $table->string('name');
+            $table->string('slug')->unique();
             $table->timestamps();
         });
     }

@@ -11,63 +11,80 @@ import {
 import Fade from "@mui/material/Fade";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { json, z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import API from "../../../axios-client";
+import type { User } from "../../types/users";
+
+const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
+type LoginForm = z.infer<typeof LoginSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(LoginSchema),
+    mode: "onBlur",
+  });
+
   const [transitioning, setTransitioning] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    // Allow login with any saved registration or admin/admin fallback
+  const onSubmit = async (data: LoginForm) => {
+    const payload = {
+      email: data.email,
+      password: data.password,
+    };
+
     try {
-      const raw = localStorage.getItem("registered_users");
-      const users: Array<{
-        email: string;
-        password: string;
-        name?: string;
-        company?: string;
-        role?: "admin" | "recruiter";
-      }> = raw ? JSON.parse(raw) : [];
-      const found = users.find(
-        (u) => u.email === email && u.password === password
-      );
-      if (found) {
-        localStorage.setItem("auth_token", "dev-temp-token");
-        localStorage.setItem(
-          "current_user",
-          JSON.stringify({
-            email: found.email,
-            name: found.name ?? "",
-            company: found.company ?? "",
-            role: found.role ?? "recruiter",
-          })
-        );
+      const res = await API.post("/auth/login", payload);
+      console.log(res);
+      if (res.token) {
+        localStorage.setItem("auth_token", res.token);
+        localStorage.setItem("current_user", res.user);
         setTransitioning(true);
-        return;
       }
-      if (email === "admin" && password === "admin") {
-        localStorage.setItem("auth_token", "dev-temp-token");
-        localStorage.setItem(
-          "current_user",
-          JSON.stringify({
-            email: "admin",
-            name: "Admin",
-            company: "",
-            role: "admin",
-          })
-        );
-        setTransitioning(true);
-        return;
-      }
-    } catch (_) {
-      // ignore parse errors
+    } catch (e: any) {
+      console.log(e?.message);
     }
-    setError("Onjuiste inloggegevens");
-  }
+
+    // await API.post("/auth/login", payload)
+    //   .then((response) => {
+    //     const { token, user } = response.data.data;
+    //     if (token) {
+    //       localStorage.setItem("auth_token", token);
+    //       localStorage.setItem("current_user", JSON.stringify(user));
+    //       setTransitioning(true);
+    //       console.log(transitioning);
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     if (error.response?.status === 422) {
+    //       const errors = error.response.data.errors;
+
+    //       Object.entries(errors).forEach(([field, messages]) => {
+    //         setError(field as keyof LoginForm, {
+    //           type: "server",
+    //           message: (messages as string[])[0],
+    //         });
+    //       });
+    //     } else {
+    //       setError("root", {
+    //         type: "server",
+    //         message: "Er is iets misgegaan. Probeer het opnieuw.",
+    //       });
+    //     }
+    //   });
+  };
 
   return (
     <Fade
@@ -77,7 +94,7 @@ export default function LoginPage() {
     >
       <Card variant="outlined" sx={{ width: "100%", maxWidth: 420 }}>
         <CardContent sx={{ p: 3 }}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={2}>
               <Typography variant="h5" component="h1">
                 Inloggen
@@ -86,30 +103,24 @@ export default function LoginPage() {
               <TextField
                 label="E-mailadres"
                 type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={transitioning}
                 fullWidth
                 required
-                autoComplete="username"
+                error={!!errors.email}
+                helperText={errors.email?.message ?? " "}
+                {...register("email")}
+                disabled={transitioning}
               />
 
               <TextField
                 label="Wachtwoord"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={transitioning}
                 fullWidth
                 required
-                autoComplete="current-password"
+                error={!!errors.password}
+                helperText={errors.password?.message ?? ""}
+                {...register("password")}
+                disabled={transitioning}
               />
-
-              {error && (
-                <Typography color="error" variant="body2">
-                  {error}
-                </Typography>
-              )}
 
               <Button
                 type="submit"

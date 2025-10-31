@@ -17,8 +17,8 @@ class Tenant extends Model
         'slug',
     ];
 
-    protected $cast = [
-        'uid' => 'string'
+    protected $casts = [
+        'uid' => 'string',
     ];
 
     protected static function booted(): void

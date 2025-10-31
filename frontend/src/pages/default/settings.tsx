@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Tabs,
@@ -20,72 +20,72 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { useDisclosure } from "../../hooks/useDisclosure";
+import { useUsers } from "../../hooks/useUsers";
+import z from "zod";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import API from "../../../axios-client";
+import type { Paginated, User } from "../../types/users";
 
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
+const a11yProps = (index: number) => ({
+  id: `settings-tab-${index}`,
+  "aria-controls": `settings-tabpanel-${index}`,
+});
 
-function isStrongPassword(password: string): boolean {
-  const strongRegex = /^(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/;
-  return strongRegex.test(password);
-}
-
-type Role = "admin" | "recruiter";
-
-function a11yProps(index: number) {
-  return {
-    id: `settings-tab-${index}`,
-    "aria-controls": `settings-tabpanel-${index}`,
-  };
-}
-
-function TabPanel(props: {
+const TabPanel = ({
+  children,
+  value,
+  index,
+  ...other
+}: {
   children?: React.ReactNode;
-  index: number;
   value: number;
-}) {
-  const { children, value, index, ...other } = props;
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`settings-tabpanel-${index}`}
-      aria-labelledby={`settings-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
-    </div>
-  );
-}
+  index: number;
+}) => (
+  <div
+    role="tabpanel"
+    hidden={value !== index}
+    id={`settings-tabpanel-${index}`}
+    aria-labelledby={`settings-tab-${index}`}
+    {...other}
+  >
+    {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+  </div>
+);
 
-export default function SettingsPage() {
-  const [tab, setTab] = useState(0);
-  const currentUser = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("current_user");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
+const NewUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string(),
+  password: z
+    .string()
+    .min(8, "Minimaal 8 tekens")
+    .regex(/\d/, "Minstens 1 cijfer")
+    .regex(/[^A-Za-z0-9]/, "Minstens 1 speciaal teken"),
+  role: z.enum(["admin", "recruiter", "viewer"]),
+});
+
+type NewUserForm = z.infer<typeof NewUserSchema>;
+
+const SettingsPage = () => {
+  const [currentTab, setCurrentTab] = useState(0);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("current_user");
+    if (stored) {
+      try {
+        const parsed: User = JSON.parse(stored);
+        setCurrentUser(parsed);
+      } catch {
+        console.error("Invalid user JSON in localStorage");
+        setCurrentUser(null);
+      }
+    } else {
+      setCurrentUser(null);
     }
   }, []);
-
-  const isAdmin = ((): boolean => {
-    try {
-      const email: string | undefined = currentUser?.email;
-      if (!email) return false;
-      const raw = localStorage.getItem("registered_users");
-      const users: Array<{ email: string; role?: Role }> = raw
-        ? JSON.parse(raw)
-        : [];
-      const u = users.find((x) => x.email === email);
-      return (u?.role ?? "recruiter") === "admin" || email === "admin";
-    } catch {
-      return false;
-    }
-  })();
 
   return (
     <Box>
@@ -95,8 +95,8 @@ export default function SettingsPage() {
 
       <Paper sx={{ width: "100%" }}>
         <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
+          value={currentTab}
+          onChange={(_, v) => setCurrentTab(v)}
           aria-label="settings tabs"
         >
           <Tab label="Overzicht" {...a11yProps(0)} />
@@ -104,97 +104,57 @@ export default function SettingsPage() {
           <Tab label="Gebruikers" {...a11yProps(2)} />
         </Tabs>
 
-        <TabPanel value={tab} index={0}>
+        <TabPanel value={currentTab} index={0}>
           <Typography variant="body1">Placeholder submenu 1</Typography>
         </TabPanel>
-        <TabPanel value={tab} index={1}>
+        <TabPanel value={currentTab} index={1}>
           <Typography variant="body1">Placeholder submenu 2</Typography>
         </TabPanel>
-        <TabPanel value={tab} index={2}>
-          <UsersTab isAdmin={isAdmin} />
+        <TabPanel value={currentTab} index={2}>
+          <UsersTab currentUser={currentUser} />
         </TabPanel>
       </Paper>
     </Box>
   );
-}
+};
 
-function UsersTab({ isAdmin }: { isAdmin: boolean }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("recruiter");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [open, setOpen] = useState(false);
-  const [touched, setTouched] = useState({ email: false, password: false });
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
+export default SettingsPage;
 
-  const emailInvalid = (touched.email || false) && !isValidEmail(email);
-  const passwordInvalid =
-    (touched.password || false) && !isStrongPassword(password);
-  const formValid = isValidEmail(email) && isStrongPassword(password);
+const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
+  const addUser = useDisclosure();
+  const { users, loading, error, refresh } = useUsers();
 
-  const passwordChecklist = React.useMemo(() => {
-    const hasMinLength = password.length >= 8;
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecial = /[^A-Za-z0-9]/.test(password);
-    return { hasMinLength, hasNumber, hasSpecial };
-  }, [password]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  function resetForm() {
-    setEmail("");
-    setPassword("");
-    setRole("recruiter");
-    setError("");
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isSubmitSuccessful },
+    reset,
+    control,
+  } = useForm<NewUserForm>({
+    resolver: zodResolver(NewUserSchema),
+    mode: "onBlur",
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      role: "recruiter",
+    },
+  });
 
-  function handleOpen() {
-    resetForm();
-    setOpen(true);
-  }
-
-  function handleClose() {
-    setOpen(false);
-  }
-
-  function handleAddUser(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    if (!isAdmin) {
-      setError("Alleen admins kunnen gebruikers toevoegen");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setTouched((t) => ({ ...t, email: true }));
-      setError("Voer een geldig e-mailadres in");
-      return;
-    }
-    if (!isStrongPassword(password)) {
-      setTouched((t) => ({ ...t, password: true }));
-      setError("Wachtwoord voldoet niet aan de eisen");
-      return;
-    }
+  const onSubmit = async (data: NewUserForm) => {
     try {
-      const raw = localStorage.getItem("registered_users");
-      const users: Array<{ email: string; password: string; role?: Role }> = raw
-        ? JSON.parse(raw)
-        : [];
-      if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-        setError("E-mailadres bestaat al");
-        return;
-      }
-      users.push({ email, password, role });
-      localStorage.setItem("registered_users", JSON.stringify(users));
-      setSuccess("Gebruiker toegevoegd");
-      setEmail("");
-      setPassword("");
-      setRole("recruiter");
-      setRefreshKey((k) => k + 1);
-    } catch {
-      setError("Opslaan mislukt");
+      await API.post("/users", data);
+      addUser.close();
+      reset();
+      await refresh(); // re-fetch
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
   return (
     <Box sx={{ p: 2 }}>
@@ -202,75 +162,48 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
         Gebruikers
       </Typography>
 
-      {!isAdmin && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Recruiters kunnen geen gebruikers toevoegen.
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>
-          {success}
-        </Alert>
-      )}
-
-      {error && !open && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
-          {error}
-        </Alert>
-      )}
-
       <Box sx={{ mb: 2 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={handleOpen}
-          disabled={!isAdmin}
+          onClick={addUser.open}
         >
           Gebruiker toevoegen
         </Button>
       </Box>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      {/* Dialoog zonder functionaliteit; standaard gesloten */}
+      <Dialog open={addUser.isOpen} fullWidth maxWidth="sm">
         <DialogTitle>Nieuwe gebruiker</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField
               label="E-mailadres"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
               type="email"
               required
-              autoFocus
-              error={Boolean(emailInvalid)}
-              helperText={emailInvalid ? "Voer een geldig e-mailadres in" : " "}
+              error={!!errors.email}
+              {...register("email")}
+              helperText={errors.email?.message ?? " "}
+            />
+            <TextField
+              label="Name"
+              required
+              error={!!errors.name}
+              {...register("name")}
+              helperText={errors.name?.message ?? " "}
             />
             <TextField
               label="Wachtwoord"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-              type={showPassword ? "text" : "password"}
+              type="password"
               required
-              error={Boolean(passwordInvalid)}
-              helperText={
-                passwordInvalid
-                  ? "Min. 8 tekens, incl. 1 cijfer en 1 speciaal teken"
-                  : "Min. 8 tekens, incl. 1 cijfer en 1 speciaal teken"
-              }
+              error={!!errors.password}
+              helperText={errors.password?.message ?? " "}
+              {...register("password")}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      aria-label={
-                        showPassword ? "Verberg wachtwoord" : "Toon wachtwoord"
-                      }
-                      onClick={() => setShowPassword((v) => !v)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    <IconButton edge="end" aria-label="Toon/Verberg wachtwoord">
+                      <VisibilityOff />
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -293,14 +226,7 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                     height: 8,
                     borderRadius: "50%",
                     display: "inline-block",
-                    bgcolor: passwordChecklist.hasMinLength
-                      ? "success.main"
-                      : "text.disabled",
-                    transform: passwordChecklist.hasMinLength
-                      ? "scale(1.1)"
-                      : "scale(1)",
-                    transition:
-                      "background-color 180ms ease, transform 140ms ease",
+                    bgcolor: "text.disabled",
                   }}
                 />
                 Minimaal 8 tekens
@@ -313,14 +239,7 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                     height: 8,
                     borderRadius: "50%",
                     display: "inline-block",
-                    bgcolor: passwordChecklist.hasNumber
-                      ? "success.main"
-                      : "text.disabled",
-                    transform: passwordChecklist.hasNumber
-                      ? "scale(1.1)"
-                      : "scale(1)",
-                    transition:
-                      "background-color 180ms ease, transform 140ms ease",
+                    bgcolor: "text.disabled",
                   }}
                 />
                 Minstens 1 cijfer
@@ -333,138 +252,104 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                     height: 8,
                     borderRadius: "50%",
                     display: "inline-block",
-                    bgcolor: passwordChecklist.hasSpecial
-                      ? "success.main"
-                      : "text.disabled",
-                    transform: passwordChecklist.hasSpecial
-                      ? "scale(1.1)"
-                      : "scale(1)",
-                    transition:
-                      "background-color 180ms ease, transform 140ms ease",
+                    bgcolor: "text.disabled",
                   }}
                 />
                 Minstens 1 speciaal teken
               </Box>
             </Box>
-            <TextField
-              select
-              label="Rol"
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-            >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="recruiter">Recruiter</MenuItem>
-            </TextField>
-            {error && (
-              <Alert severity="error" onClose={() => setError("")}>
-                {error}
-              </Alert>
-            )}
+            <Controller
+              name="role"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  select
+                  label="Rol"
+                  fullWidth
+                  {...field} // bevat value, onChange, onBlur, name, ref
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message ?? " "}
+                >
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="recruiter">Recruiter</MenuItem>
+                  <MenuItem value="viewer">Viewer</MenuItem>
+                </TextField>
+              )}
+            />
+            <Alert severity="error">Voorbeeld foutmelding in dialoog</Alert>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Annuleren</Button>
+          <Button onClick={addUser.close}>Annuleren</Button>
           <Button
-            onClick={(e) => {
-              handleAddUser(e as unknown as React.FormEvent);
-              if (!error && formValid) {
-                setOpen(false);
-              }
-            }}
             variant="contained"
-            disabled={!isAdmin || !formValid}
+            onClick={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
           >
             Opslaan
           </Button>
         </DialogActions>
       </Dialog>
 
-      <ExistingUsersList refreshKey={refreshKey} />
+      <ExistingUsersList
+        currentUser={currentUser}
+        users={users}
+        loading={loading}
+        error={error}
+      />
     </Box>
   );
-}
+};
 
-function ExistingUsersList({ refreshKey }: { refreshKey: number }) {
-  const [tick, setTick] = useState(0);
-  React.useEffect(() => {
-    function onStorage(e: StorageEvent) {
-      if (e.key === "registered_users") setTick((t) => t + 1);
-    }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  const users = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("registered_users");
-      const list: Array<{ email: string; role?: Role }> = raw
-        ? JSON.parse(raw)
-        : [];
-      return list;
-    } catch {
-      return [] as Array<{ email: string; role?: Role }>;
-    }
-  }, [refreshKey, tick]);
-
-  if (users.length === 0) return null;
+const ExistingUsersList = ({
+  currentUser,
+  users = [],
+  loading,
+  error,
+}: {
+  currentUser: User | null;
+  users?: User[];
+  loading: boolean;
+  error: string | null;
+}) => {
+  useEffect(() => {
+    console.log("ExistingUsersList users:", users);
+  }, [users]);
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Typography variant="subtitle1" sx={{ mb: 1 }}>
         Bestaande gebruikers
       </Typography>
-      <Stack spacing={1}>
-        {users.map((u) => (
-          <UserRow key={u.email} user={u} />
-        ))}
-      </Stack>
+
+      {loading && <Typography variant="body2">Laden…</Typography>}
+      {error && <Alert severity="error">{error}</Alert>}
+
+      {!loading && !error && users.length === 0 && (
+        <Typography variant="body2" color="text.secondary">
+          Geen gebruikers gevonden.
+        </Typography>
+      )}
+
+      {!loading && !error && users.length > 0 && (
+        <Stack spacing={1}>
+          {users.map((u) => (
+            <UserRow
+              key={u.uid ?? u.email}
+              user={{ email: u.email, role: u.role }}
+            />
+          ))}
+        </Stack>
+      )}
     </Paper>
   );
-}
+};
 
-function UserRow({ user }: { user: { email: string; role?: Role } }) {
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [removing, setRemoving] = useState(false);
-
-  React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem("current_user");
-      const cu = raw ? JSON.parse(raw) : null;
-      const mail: string | undefined = cu?.email;
-      if (!mail) return;
-      const rawUsers = localStorage.getItem("registered_users");
-      const list: Array<{ email: string; role?: Role }> = rawUsers
-        ? JSON.parse(rawUsers)
-        : [];
-      const me = list.find((x) => x.email === mail);
-      setIsAdmin((me?.role ?? "recruiter") === "admin" || mail === "admin");
-    } catch {
-      setIsAdmin(false);
-    }
-  }, []);
-
-  function performDelete() {
-    try {
-      const raw = localStorage.getItem("registered_users");
-      const list: Array<{ email: string; role?: Role; password?: string }> = raw
-        ? JSON.parse(raw)
-        : [];
-      const updated = list.filter((u) => u.email !== user.email);
-      localStorage.setItem("registered_users", JSON.stringify(updated));
-      // Trigger UI refresh for parent by dispatching storage event
-      window.dispatchEvent(
-        new StorageEvent("storage", { key: "registered_users" })
-      );
-      setConfirmOpen(false);
-    } catch {
-      setConfirmOpen(false);
-    }
-  }
-
+const UserRow = ({ user }: { user: { email: string; role?: string } }) => {
   return (
     <>
-      <Collapse in={!removing} timeout={200} onExited={performDelete}>
+      {/* Altijd zichtbaar; geen delete-actie */}
+      <Collapse in timeout={0}>
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
           <Typography sx={{ flex: 1 }}>{user.email}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
@@ -475,33 +360,25 @@ function UserRow({ user }: { user: { email: string; role?: Role } }) {
             color="error"
             variant="text"
             startIcon={<DeleteOutlineIcon />}
-            onClick={() => setConfirmOpen(true)}
-            disabled={!isAdmin}
           >
             Verwijderen
           </Button>
         </Box>
       </Collapse>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+      {/* Bevestigingsdialoog markup, standaard gesloten */}
+      <Dialog open={false}>
         <DialogTitle>Gebruiker verwijderen</DialogTitle>
         <DialogContent>
           Weet je zeker dat je {user.email} wilt verwijderen?
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Annuleren</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              setConfirmOpen(false);
-              setRemoving(true);
-            }}
-          >
+          <Button>Annuleren</Button>
+          <Button color="error" variant="contained">
             Verwijderen
           </Button>
         </DialogActions>
       </Dialog>
     </>
   );
-}
+};

@@ -20,6 +20,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./backend:/var/www/html
+    command: sh -c "./scripts/init-perms.sh && php-fpm"
     depends_on: [db, redis]
 
   nginx:
@@ -30,6 +31,20 @@ services:
     ports:
       - "8080:80"
     depends_on: [backend-php]
+
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    environment:
+      # Zorgt dat 'db' (jouw Postgres service) voorgeselecteerd staat
+      ADMINER_DEFAULT_SERVER: db
+      # Optioneel thema (others: flat, pepa-linha, etc.)
+      ADMINER_DESIGN: dracula
+    depends_on:
+      - db
+    ports:
+      - "8081:8080"   # lokaal bereikbaar op http://localhost:8081
+  
 
 volumes:
   dbdata:

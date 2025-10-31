@@ -64,6 +64,19 @@ class User extends Authenticatable
         });
     }
 
+    public function scopeForTenant($query, int $tenantId)
+    {
+        return $query->where('tenant_id', $tenantId);
+    }
+
+    public function scopeExcept($query, $userOrId)
+    {
+        $id = $userOrId instanceof self ? $userOrId->getKey() : $userOrId;
+
+        return $query->where($query->getModel()->getKeyName(), '!=', $id);
+    }
+
+
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
