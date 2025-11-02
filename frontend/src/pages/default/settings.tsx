@@ -316,6 +316,17 @@ const ExistingUsersList = ({
     console.log("ExistingUsersList users:", users);
   }, [users]);
 
+  const combinedUsers = React.useMemo(() => {
+    const list = [...users];
+    if (currentUser) {
+      const exists = list.some((u) =>
+        u.uid && currentUser.uid ? u.uid === currentUser.uid : u.email === currentUser.email
+      );
+      if (!exists) list.unshift(currentUser);
+    }
+    return list;
+  }, [users, currentUser]);
+
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Typography variant="subtitle1" sx={{ mb: 1 }}>
@@ -325,15 +336,15 @@ const ExistingUsersList = ({
       {loading && <Typography variant="body2">Laden…</Typography>}
       {error && <Alert severity="error">{error}</Alert>}
 
-      {!loading && !error && users.length === 0 && (
+      {!loading && !error && combinedUsers.length === 0 && (
         <Typography variant="body2" color="text.secondary">
           Geen gebruikers gevonden.
         </Typography>
       )}
 
-      {!loading && !error && users.length > 0 && (
+      {!loading && !error && combinedUsers.length > 0 && (
         <Stack spacing={1}>
-          {users.map((u) => (
+          {combinedUsers.map((u) => (
             <UserRow
               key={u.uid ?? u.email}
               user={{ email: u.email, role: u.role }}

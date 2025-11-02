@@ -9,6 +9,7 @@ import {
   Link,
 } from "@mui/material";
 import Fade from "@mui/material/Fade";
+import React from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { json, z } from "zod";
@@ -46,15 +47,19 @@ export default function LoginPage() {
     };
 
     try {
-      const res = await API.post("/auth/login", payload);
-      console.log(res);
+      type AuthResponse = { token: string; user: User };
+      const res = (await API.post("/auth/login", payload)) as AuthResponse;
+      console.log("Login: Full response:", res);
+      console.log("Login: User object:", res.user);
+      console.log("Login: User name:", res.user?.name);
       if (res.token) {
         localStorage.setItem("auth_token", res.token);
-        localStorage.setItem("current_user", res.user);
+        localStorage.setItem("current_user", JSON.stringify(res.user));
+        console.log("Login: Saved to localStorage:", res.user);
         setTransitioning(true);
       }
     } catch (e: any) {
-      console.log(e?.message);
+      console.error("Login error:", e?.message, e);
     }
 
     // await API.post("/auth/login", payload)

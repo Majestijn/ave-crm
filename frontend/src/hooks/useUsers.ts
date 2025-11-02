@@ -12,9 +12,8 @@ export const useUsers = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await API.get<User[]>("/users"); // Update type to User[]
-      console.log("Full API response:", res.data); // Debug the entire response
-      const userData = res.data; // The response is the array directly
+      const userData = await API.get<User[]>("/users");
+      console.log("Users response:", userData);
       if (!Array.isArray(userData)) {
         throw new Error("Unexpected data format: response is not an array");
       }

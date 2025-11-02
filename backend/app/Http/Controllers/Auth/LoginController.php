@@ -34,7 +34,6 @@ class LoginController extends Controller
             $query->where('tenant_id', $tenantId);
         }
         $user = $query->first();
-        Log::info('LoginController: User found', ['user' => $user->toArray()]);
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -42,28 +41,24 @@ class LoginController extends Controller
             ]);
         }
 
-        Log::info('LoginController: Before createToken', ['user_id' => $user->id]);
         $tokenRecord = $user->createToken('pat');
-        Log::info('LoginController: After createToken', ['token_record' => $tokenRecord->toArray()]);
+        $fullToken = $tokenRecord->plainTextToken;
 
-        $plainToken = $tokenRecord->plainTextToken;
-        $storedToken = $tokenRecord->accessToken->token;
-        $fullToken = $user->id . '|' . $storedToken;
-        Log::info('LoginController: Token created', [
-            'user_id' => $user->id,
-            'plain_token' => $plainToken,
-            'stored_token' => $storedToken,
-            'full_token' => $fullToken,
+        $userData = [
+            'uid'   => $user->uid,
+            'name'  => $user->name ?? '',
+            'email' => $user->email,
+            'role'  => $user->role,
+        ];
+
+        Log::info('LoginController: Returning user data', [
+            'user_name' => $user->name,
+            'user_data' => $userData,
         ]);
 
         return response()->json([
             'token' => $fullToken,
-            'user'  => [
-                'uid'   => $user->uid,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'role'  => $user->role,
-            ],
+            'user'  => $userData,
             'tenant' => $user->tenant ? [
                 'uid'  => $user->tenant->uid,
                 'name' => $user->tenant->name,
