@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unique(['tenant_id', 'email']);
 
             $table->string('password');
-            $table->enum('role', ['admin', 'recruiter', 'viewer'])->default('recruiter');
+            $table->enum('role', ['owner','admin', 'recruiter', 'viewer'])->default('recruiter');
 
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

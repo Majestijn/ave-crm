@@ -9,15 +9,25 @@ class UserPolicy
 {
     public function before(User $auth, string $ability): ?bool
     {
-        return $auth->role === 'admin' ? true : false;
+        // CRITICAL SECURITY: Always verify user has tenant_id
+        if (empty($auth->tenant_id)) {
+            return false;
+        }
+        
+        // Owners have full access, admins have access except for deleting owners
+        if ($auth->role === 'owner') {
+            return true;
+        }
+        return null; // Let individual methods handle admin permissions
     }
 
     /**
      * Determine whether the user can view any models.
      */
-    public function viewAny(User $user): bool
+    public function viewAny(User $auth): bool
     {
-        return true;
+        // Security: user must have tenant_id
+        return !empty($auth->tenant_id);
     }
 
     /**
@@ -25,6 +35,10 @@ class UserPolicy
      */
     public function view(User $auth, User $model): bool
     {
+        // CRITICAL: Always verify tenant_id matches
+        if (empty($auth->tenant_id) || empty($model->tenant_id)) {
+            return false;
+        }
         return $auth->tenant_id === $model->tenant_id;
     }
 
@@ -33,7 +47,11 @@ class UserPolicy
      */
     public function create(User $auth): bool
     {
-        return in_array($auth->role, ['admin']);
+        // Security: user must have tenant_id
+        if (empty($auth->tenant_id)) {
+            return false;
+        }
+        return in_array($auth->role, ['owner', 'admin']);
     }
 
     /**
@@ -41,6 +59,10 @@ class UserPolicy
      */
     public function update(User $auth, User $model): bool
     {
+        // CRITICAL: Always verify tenant_id matches
+        if (empty($auth->tenant_id) || empty($model->tenant_id)) {
+            return false;
+        }
         return $auth->tenant_id === $model->tenant_id;
     }
 
@@ -49,7 +71,23 @@ class UserPolicy
      */
     public function delete(User $auth, User $model): bool
     {
-        return $auth->tenant_id === $model->tenant_id && $auth->id !== $model->id;
+        // Can't delete yourself
+        if ($auth->id === $model->id) {
+            return false;
+        }
+        
+        // Must be in same tenant
+        if ($auth->tenant_id !== $model->tenant_id) {
+            return false;
+        }
+        
+        // Admins cannot delete owners
+        if ($auth->role === 'admin' && $model->role === 'owner') {
+            return false;
+        }
+        
+        // Owners and admins can delete other users (except owners for admins)
+        return in_array($auth->role, ['owner', 'admin']);
     }
 
     /**

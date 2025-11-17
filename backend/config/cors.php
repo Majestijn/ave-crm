@@ -4,7 +4,7 @@ return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
     'allowed_origins' => [
-        'http://localhost:5174', // Vite devs
+        'http://localhost:5173', // Vite devs
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],

@@ -20,18 +20,20 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        Log::info("LALALA");
         $auth = $request->user();
+        
+        // Double-check tenant_id matches (security check)
+        if (empty($auth->tenant_id)) {
+            abort(403, 'User is not associated with a tenant');
+        }
 
-        Log::info(json_encode($auth));
-
-        $query = User::forTenant($auth->tenant_id)->except($auth)->orderBy('name');
-
-        Log::info(json_encode($query));
+        // User model doesn't use global scope, so we can query directly
+        // We need to exclude the current user
+        $query = User::where('tenant_id', $auth->tenant_id)
+            ->where('id', '!=', $auth->id)
+            ->orderBy('name');
 
         $users = $query->paginate(perPage: (int) $request->query('per_page', 15));
-
-        Log::info(json_encode($users));
 
         return UserResource::collection($users);
     }
@@ -42,8 +44,15 @@ class UserController extends Controller
     public function store(StoreUserRequest $request, User $user)
     {
         $auth = $request->user();
+        
+        // Security check: ensure user has tenant_id
+        if (empty($auth->tenant_id)) {
+            abort(403, 'User is not associated with a tenant');
+        }
+        
         $data = $request->validated();
 
+        // Explicitly set tenant_id
         $user = User::create([
             'tenant_id' => $auth->tenant_id,
             'name' => $data['name'],
@@ -58,9 +67,24 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        //
+        $auth = $request->user();
+        
+        // Security check: ensure user has tenant_id
+        if (empty($auth->tenant_id)) {
+            abort(403, 'User is not associated with a tenant');
+        }
+        
+        // Find user and verify tenant_id matches
+        $user = User::where('uid', $id)
+            ->where('tenant_id', $auth->tenant_id)
+            ->firstOrFail();
+        
+        // Authorization is handled by the policy via authorizeResource
+        $this->authorize('view', $user);
+        
+        return new UserResource($user);
     }
 
     /**
@@ -68,7 +92,19 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user)
     {
-        if ($request->filled('role') && $user->id === $request->user()->id) {
+        $auth = $request->user();
+        
+        // Security check: ensure user has tenant_id
+        if (empty($auth->tenant_id)) {
+            abort(403, 'User is not associated with a tenant');
+        }
+        
+        // CRITICAL: Verify tenant_id matches before any operation
+        if ($user->tenant_id !== $auth->tenant_id) {
+            abort(403, 'Cannot access user from different tenant');
+        }
+        
+        if ($request->filled('role') && $user->id === $auth->id) {
             return response()->json([
                 'message' => 'Je kunt je eigen rol niet wijzigen'
             ], 422);
@@ -76,6 +112,7 @@ class UserController extends Controller
 
         $data = $request->validated();
 
+        // Prevent tenant_id and uid from being changed
         unset($data['tenant_id'], $data['uid']);
 
         if (array_key_exists('password', $data) && blank($data['password'])) {
@@ -99,8 +136,28 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
+        $auth = $request->user();
+        
+        // Security check: ensure user has tenant_id
+        if (empty($auth->tenant_id)) {
+            abort(403, 'User is not associated with a tenant');
+        }
+        
+        // Find the user, then verify tenant_id manually
+        $user = User::where('uid', $id)->firstOrFail();
+        
+        // CRITICAL: Verify tenant_id matches before any operation
+        if ($user->tenant_id !== $auth->tenant_id) {
+            abort(403, 'Cannot access user from different tenant');
+        }
+        
+        // Authorization is handled by the policy via authorizeResource
+        $this->authorize('delete', $user);
+        
+        $user->delete();
+        
+        return response()->json(['message' => 'Gebruiker succesvol verwijderd'], 200);
     }
 }

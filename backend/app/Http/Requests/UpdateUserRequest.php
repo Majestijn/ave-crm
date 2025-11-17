@@ -12,7 +12,19 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('user'));
+        $auth = $this->user();
+        $user = $this->route('user');
+        
+        // CRITICAL SECURITY: Ensure both users have tenant_id and they match
+        if (empty($auth->tenant_id) || empty($user->tenant_id)) {
+            return false;
+        }
+        
+        if ($auth->tenant_id !== $user->tenant_id) {
+            return false;
+        }
+        
+        return $auth->can('update', $user);
     }
 
     /**
@@ -22,8 +34,20 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $tenantId = $this->user()->tenant_id;
+        $auth = $this->user();
         $user = $this->route('user');
+        
+        // CRITICAL SECURITY: Ensure user has tenant_id
+        if (empty($auth->tenant_id)) {
+            abort(403, 'User is not associated with a tenant');
+        }
+        
+        // CRITICAL SECURITY: Verify tenant_id matches
+        if ($user->tenant_id !== $auth->tenant_id) {
+            abort(403, 'Cannot access user from different tenant');
+        }
+        
+        $tenantId = $auth->tenant_id;
 
         return [
             'name' => ['sometimes','string','max:255'],

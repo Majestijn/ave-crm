@@ -20,13 +20,23 @@ Route::prefix('/v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auth/me', MeController::class);
         Route::post('/auth/logout', [LogoutController::class, 'destroy']);
-
-        Route::middleware('can:manage-users')->group(function () {
-            Route::apiResource('users', UserController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
-        });
     });
 
-    Route::middleware('auth.tenant')->group(function () {});
+    // All tenant-scoped routes require auth.tenant middleware
+    // This ensures tenant context is set before any queries
+    Route::middleware('auth.tenant')->group(function () {
+        // View users - allowed for all authenticated users in the tenant
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+        
+        // Manage users - only for owners and admins
+        Route::middleware('can:manage-users')->group(function () {
+            Route::post('/users', [UserController::class, 'store']);
+            Route::put('/users/{user}', [UserController::class, 'update']);
+            Route::patch('/users/{user}', [UserController::class, 'update']);
+            Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        });
+    });
 });
 
 Route::get('/health', function () {

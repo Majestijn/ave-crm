@@ -8,8 +8,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Str;
-
-
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -63,7 +61,12 @@ class User extends Authenticatable
             };
         });
     }
-
+    
+    /**
+     * Override forTenant scope - User model needs special handling
+     * because we need to exclude the current user and we can't use global scope
+     * for authentication queries
+     */
     public function scopeForTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);

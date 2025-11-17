@@ -6,14 +6,14 @@ import {
   TextField,
   Button,
   Link,
-  Snackbar,
-  Alert,
 } from "@mui/material";
+import React from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { Box } from "@mui/material";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRef } from "react";
 import API from "../../../axios-client";
 
 const TenantSchema = z
@@ -37,19 +37,29 @@ type TenantForm = z.infer<typeof TenantSchema>;
 
 export default function Register() {
   const navigate = useNavigate();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const companyRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
   const {
-    register,
+    control,
     handleSubmit,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
     watch,
     reset,
+    setValue,
   } = useForm<TenantForm>({
     resolver: zodResolver(TenantSchema),
     mode: "onBlur",
   });
 
   const password = watch("password") ?? "";
+  const email = watch("email") ?? "";
+  const company = watch("company") ?? "";
+  const name = watch("name") ?? "";
+  const confirmPassword = watch("confirmPassword") ?? "";
   const passwordChecklist = {
     hasMinLength: password.length >= 8,
     hasNumber: /\d/.test(password),
@@ -65,9 +75,13 @@ export default function Register() {
       password_confirmation: data.confirmPassword,
     };
 
-    await API.post("/auth/register-tenant", payload)
-      .then((response) => console.log(response.data))
-      .catch((error) => console.log(error));
+    try {
+      await API.post("/auth/register-tenant", payload);
+      // Redirect to login page with success parameter
+      navigate("/?registered=true", { replace: true });
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -79,46 +93,90 @@ export default function Register() {
               Registreren
             </Typography>
 
-            <TextField
-              label="E-mailadres"
-              type="email"
-              autoComplete="email"
-              fullWidth
-              required
-              error={!!errors.email}
-              helperText={errors.email?.message ?? " "}
-              {...register("email")}
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  inputRef={(e) => {
+                    field.ref(e);
+                    emailRef.current = e;
+                  }}
+                  label="E-mailadres"
+                  type="email"
+                  autoComplete="email"
+                  fullWidth
+                  required
+                  error={!!errors.email}
+                  helperText={errors.email?.message ?? " "}
+                  InputLabelProps={{ shrink: !!email }}
+                />
+              )}
             />
 
-            <TextField
-              label="Bedrijfsnaam"
-              autoComplete="organization"
-              fullWidth
-              required
-              error={!!errors.company}
-              helperText={errors.company?.message ?? " "}
-              {...register("company")}
+            <Controller
+              name="company"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  inputRef={(e) => {
+                    field.ref(e);
+                    companyRef.current = e;
+                  }}
+                  label="Bedrijfsnaam"
+                  autoComplete="organization"
+                  fullWidth
+                  required
+                  error={!!errors.company}
+                  helperText={errors.company?.message ?? " "}
+                  InputLabelProps={{ shrink: !!company }}
+                />
+              )}
             />
 
-            <TextField
-              label="Naam"
-              autoComplete="name"
-              fullWidth
-              required
-              error={!!errors.name}
-              helperText={errors.name?.message ?? " "}
-              {...register("name")}
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  inputRef={(e) => {
+                    field.ref(e);
+                    nameRef.current = e;
+                  }}
+                  label="Naam"
+                  autoComplete="name"
+                  fullWidth
+                  required
+                  error={!!errors.name}
+                  helperText={errors.name?.message ?? " "}
+                  InputLabelProps={{ shrink: !!name }}
+                />
+              )}
             />
 
-            <TextField
-              label="Wachtwoord"
-              type="password"
-              autoComplete="new-password"
-              fullWidth
-              required
-              error={!!errors.password}
-              helperText={errors.password?.message ?? " "}
-              {...register("password")}
+            <Controller
+              name="password"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  inputRef={(e) => {
+                    field.ref(e);
+                    passwordRef.current = e;
+                  }}
+                  label="Wachtwoord"
+                  type="password"
+                  autoComplete="new-password"
+                  fullWidth
+                  required
+                  error={!!errors.password}
+                  helperText={errors.password?.message ?? " "}
+                  InputLabelProps={{ shrink: !!password }}
+                />
+              )}
             />
 
             {/* Live password checklist */}
@@ -132,16 +190,65 @@ export default function Register() {
               Minstens 1 speciaal teken
             </ChecklistRow>
 
-            <TextField
-              label="Wachtwoord herhalen"
-              type="password"
-              autoComplete="new-password"
-              fullWidth
-              required
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword?.message ?? " "}
-              {...register("confirmPassword")}
+            <Controller
+              name="confirmPassword"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  inputRef={(e) => {
+                    field.ref(e);
+                    confirmPasswordRef.current = e;
+                  }}
+                  label="Wachtwoord herhalen"
+                  type="password"
+                  autoComplete="new-password"
+                  fullWidth
+                  required
+                  error={!!errors.confirmPassword}
+                  helperText={errors.confirmPassword?.message ?? " "}
+                  InputLabelProps={{ shrink: !!confirmPassword }}
+                />
+              )}
             />
+
+            <Button
+              type="button"
+              variant="outlined"
+              fullWidth
+              onClick={() => {
+                const debugValues = {
+                  email: "admin@aveconsult.nl",
+                  company: "Ave Consult B.V.",
+                  name: "Adriaan van Essen",
+                  password: "Aveconsult1!",
+                  confirmPassword: "Aveconsult1!",
+                };
+                // Set values and trigger focus/blur to animate Material UI labels
+                setValue("email", debugValues.email, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                setValue("company", debugValues.company, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                setValue("name", debugValues.name, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                setValue("password", debugValues.password, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                setValue("confirmPassword", debugValues.confirmPassword, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                
+                // Trigger focus and blur on each field to animate Material UI labels
+                setTimeout(() => {
+                  emailRef.current?.focus();
+                  emailRef.current?.blur();
+                  companyRef.current?.focus();
+                  companyRef.current?.blur();
+                  nameRef.current?.focus();
+                  nameRef.current?.blur();
+                  passwordRef.current?.focus();
+                  passwordRef.current?.blur();
+                  confirmPasswordRef.current?.focus();
+                  confirmPasswordRef.current?.blur();
+                }, 0);
+              }}
+              sx={{ mb: 1 }}
+            >
+              Debug: Vul formulier in
+            </Button>
 
             <Button
               type="submit"
@@ -161,16 +268,6 @@ export default function Register() {
           </Stack>
         </form>
       </CardContent>
-
-      <Snackbar
-        open={isSubmitSuccessful}
-        autoHideDuration={3000}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="success" sx={{ width: "100%" }}>
-          Registratie geslaagd! Je kunt nu inloggen.
-        </Alert>
-      </Snackbar>
     </Card>
   );
 }

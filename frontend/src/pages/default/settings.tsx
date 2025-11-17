@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Tabs,
@@ -21,6 +21,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import Visibility from "@mui/icons-material/Visibility";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import { useUsers } from "../../hooks/useUsers";
 import z from "zod";
@@ -123,6 +124,8 @@ export default SettingsPage;
 const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
   const addUser = useDisclosure();
   const { users, loading, error, refresh } = useUsers();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     refresh();
@@ -131,9 +134,11 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
     reset,
     control,
+    setError,
+    watch,
   } = useForm<NewUserForm>({
     resolver: zodResolver(NewUserSchema),
     mode: "onBlur",
@@ -144,15 +149,40 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
       role: "recruiter",
     },
   });
+  
+  const password = watch("password") ?? "";
+  const passwordChecklist = {
+    hasMinLength: password.length >= 8,
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[^A-Za-z0-9]/.test(password),
+  };
 
   const onSubmit = async (data: NewUserForm) => {
+    setSubmitError(null);
     try {
       await API.post("/users", data);
       addUser.close();
       reset();
+      setShowPassword(false);
       await refresh(); // re-fetch
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      if (err?.response?.data?.message) {
+        setSubmitError(err.response.data.message);
+      } else if (err?.response?.data?.errors) {
+        // Handle validation errors
+        const errors = err.response.data.errors;
+        Object.keys(errors).forEach((key) => {
+          if (key in data) {
+            setError(key as keyof NewUserForm, {
+              type: "server",
+              message: Array.isArray(errors[key]) ? errors[key][0] : errors[key],
+            });
+          }
+        });
+      } else {
+        setSubmitError("Er is iets misgegaan. Probeer het opnieuw.");
+      }
     }
   };
 
@@ -162,18 +192,28 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
         Gebruikers
       </Typography>
 
-      <Box sx={{ mb: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={addUser.open}
-        >
-          Gebruiker toevoegen
-        </Button>
-      </Box>
+      {(currentUser?.role === 'owner' || currentUser?.role === 'admin') && (
+        <Box sx={{ mb: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={addUser.open}
+          >
+            Gebruiker toevoegen
+          </Button>
+        </Box>
+      )}
 
-      {/* Dialoog zonder functionaliteit; standaard gesloten */}
-      <Dialog open={addUser.isOpen} fullWidth maxWidth="sm">
+      <Dialog 
+        open={addUser.isOpen} 
+        fullWidth 
+        maxWidth="sm"
+        onClose={() => {
+          addUser.close();
+          setSubmitError(null);
+          setShowPassword(false);
+        }}
+      >
         <DialogTitle>Nieuwe gebruiker</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -194,7 +234,7 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
             />
             <TextField
               label="Wachtwoord"
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               error={!!errors.password}
               helperText={errors.password?.message ?? " "}
@@ -202,8 +242,13 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton edge="end" aria-label="Toon/Verberg wachtwoord">
-                      <VisibilityOff />
+                    <IconButton
+                      edge="end"
+                      aria-label="Toon/Verberg wachtwoord"
+                      onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -218,45 +263,15 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
                 pl: 1.75,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  component="span"
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    display: "inline-block",
-                    bgcolor: "text.disabled",
-                  }}
-                />
+              <ChecklistRow ok={passwordChecklist.hasMinLength}>
                 Minimaal 8 tekens
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  component="span"
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    display: "inline-block",
-                    bgcolor: "text.disabled",
-                  }}
-                />
+              </ChecklistRow>
+              <ChecklistRow ok={passwordChecklist.hasNumber}>
                 Minstens 1 cijfer
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  component="span"
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    display: "inline-block",
-                    bgcolor: "text.disabled",
-                  }}
-                />
+              </ChecklistRow>
+              <ChecklistRow ok={passwordChecklist.hasSpecial}>
                 Minstens 1 speciaal teken
-              </Box>
+              </ChecklistRow>
             </Box>
             <Controller
               name="role"
@@ -276,11 +291,19 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
                 </TextField>
               )}
             />
-            <Alert severity="error">Voorbeeld foutmelding in dialoog</Alert>
+            {submitError && (
+              <Alert severity="error" onClose={() => setSubmitError(null)}>
+                {submitError}
+              </Alert>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={addUser.close}>Annuleren</Button>
+          <Button onClick={() => {
+            addUser.close();
+            setSubmitError(null);
+            setShowPassword(false);
+          }}>Annuleren</Button>
           <Button
             variant="contained"
             onClick={handleSubmit(onSubmit)}
@@ -296,6 +319,7 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
         users={users}
         loading={loading}
         error={error}
+        refresh={refresh}
       />
     </Box>
   );
@@ -306,17 +330,19 @@ const ExistingUsersList = ({
   users = [],
   loading,
   error,
+  refresh,
 }: {
   currentUser: User | null;
   users?: User[];
   loading: boolean;
   error: string | null;
+  refresh: () => Promise<void>;
 }) => {
   useEffect(() => {
     console.log("ExistingUsersList users:", users);
   }, [users]);
 
-  const combinedUsers = React.useMemo(() => {
+  const combinedUsers = useMemo(() => {
     const list = [...users];
     if (currentUser) {
       const exists = list.some((u) =>
@@ -347,7 +373,9 @@ const ExistingUsersList = ({
           {combinedUsers.map((u) => (
             <UserRow
               key={u.uid ?? u.email}
-              user={{ email: u.email, role: u.role }}
+              user={{ uid: u.uid, name: u.name, email: u.email, role: u.role }}
+              currentUser={currentUser}
+              onDelete={refresh}
             />
           ))}
         </Stack>
@@ -356,40 +384,127 @@ const ExistingUsersList = ({
   );
 };
 
-const UserRow = ({ user }: { user: { email: string; role?: string } }) => {
+const UserRow = ({ 
+  user, 
+  currentUser, 
+  onDelete 
+}: { 
+  user: { uid?: string; name?: string; email: string; role?: string };
+  currentUser: User | null;
+  onDelete: () => Promise<void>;
+}) => {
+  const deleteDialog = useDisclosure();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Check if user can be deleted
+  const canDelete = useMemo(() => {
+    if (!currentUser) return false;
+    
+    // Can't delete yourself
+    const isSelf = (user.uid && currentUser.uid && user.uid === currentUser.uid) || 
+                   user.email === currentUser.email;
+    if (isSelf) return false;
+    
+    // Admins cannot delete owners
+    if (currentUser.role === 'admin' && user.role === 'owner') {
+      return false;
+    }
+    
+    // Only owners and admins can delete users
+    return currentUser.role === 'owner' || currentUser.role === 'admin';
+  }, [user, currentUser]);
+
+  const handleDelete = async () => {
+    if (!user.uid) return;
+    
+    setIsDeleting(true);
+    try {
+      await API.delete(`/users/${user.uid}`);
+      deleteDialog.close();
+      await onDelete();
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      // You might want to show an error message here
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
-      {/* Altijd zichtbaar; geen delete-actie */}
-      <Collapse in timeout={0}>
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-          <Typography sx={{ flex: 1 }}>{user.email}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-            {user.role ?? "recruiter"}
+      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+        <Box sx={{ flex: 1 }}>
+          {user.name && (
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {user.name}
+            </Typography>
+          )}
+          <Typography variant={user.name ? "body2" : "body1"} color={user.name ? "text.secondary" : "text.primary"}>
+            {user.email}
           </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+          {user.role ?? "recruiter"}
+        </Typography>
+        {canDelete && (
           <Button
             size="small"
             color="error"
             variant="text"
             startIcon={<DeleteOutlineIcon />}
+            onClick={deleteDialog.open}
+            disabled={isDeleting}
           >
             Verwijderen
           </Button>
-        </Box>
-      </Collapse>
+        )}
+      </Box>
 
-      {/* Bevestigingsdialoog markup, standaard gesloten */}
-      <Dialog open={false}>
+      <Dialog open={deleteDialog.isOpen} onClose={deleteDialog.close}>
         <DialogTitle>Gebruiker verwijderen</DialogTitle>
         <DialogContent>
           Weet je zeker dat je {user.email} wilt verwijderen?
         </DialogContent>
         <DialogActions>
-          <Button>Annuleren</Button>
-          <Button color="error" variant="contained">
-            Verwijderen
+          <Button onClick={deleteDialog.close} disabled={isDeleting}>
+            Annuleren
+          </Button>
+          <Button 
+            color="error" 
+            variant="contained" 
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Bezig..." : "Verwijderen"}
           </Button>
         </DialogActions>
       </Dialog>
     </>
   );
 };
+
+function ChecklistRow({
+  ok,
+  children,
+}: {
+  ok: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box
+        component="span"
+        sx={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          display: "inline-block",
+          bgcolor: ok ? "success.main" : "text.disabled",
+          transform: ok ? "scale(1.1)" : "scale(1)",
+          transition: "background-color 180ms ease, transform 140ms ease",
+        }}
+      />
+      {children}
+    </Box>
+  );
+}

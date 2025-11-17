@@ -12,13 +12,21 @@ export const useUsers = () => {
     setLoading(true);
     setError(null);
     try {
-      const userData = await API.get<User[]>("/users");
-      console.log("Users response:", userData);
-      if (!Array.isArray(userData)) {
-        throw new Error("Unexpected data format: response is not an array");
+      const response = await API.get<Paginated<User> | User[]>("/users");
+      console.log("Users response:", response);
+      
+      // Handle paginated response
+      let userArray: User[];
+      if (Array.isArray(response)) {
+        userArray = response;
+      } else if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+        userArray = response.data;
+      } else {
+        throw new Error("Unexpected data format: response is not an array or paginated object");
       }
-      setUsers(userData); // Set users to the array
-      console.log("Users set to:", userData); // Confirm the set value
+      
+      setUsers(userArray);
+      console.log("Users set to:", userArray);
     } catch (e: any) {
       setError(e?.message ?? "Onbekende fout");
       setUsers([]); // Reset to empty array on error

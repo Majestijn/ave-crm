@@ -36,7 +36,7 @@ class RegisterTenantController extends Controller
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => $data['password'],
-                'role' => 'admin',
+                'role' => 'owner',
             ]);
 
             $token = $admin->createToken('pat')->plainTextToken;
