@@ -6,7 +6,9 @@ use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvid
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use App\Models\Candidate;
+use App\Models\Client;
 use App\Policies\CandidatePolicy;
+use App\Policies\ClientPolicy;
 use Illuminate\Support\Facades\Log;
 
 class AuthServiceProvider extends ServiceProvider
@@ -16,6 +18,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Candidate::class => CandidatePolicy::class,
+        Client::class => ClientPolicy::class,
     ];
 
     /**

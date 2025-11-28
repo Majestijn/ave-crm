@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class AccountContact extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'account_id',
+        'name',
+        'phone',
+        'email',
+        'role',
+    ];
+
+    public function account()
+    {
+        return $this->belongsTo(Account::class);
+    }
+}
+

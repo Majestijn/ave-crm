@@ -10,7 +10,7 @@ import {
   Alert,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import API from "../../axios-client";
+import API from "../../../axios-client";
 
 interface BulkImportDialogProps {
   open: boolean;
