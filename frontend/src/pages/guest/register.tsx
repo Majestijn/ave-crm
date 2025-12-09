@@ -76,9 +76,14 @@ export default function Register() {
     };
 
     try {
-      await API.post("/auth/register-tenant", payload);
-      // Redirect to login page with success parameter
-      navigate("/?registered=true", { replace: true });
+      const response = await API.post("/auth/register-tenant", payload);
+      const { domain } = response.tenant;
+
+      // Redirect to the new tenant domain
+      // We assume the port is the same as the current window (5173 for dev)
+      const protocol = window.location.protocol;
+      const port = window.location.port ? `:${window.location.port}` : "";
+      window.location.href = `${protocol}//${domain}${port}`;
     } catch (error) {
       console.log(error);
     }
@@ -230,7 +235,7 @@ export default function Register() {
                 setValue("name", debugValues.name, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
                 setValue("password", debugValues.password, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
                 setValue("confirmPassword", debugValues.confirmPassword, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
-                
+
                 // Trigger focus and blur on each field to animate Material UI labels
                 setTimeout(() => {
                   emailRef.current?.focus();

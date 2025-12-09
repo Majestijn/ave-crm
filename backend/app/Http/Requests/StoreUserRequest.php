@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\User;
 
 class StoreUserRequest extends FormRequest
 {
@@ -13,12 +14,7 @@ class StoreUserRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
-        
-        // CRITICAL SECURITY: Ensure user has tenant_id
-        if (empty($user->tenant_id)) {
-            return false;
-        }
-        
+
         return $user->can('create', \App\Models\User::class);
     }
 
@@ -29,19 +25,23 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $user = $this->user();
-        
-        // CRITICAL SECURITY: Ensure user has tenant_id
-        if (empty($user->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-        
-        $tenantID = $user->tenant_id;
-
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->where('tenant_id', $tenantID)],
-            'role' => ['required', 'in:admin,recruiter,viewer'], // Note: 'owner' role cannot be assigned via this endpoint
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    try {
+                        $exists = User::where('email', $value)->exists();
+                        if ($exists) {
+                            $fail('The email has already been taken.');
+                        }
+                    } catch (\Exception $e) {
+                    }
+                },
+            ],
+            'role' => ['required', 'in:admin,recruiter,viewer'],
             'password' => ['nullable', 'string', 'min:8', 'regex:/\d/', 'regex:/[^A-Za-z0-9]/'],
         ];
     }

@@ -15,25 +15,12 @@ class LoginController extends Controller
     public function store(Request $request)
     {
         $credentials = $request->validate([
-            'slug' => ['nullable', 'alpha_dash', 'max:64'],
             'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'max:255'],
         ]);
 
-        $tenantId = null;
-        if (!empty($credentials['slug'])) {
-            $tenant = Tenant::where('slug', $credentials['slug'])->first();
-            if (!$tenant) {
-                throw ValidationException::withMessages(['slug' => 'Tenant niet gevonden']);
-            }
-            $tenantId = $tenant->id;
-        }
-
-        $query = User::query()->where('email', $credentials['email']);
-        if ($tenantId) {
-            $query->where('tenant_id', $tenantId);
-        }
-        $user = $query->first();
+        // Tenant context should be set by middleware (NeedsTenant)
+        $user = User::where('email', $credentials['email'])->first();
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -45,10 +32,10 @@ class LoginController extends Controller
         $fullToken = $tokenRecord->plainTextToken;
 
         $userData = [
-            'uid'   => $user->uid,
-            'name'  => $user->name ?? '',
+            'uid' => $user->uid,
+            'name' => $user->name ?? '',
             'email' => $user->email,
-            'role'  => $user->role,
+            'role' => $user->role,
         ];
 
         Log::info('LoginController: Returning user data', [
@@ -56,13 +43,15 @@ class LoginController extends Controller
             'user_data' => $userData,
         ]);
 
+        $tenant = \Spatie\Multitenancy\Models\Tenant::current();
+
         return response()->json([
             'token' => $fullToken,
-            'user'  => $userData,
-            'tenant' => $user->tenant ? [
-                'uid'  => $user->tenant->uid,
-                'name' => $user->tenant->name,
-                'slug' => $user->tenant->slug ?? null,
+            'user' => $userData,
+            'tenant' => $tenant ? [
+                'uid' => $tenant->uid,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
             ] : null,
         ]);
     }

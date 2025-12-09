@@ -6,15 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use App\Models\Concerns\BelongsToTenant;
+use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
 class Candidate extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant;
+    use HasFactory, SoftDeletes, UsesTenantConnection;
 
     protected $fillable = [
         'uid',
-        'tenant_id',
         'first_name',
         'last_name',
         'gender',
@@ -47,11 +46,6 @@ class Candidate extends Model
                 $candidate->uid = (string) Str::ulid();
             }
         });
-    }
-
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
     }
 }
 

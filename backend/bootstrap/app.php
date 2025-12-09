@@ -14,12 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['tenant' => App\Http\Middleware\ResolveTenantFromAuth::class]);
-
-        $middleware->group('auth.tenant', [
-            'auth:sanctum',
-            'tenant',
-        ]);
+        //
     })
     ->withProviders([
         AppServiceProvider::class,

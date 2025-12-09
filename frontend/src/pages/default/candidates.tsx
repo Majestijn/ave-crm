@@ -27,7 +27,7 @@ import type { Candidate } from "../../types/candidates";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import BulkImportDialog from "../../components/BulkImportDialog";
+import BulkImportDialog from "../../components/features/BulkImportDialog";
 
 const CandidateSchema = z.object({
   first_name: z.string().min(1, "Voornaam is verplicht"),
@@ -157,7 +157,7 @@ export default function CandidatesPage() {
     try {
       // Extract the path from the storage URL (e.g., /storage/cvs/filename.docx)
       let cvPath = candidate.cv_url;
-      
+
       // If it's a storage URL, extract the path after /storage/
       if (cvPath.includes('/storage/')) {
         cvPath = cvPath.split('/storage/')[1];
@@ -184,7 +184,7 @@ export default function CandidatesPage() {
           Authorization: `Bearer ${token}`,
         } : {},
       });
-      
+
       if (!response.ok) {
         throw new Error("CV kon niet worden geladen");
       }
@@ -197,7 +197,7 @@ export default function CandidatesPage() {
         // For PDF, create object URL
         const pdfUrl = URL.createObjectURL(blob);
         setCvContent(pdfUrl);
-      } 
+      }
       // Check if it's a Word document
       else if (
         fileType === "application/msword" ||
@@ -209,7 +209,7 @@ export default function CandidatesPage() {
         const arrayBuffer = await blob.arrayBuffer();
         const result = await mammoth.convertToHtml({ arrayBuffer });
         setCvContent(result.value);
-        
+
         // Handle warnings if any
         if (result.messages.length > 0) {
           console.warn("Mammoth conversion warnings:", result.messages);

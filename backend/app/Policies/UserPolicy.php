@@ -9,16 +9,12 @@ class UserPolicy
 {
     public function before(User $auth, string $ability): ?bool
     {
-        // CRITICAL SECURITY: Always verify user has tenant_id
-        if (empty($auth->tenant_id)) {
-            return false;
-        }
-        
-        // Owners have full access, admins have access except for deleting owners
+        // In database-per-tenant architecture, if user exists, they're in the correct tenant
+        // No need to check tenant_id since it doesn't exist
         if ($auth->role === 'owner') {
             return true;
         }
-        return null; // Let individual methods handle admin permissions
+        return null;
     }
 
     /**
@@ -26,8 +22,8 @@ class UserPolicy
      */
     public function viewAny(User $auth): bool
     {
-        // Security: user must have tenant_id
-        return !empty($auth->tenant_id);
+        // In database-per-tenant, if user exists, they can view users in their tenant
+        return true;
     }
 
     /**
@@ -35,11 +31,8 @@ class UserPolicy
      */
     public function view(User $auth, User $model): bool
     {
-        // CRITICAL: Always verify tenant_id matches
-        if (empty($auth->tenant_id) || empty($model->tenant_id)) {
-            return false;
-        }
-        return $auth->tenant_id === $model->tenant_id;
+        // In database-per-tenant, if both users exist in the same database, they're in the same tenant
+        return true;
     }
 
     /**
@@ -47,10 +40,7 @@ class UserPolicy
      */
     public function create(User $auth): bool
     {
-        // Security: user must have tenant_id
-        if (empty($auth->tenant_id)) {
-            return false;
-        }
+        // Only owners and admins can create users
         return in_array($auth->role, ['owner', 'admin']);
     }
 
@@ -59,11 +49,9 @@ class UserPolicy
      */
     public function update(User $auth, User $model): bool
     {
-        // CRITICAL: Always verify tenant_id matches
-        if (empty($auth->tenant_id) || empty($model->tenant_id)) {
-            return false;
-        }
-        return $auth->tenant_id === $model->tenant_id;
+        // In database-per-tenant, if both users exist, they're in the same tenant
+        // Users can update themselves, admins/owners can update others
+        return $auth->id === $model->id || in_array($auth->role, ['owner', 'admin']);
     }
 
     /**
@@ -76,17 +64,13 @@ class UserPolicy
             return false;
         }
         
-        // Must be in same tenant
-        if ($auth->tenant_id !== $model->tenant_id) {
-            return false;
-        }
-        
         // Admins cannot delete owners
         if ($auth->role === 'admin' && $model->role === 'owner') {
             return false;
         }
         
-        // Owners and admins can delete other users (except owners for admins)
+        // Only owners and admins can delete users
+        // In database-per-tenant, if both users exist, they're in the same tenant
         return in_array($auth->role, ['owner', 'admin']);
     }
 

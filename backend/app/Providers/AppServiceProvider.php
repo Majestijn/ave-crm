@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Laravel\Sanctum\Sanctum::usePersonalAccessTokenModel(\App\Models\PersonalAccessToken::class);
+
         RateLimiter::for('login', function (Request $request) {
             // limiet per IP + e-mail samen; pas aan naar smaak
             $email = (string) $request->input('email');

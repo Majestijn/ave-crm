@@ -1,0 +1,64 @@
+PHPUnit 11.5.36 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.28
+Configuration: /var/www/html/phpunit.xml
+
+E                                                                   1 / 1 (100%)
+
+Time: 00:00.081, Memory: 26.00 MB
+
+There was 1 error:
+
+1) Tests\Feature\TenantRegistrationTest::test_can_register_new_tenant
+Illuminate\Database\QueryException: SQLSTATE[08006] [7] connection to server at "db" (172.18.0.3), port 5432 failed: FATAL:  database ":memory:" does not exist (Connection: landlord, SQL: select * from "tenants" where "slug" = acme-corp or "name" = Acme Corp limit 1)
+
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:824
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:778
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:397
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3188
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3173
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3763
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3172
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:887
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:869
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Concerns/BuildsQueries.php:366
+/var/www/html/tests/Feature/TenantRegistrationTest.php:31
+/var/www/html/tests/Feature/TenantRegistrationTest.php:19
+
+Caused by
+PDOException: SQLSTATE[08006] [7] connection to server at "db" (172.18.0.3), port 5432 failed: FATAL:  database ":memory:" does not exist
+
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connectors/Connector.php:66
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connectors/Connector.php:44
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connectors/PostgresConnector.php:35
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connectors/ConnectionFactory.php:184
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:1230
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:1266
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:511
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:406
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:811
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:778
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:397
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3188
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3173
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3763
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3172
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:887
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:869
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Concerns/BuildsQueries.php:366
+/var/www/html/tests/Feature/TenantRegistrationTest.php:31
+/var/www/html/tests/Feature/TenantRegistrationTest.php:19
+
+--
+
+There was 1 risky test:
+
+1) Tests\Feature\TenantRegistrationTest::test_can_register_new_tenant
+* Test code or tested code did not remove its own error handlers
+
+* Test code or tested code did not remove its own exception handlers
+
+/var/www/html/tests/Feature/TenantRegistrationTest.php:57
+
+ERRORS!
+Tests: 1, Assertions: 0, Errors: 1, Risky: 1.

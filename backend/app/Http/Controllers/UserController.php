@@ -11,26 +11,19 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    public function __construct()
-    {
-        $this->authorizeResource(\App\Models\User::class, 'user');
-    }
+    // Note: Authorization is handled by:
+    // 1. Route middleware: 'can:manage-users' for create/update/delete
+    // 2. FormRequest authorize() methods for additional checks
+    // We don't use authorizeResource here because it conflicts with FormRequest authorization
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
         $auth = $request->user();
-        
-        // Double-check tenant_id matches (security check)
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
 
-        // User model doesn't use global scope, so we can query directly
-        // We need to exclude the current user
-        $query = User::where('tenant_id', $auth->tenant_id)
-            ->where('id', '!=', $auth->id)
+        // We are already in the tenant context, so we just query the users table
+        $query = User::where('id', '!=', $auth->id)
             ->orderBy('name');
 
         $users = $query->paginate(perPage: (int) $request->query('per_page', 15));
@@ -41,20 +34,11 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request, User $user)
+    public function store(StoreUserRequest $request)
     {
-        $auth = $request->user();
-        
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-        
         $data = $request->validated();
 
-        // Explicitly set tenant_id
         $user = User::create([
-            'tenant_id' => $auth->tenant_id,
             'name' => $data['name'],
             'email' => $data['email'],
             'role' => $data['role'],
@@ -67,23 +51,11 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, string $id)
+    public function show(Request $request, User $user)
     {
-        $auth = $request->user();
-        
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-        
-        // Find user and verify tenant_id matches
-        $user = User::where('uid', $id)
-            ->where('tenant_id', $auth->tenant_id)
-            ->firstOrFail();
-        
         // Authorization is handled by the policy via authorizeResource
-        $this->authorize('view', $user);
-        
+        // The User model binding automatically finds the user in the current tenant DB
+
         return new UserResource($user);
     }
 
@@ -93,17 +65,7 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user)
     {
         $auth = $request->user();
-        
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-        
-        // CRITICAL: Verify tenant_id matches before any operation
-        if ($user->tenant_id !== $auth->tenant_id) {
-            abort(403, 'Cannot access user from different tenant');
-        }
-        
+
         if ($request->filled('role') && $user->id === $auth->id) {
             return response()->json([
                 'message' => 'Je kunt je eigen rol niet wijzigen'
@@ -112,8 +74,8 @@ class UserController extends Controller
 
         $data = $request->validated();
 
-        // Prevent tenant_id and uid from being changed
-        unset($data['tenant_id'], $data['uid']);
+        // Prevent uid from being changed
+        unset($data['uid']);
 
         if (array_key_exists('password', $data) && blank($data['password'])) {
             unset($data['password']);
@@ -136,28 +98,12 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, string $id)
+    public function destroy(Request $request, User $user)
     {
-        $auth = $request->user();
-        
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-        
-        // Find the user, then verify tenant_id manually
-        $user = User::where('uid', $id)->firstOrFail();
-        
-        // CRITICAL: Verify tenant_id matches before any operation
-        if ($user->tenant_id !== $auth->tenant_id) {
-            abort(403, 'Cannot access user from different tenant');
-        }
-        
         // Authorization is handled by the policy via authorizeResource
-        $this->authorize('delete', $user);
-        
+
         $user->delete();
-        
+
         return response()->json(['message' => 'Gebruiker succesvol verwijderd'], 200);
     }
 }

@@ -8,10 +8,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Str;
+use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.
@@ -20,7 +22,6 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'uid',
-        'tenant_id',
         'name',
         'email',
         'password',
@@ -61,28 +62,12 @@ class User extends Authenticatable
             };
         });
     }
-    
-    /**
-     * Override forTenant scope - User model needs special handling
-     * because we need to exclude the current user and we can't use global scope
-     * for authentication queries
-     */
-    public function scopeForTenant($query, int $tenantId)
-    {
-        return $query->where('tenant_id', $tenantId);
-    }
 
     public function scopeExcept($query, $userOrId)
     {
         $id = $userOrId instanceof self ? $userOrId->getKey() : $userOrId;
 
         return $query->where($query->getModel()->getKeyName(), '!=', $id);
-    }
-
-
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
     }
 
     public function isAdmin(): bool

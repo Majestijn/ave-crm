@@ -9,15 +9,10 @@ use Illuminate\Support\Facades\Log;
 
 class CandidateController extends Controller
 {
-    // Note: We don't use authorizeResource because we need manual route parameter handling for uid
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $auth = $request->user();
         
-        // Security check: ensure user has tenant_id
         if (empty($auth->tenant_id)) {
             abort(403, 'User is not associated with a tenant');
         }
@@ -38,12 +33,10 @@ class CandidateController extends Controller
     {
         $auth = $request->user();
         
-        // Security check: ensure user has tenant_id
         if (empty($auth->tenant_id)) {
             abort(403, 'User is not associated with a tenant');
         }
         
-        // Authorization check
         if (!$auth->can('create', Candidate::class)) {
             abort(403, 'This action is unauthorized.');
         }
@@ -79,7 +72,6 @@ class CandidateController extends Controller
     {
         $auth = $request->user();
         
-        // Security check: ensure user has tenant_id
         if (empty($auth->tenant_id)) {
             abort(403, 'User is not associated with a tenant');
         }
@@ -88,7 +80,6 @@ class CandidateController extends Controller
             ->where('tenant_id', $auth->tenant_id)
             ->firstOrFail();
         
-        // Authorization check
         if (!$auth->can('view', $candidateModel)) {
             abort(403, 'This action is unauthorized.');
         }

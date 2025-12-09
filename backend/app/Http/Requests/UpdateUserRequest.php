@@ -15,15 +15,8 @@ class UpdateUserRequest extends FormRequest
         $auth = $this->user();
         $user = $this->route('user');
         
-        // CRITICAL SECURITY: Ensure both users have tenant_id and they match
-        if (empty($auth->tenant_id) || empty($user->tenant_id)) {
-            return false;
-        }
-        
-        if ($auth->tenant_id !== $user->tenant_id) {
-            return false;
-        }
-        
+        // In database-per-tenant architecture, if both users exist in the same database,
+        // they're already in the same tenant. No need to check tenant_id.
         return $auth->can('update', $user);
     }
 
@@ -34,26 +27,14 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $auth = $this->user();
         $user = $this->route('user');
-        
-        // CRITICAL SECURITY: Ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-        
-        // CRITICAL SECURITY: Verify tenant_id matches
-        if ($user->tenant_id !== $auth->tenant_id) {
-            abort(403, 'Cannot access user from different tenant');
-        }
-        
-        $tenantId = $auth->tenant_id;
 
         return [
             'name' => ['sometimes','string','max:255'],
             'email' => [
                 'sometimes','email','max:255',
-                Rule::unique('users','email')->where('tenant_id',$tenantId)->ignore($user->id),
+                // In database-per-tenant, email uniqueness is already scoped to the tenant database
+                Rule::unique('users','email')->ignore($user->id),
             ],
             'role' => ['sometimes','in:admin,recruiter,viewer'],
             'password' => ['nullable','string','min:8','regex:/\d/','regex:/[^A-Za-z0-9]/'],

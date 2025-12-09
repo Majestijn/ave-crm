@@ -36,6 +36,7 @@ export default function LoginPage() {
     register,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(LoginSchema),
@@ -148,6 +149,28 @@ export default function LoginPage() {
                   disabled={transitioning}
                 >
                   Log in
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outlined"
+                  fullWidth
+                  disabled={transitioning}
+                  onClick={() => {
+                    setValue("email", "admin@aveconsult.nl");
+                    setValue("password", "Aveconsult1!");
+                  }}
+                  sx={{ 
+                    mt: 1,
+                    borderColor: "warning.main",
+                    color: "warning.main",
+                    "&:hover": {
+                      borderColor: "warning.dark",
+                      backgroundColor: "warning.light",
+                    }
+                  }}
+                >
+                  🐛 Debug: Vul test credentials in
                 </Button>
 
                 <Typography variant="body2" sx={{ textAlign: "center" }}>

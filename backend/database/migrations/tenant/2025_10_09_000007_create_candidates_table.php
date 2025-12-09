@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,8 +12,7 @@ return new class extends Migration
     {
         Schema::create('candidates', function (Blueprint $table) {
             $table->id();
-            $table->ulid('uid');
-            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            $table->ulid('uid')->unique();
 
             $table->string('first_name');
             $table->string('last_name');
@@ -33,10 +31,6 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-
-            $table->unique(['tenant_id', 'uid']);
-
-            $table->index(['tenant_id', 'last_name', 'email']);
         });
     }
 

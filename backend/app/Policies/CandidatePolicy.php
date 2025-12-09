@@ -9,7 +9,6 @@ class CandidatePolicy
 {
     public function before(User $auth, string $ability): ?bool
     {
-        // CRITICAL SECURITY: Always verify user has tenant_id
         if (empty($auth->tenant_id)) {
             return false;
         }
@@ -22,7 +21,6 @@ class CandidatePolicy
      */
     public function viewAny(User $auth): bool
     {
-        // Security: user must have tenant_id
         return !empty($auth->tenant_id);
     }
 
@@ -31,7 +29,6 @@ class CandidatePolicy
      */
     public function view(User $auth, Candidate $model): bool
     {
-        // CRITICAL: Always verify tenant_id matches
         if (empty($auth->tenant_id) || empty($model->tenant_id)) {
             return false;
         }
@@ -43,11 +40,9 @@ class CandidatePolicy
      */
     public function create(User $auth): bool
     {
-        // Security: user must have tenant_id
         if (empty($auth->tenant_id)) {
             return false;
         }
-        // Owners, admins, and recruiters can create candidates
         return in_array($auth->role, ['owner', 'admin', 'recruiter']);
     }
 
@@ -56,7 +51,6 @@ class CandidatePolicy
      */
     public function update(User $auth, Candidate $model): bool
     {
-        // CRITICAL: Always verify tenant_id matches
         if (empty($auth->tenant_id) || empty($model->tenant_id)) {
             return false;
         }
@@ -68,7 +62,6 @@ class CandidatePolicy
      */
     public function delete(User $auth, Candidate $model): bool
     {
-        // Must be in same tenant
         if (empty($auth->tenant_id) || empty($model->tenant_id)) {
             return false;
         }
@@ -77,7 +70,6 @@ class CandidatePolicy
             return false;
         }
         
-        // Owners, admins, and recruiters can delete candidates
         return in_array($auth->role, ['owner', 'admin', 'recruiter']);
     }
 

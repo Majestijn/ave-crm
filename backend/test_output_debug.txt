@@ -1,0 +1,35 @@
+PHPUnit Started (PHPUnit 11.5.36 using PHP 8.3.28 (cli) on Linux)
+Test Runner Configured
+Bootstrap Finished (/var/www/html/vendor/autoload.php)
+Event Facade Sealed
+Test Suite Loaded (2 tests)
+Test Runner Started
+Test Suite Sorted
+Test Suite Filtered (1 test)
+Test Runner Execution Started (1 test)
+Test Suite Started (Tests\Feature\TenantRegistrationTest, 1 test)
+Test Preparation Started (Tests\Feature\TenantRegistrationTest::test_can_register_new_tenant)
+Before Test Method Called (Tests\Feature\TenantRegistrationTest::setUp)
+Before Test Method Errored (Tests\Feature\TenantRegistrationTest::setUp)
+SQLSTATE[08006] [7] connection to server at "db" (172.18.0.3), port 5432 failed: FATAL:  database ":memory:" does not exist (Connection: landlord, SQL: select * from "tenants" where "slug" = acme-corp or "name" = Acme Corp limit 1)
+Before Test Method Finished:
+- Tests\Feature\TenantRegistrationTest::setUp
+Test Preparation Failed (Tests\Feature\TenantRegistrationTest::test_can_register_new_tenant)
+Test Errored (Tests\Feature\TenantRegistrationTest::test_can_register_new_tenant)
+SQLSTATE[08006] [7] connection to server at "db" (172.18.0.3), port 5432 failed: FATAL:  database ":memory:" does not exist (Connection: landlord, SQL: select * from "tenants" where "slug" = acme-corp or "name" = Acme Corp limit 1)
+After Test Method Called (Tests\Feature\TenantRegistrationTest::tearDown)
+After Test Method Errored (Tests\Feature\TenantRegistrationTest::tearDown)
+SQLSTATE[08006] [7] connection to server at "db" (172.18.0.3), port 5432 failed: FATAL:  database ":memory:" does not exist (Connection: landlord, SQL: select * from "tenants" where "slug" = acme-corp or "name" = Acme Corp limit 1)
+After Test Method Finished:
+- Tests\Feature\TenantRegistrationTest::tearDown
+Test Considered Risky (Tests\Feature\TenantRegistrationTest::test_can_register_new_tenant)
+Test code or tested code did not remove its own error handlers
+Test Considered Risky (Tests\Feature\TenantRegistrationTest::test_can_register_new_tenant)
+Test code or tested code did not remove its own exception handlers
+After Last Test Method Called (Tests\Feature\TenantRegistrationTest::tearDownAfterClass)
+After Last Test Method Finished:
+- Tests\Feature\TenantRegistrationTest::tearDownAfterClass
+Test Suite Finished (Tests\Feature\TenantRegistrationTest, 1 test)
+Test Runner Execution Finished
+Test Runner Finished
+PHPUnit Finished (Shell Exit Code: 2)
