@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+
 use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
 class Account extends Model
@@ -56,4 +57,3 @@ class Account extends Model
         return $this->hasMany(AccountActivity::class);
     }
 }
-

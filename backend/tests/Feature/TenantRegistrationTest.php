@@ -95,7 +95,6 @@ class TenantRegistrationTest extends TestCase
                 'email' => 'john@acme.com',
                 'role' => 'owner',
             ], 'tenant');
-
         } catch (\Throwable $e) {
             dump("Caught exception: " . $e->getMessage());
             dump("Trace: " . $e->getTraceAsString());

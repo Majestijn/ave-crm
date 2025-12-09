@@ -9,10 +9,8 @@ class AccountPolicy
 {
     public function before(User $auth, string $ability): ?bool
     {
-        if (empty($auth->tenant_id)) {
-            return false;
-        }
-
+        // In database-per-tenant architecture, if user exists, they're in the correct tenant
+        // No need to check tenant_id since it doesn't exist
         return null;
     }
 
@@ -21,7 +19,8 @@ class AccountPolicy
      */
     public function viewAny(User $auth): bool
     {
-        return !empty($auth->tenant_id);
+        // In database-per-tenant, if user exists, they can view accounts in their tenant
+        return true;
     }
 
     /**
@@ -29,10 +28,8 @@ class AccountPolicy
      */
     public function view(User $auth, Account $model): bool
     {
-        if (empty($auth->tenant_id) || empty($model->tenant_id)) {
-            return false;
-        }
-        return $auth->tenant_id === $model->tenant_id;
+        // In database-per-tenant, if both exist in the same database, they're in the same tenant
+        return true;
     }
 
     /**
@@ -40,9 +37,7 @@ class AccountPolicy
      */
     public function create(User $auth): bool
     {
-        if (empty($auth->tenant_id)) {
-            return false;
-        }
+        // Owners, admins, and recruiters can create accounts
         return in_array($auth->role, ['owner', 'admin', 'recruiter']);
     }
 
@@ -51,10 +46,8 @@ class AccountPolicy
      */
     public function update(User $auth, Account $model): bool
     {
-        if (empty($auth->tenant_id) || empty($model->tenant_id)) {
-            return false;
-        }
-        return $auth->tenant_id === $model->tenant_id;
+        // In database-per-tenant, if both exist in the same database, they're in the same tenant
+        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
     }
 
     /**
@@ -62,14 +55,8 @@ class AccountPolicy
      */
     public function delete(User $auth, Account $model): bool
     {
-        if (empty($auth->tenant_id) || empty($model->tenant_id)) {
-            return false;
-        }
-
-        if ($auth->tenant_id !== $model->tenant_id) {
-            return false;
-        }
-
+        // In database-per-tenant, if both exist in the same database, they're in the same tenant
+        // Owners, admins, and recruiters can delete accounts
         return in_array($auth->role, ['owner', 'admin', 'recruiter']);
     }
 
@@ -89,4 +76,3 @@ class AccountPolicy
         return false;
     }
 }
-

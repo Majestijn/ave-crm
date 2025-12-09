@@ -40,7 +40,6 @@ Route::prefix('/v1')->group(function () {
 
         Route::get('/candidates/cv/{path}', function (Request $request, string $path) {
             // User is already authenticated in the tenant context
-
             $filePath = storage_path('app/public/' . urldecode($path));
 
             if (!file_exists($filePath)) {
