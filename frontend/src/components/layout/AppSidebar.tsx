@@ -9,6 +9,7 @@ import {
   Divider,
   Typography,
 } from "@mui/material";
+import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
@@ -27,7 +28,7 @@ const navItems = [
     to: "/assignments",
     icon: <AssignmentTurnedInOutlinedIcon />,
   },
-  { label: "Klanten", to: "/clients", icon: <BusinessOutlinedIcon /> },
+  { label: "Klanten", to: "/accounts", icon: <BusinessOutlinedIcon /> },
   { label: "Agenda", to: "/agenda", icon: <CalendarMonthOutlinedIcon /> },
 ];
 
@@ -38,14 +39,55 @@ const bottomItems = [
 export default function AppSidebar() {
   const navigate = useNavigate();
 
+  // Helper function to get base domain from current hostname
+  const getBaseDomain = () => {
+    const hostname = window.location.hostname;
+    const parts = hostname.split(".");
+
+    // If it's just "localhost", return as is
+    if (parts.length === 1) {
+      return hostname;
+    }
+
+    // If second part is "localhost", base is "localhost"
+    if (parts.length === 2 && parts[1] === "localhost") {
+      return "localhost";
+    }
+
+    // For tenant subdomains like "tenant1.ave-crm.com", remove first part
+    if (parts.length > 2) {
+      return parts.slice(1).join(".");
+    }
+
+    // For 2-part domains like "tenant1.ave-crm.com", return second part
+    if (parts.length === 2) {
+      return parts[1];
+    }
+
+    // Fallback
+    return hostname;
+  };
+
   const handleLogout = async () => {
-    await API.post("/auth/logout")
-      .then(() => {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("current_user");
-        navigate("/", { replace: true });
-      })
-      .catch((error) => console.log(error));
+    // Clear localStorage FIRST, before any redirects
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("current_user");
+
+    // Try to call logout endpoint (but don't wait for it or fail on error)
+    try {
+      await API.post("/auth/logout");
+    } catch (error) {
+      // Ignore errors - we've already cleared localStorage
+      console.log("Logout API call failed (ignored):", error);
+    }
+
+    // Always redirect to base domain
+    const baseDomain = getBaseDomain();
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : "";
+
+    // Use window.location.replace to prevent back button issues
+    window.location.replace(`${protocol}//${baseDomain}${port}/`);
   };
 
   return (

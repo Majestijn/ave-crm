@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('account_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('candidate_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('contact_id')->nullable()->constrained()->nullOnDelete();
             // assignments table might be 'assignments'
             $table->foreignId('assignment_id')->nullable()->constrained()->nullOnDelete();
 

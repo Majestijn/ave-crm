@@ -4,24 +4,27 @@ use App\Http\Controllers\Auth\RegisterTenantController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\TenantListController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountActivityController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 Route::prefix('/v1')->group(function () {
 
 
     Route::middleware(['throttle:20,1'])->group(function () {
         Route::post('/auth/register-tenant', RegisterTenantController::class);
+        Route::post('/auth/find-tenant', TenantListController::class); // Find tenant domain by email
     });
 
-    Route::middleware(['throttle:login', \Spatie\Multitenancy\Http\Middleware\NeedsTenant::class])->post('/auth/login', [LoginController::class, 'store']);
+    Route::middleware(['throttle:login', NeedsTenant::class])->post('/auth/login', [LoginController::class, 'store']);
 
-    Route::middleware([\Spatie\Multitenancy\Http\Middleware\NeedsTenant::class, 'auth:sanctum'])->group(function () {
+    Route::middleware([NeedsTenant::class, 'auth:sanctum'])->group(function () {
         Route::get('/auth/me', MeController::class);
         Route::post('/auth/logout', [LogoutController::class, 'destroy']);
 
@@ -35,10 +38,12 @@ Route::prefix('/v1')->group(function () {
             Route::delete('/users/{user}', [UserController::class, 'destroy']);
         });
 
-        Route::apiResource('candidates', CandidateController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
-        Route::post('/candidates/bulk-import', [CandidateController::class, 'bulkImport']);
+        // Specific routes must come before apiResource to avoid route conflicts
+        Route::get('/contacts/candidates', [ContactController::class, 'candidates']);
+        Route::post('/contacts/bulk-import', [ContactController::class, 'bulkImport']);
+        Route::apiResource('contacts', ContactController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
-        Route::get('/candidates/cv/{path}', function (Request $request, string $path) {
+        Route::get('/contacts/cv/{path}', function (Request $request, string $path) {
             // User is already authenticated in the tenant context
             $filePath = storage_path('app/public/' . urldecode($path));
 

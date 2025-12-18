@@ -9,6 +9,7 @@ import {
   Link,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import Fade from "@mui/material/Fade";
 import React from "react";
@@ -31,6 +32,62 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+  const [findingTenant, setFindingTenant] = useState(false);
+
+  // Check if we're on a tenant domain (e.g., tenant1.localhost) vs base domain (localhost)
+  const isTenantDomain = () => {
+    const hostname = window.location.hostname;
+    const parts = hostname.split(".");
+    
+    // Single part = base domain (e.g., "localhost")
+    if (parts.length === 1) {
+      return false;
+    }
+    
+    // Two parts where second is "localhost" = tenant domain (e.g., "tenant1.localhost")
+    if (parts.length === 2 && parts[1] === "localhost") {
+      return true;
+    }
+    
+    // More than 2 parts = tenant subdomain (e.g., "tenant1.ave-crm.com")
+    if (parts.length > 2) {
+      return true;
+    }
+    
+    // Two parts where second is NOT "localhost" = could be base domain (e.g., "ave-crm.com")
+    // But we'll treat it as potentially a tenant domain to be safe
+    // In production, you'd want to check against a known base domain list
+    return false;
+  };
+
+  // Get base domain for registration redirect
+  const getBaseDomain = () => {
+    const hostname = window.location.hostname;
+    const parts = hostname.split(".");
+    
+    // If it's just "localhost", return as is
+    if (parts.length === 1) {
+      return hostname;
+    }
+    
+    // If second part is "localhost", base is "localhost"
+    if (parts.length === 2 && parts[1] === "localhost") {
+      return "localhost";
+    }
+    
+    // For tenant subdomains like "tenant1.ave-crm.com", remove first part
+    if (parts.length > 2) {
+      return parts.slice(1).join(".");
+    }
+    
+    // For 2-part domains like "tenant1.ave-crm.com", return second part
+    if (parts.length === 2) {
+      return parts[1];
+    }
+    
+    // Fallback
+    return hostname;
+  };
 
   const {
     register,
@@ -46,15 +103,93 @@ export default function LoginPage() {
   const [transitioning, setTransitioning] = useState(false);
 
   useEffect(() => {
+    // Clear any stale tokens from base domain localStorage
+    // This prevents issues where registration saved a token to base domain
+    if (!isTenantDomain()) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("current_user");
+    }
+
+    // Check for auth token in URL hash (from registration auto-login)
+    // This happens when user registers on base domain and gets redirected to tenant domain
+    if (isTenantDomain()) {
+      const hash = window.location.hash;
+      const hashParams = new URLSearchParams(hash.substring(1)); // Remove '#'
+      const tokenFromHash = hashParams.get("token");
+      const userFromHash = hashParams.get("user");
+      
+      if (tokenFromHash && userFromHash) {
+        try {
+          // Decode and save to localStorage
+          const token = decodeURIComponent(tokenFromHash);
+          const user = JSON.parse(decodeURIComponent(userFromHash));
+          
+          localStorage.setItem("auth_token", token);
+          localStorage.setItem("current_user", JSON.stringify(user));
+          
+          // Clear hash from URL
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          
+          // Redirect to dashboard (auto-login)
+          navigate("/dashboard", { replace: true });
+          return;
+        } catch (error) {
+          console.error("Error processing auth from hash:", error);
+          // Clear invalid hash
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+      }
+    }
+
     // Check if we're coming from successful registration
     if (searchParams.get("registered") === "true") {
       setShowRegistrationSuccess(true);
       // Remove the query parameter from URL
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+
+    // Pre-fill email if coming from base domain redirect
+    const emailParam = searchParams.get("email");
+    if (emailParam && isTenantDomain()) {
+      setValue("email", emailParam);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, setValue, navigate]);
+
+  const handleEmailBlur = async (email: string) => {
+    // Only check tenant if on base domain and email is valid
+    if (!isTenantDomain() && email && email.includes("@")) {
+      setFindingTenant(true);
+      try {
+        const response = (await API.post("/auth/find-tenant", { email })) as { domain: string };
+        if (response.domain) {
+          // Redirect to tenant domain
+          const protocol = window.location.protocol;
+          const port = window.location.port ? `:${window.location.port}` : "";
+          // Preserve email in URL params so it can be pre-filled on tenant domain
+          window.location.href = `${protocol}//${response.domain}${port}/?email=${encodeURIComponent(email)}`;
+        }
+      } catch (error: any) {
+        // If tenant not found, show error
+        if (error.response?.status === 422) {
+          setError("email", {
+            type: "server",
+            message: error.response.data?.message || "Geen account gevonden met dit e-mailadres.",
+          });
+        }
+      } finally {
+        setFindingTenant(false);
+      }
+    }
+  };
 
   const onSubmit = async (data: LoginForm) => {
+    // If on base domain, find tenant first
+    if (!isTenantDomain()) {
+      await handleEmailBlur(data.email);
+      return;
+    }
+
     const payload = {
       email: data.email,
       password: data.password,
@@ -74,6 +209,20 @@ export default function LoginPage() {
       }
     } catch (e: any) {
       console.error("Login error:", e?.message, e);
+      if (e.response?.status === 422) {
+        const errors = e.response.data?.errors || {};
+        Object.entries(errors).forEach(([field, messages]: [string, any]) => {
+          setError(field as keyof LoginForm, {
+            type: "server",
+            message: Array.isArray(messages) ? messages[0] : messages,
+          });
+        });
+      } else {
+        setError("root", {
+          type: "server",
+          message: "Er is iets misgegaan. Probeer het opnieuw.",
+        });
+      }
     }
 
     // await API.post("/auth/login", payload)
@@ -120,6 +269,12 @@ export default function LoginPage() {
                   Inloggen
                 </Typography>
 
+                {!isTenantDomain() && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Voer uw e-mailadres in om naar uw organisatie te worden doorgestuurd.
+                  </Typography>
+                )}
+
                 <TextField
                   label="E-mailadres"
                   type="text"
@@ -127,28 +282,41 @@ export default function LoginPage() {
                   required
                   error={!!errors.email}
                   helperText={errors.email?.message ?? " "}
-                  {...register("email")}
-                  disabled={transitioning}
+                  {...register("email", {
+                    onBlur: (e) => {
+                      if (!isTenantDomain() && e.target.value) {
+                        handleEmailBlur(e.target.value);
+                      }
+                    },
+                  })}
+                  disabled={transitioning || findingTenant}
+                  InputProps={{
+                    endAdornment: findingTenant ? (
+                      <CircularProgress size={20} />
+                    ) : null,
+                  }}
                 />
 
-                <TextField
-                  label="Wachtwoord"
-                  type="password"
-                  fullWidth
-                  required
-                  error={!!errors.password}
-                  helperText={errors.password?.message ?? ""}
-                  {...register("password")}
-                  disabled={transitioning}
-                />
+                {isTenantDomain() && (
+                  <TextField
+                    label="Wachtwoord"
+                    type="password"
+                    fullWidth
+                    required
+                    error={!!errors.password}
+                    helperText={errors.password?.message ?? ""}
+                    {...register("password")}
+                    disabled={transitioning}
+                  />
+                )}
 
                 <Button
                   type="submit"
                   variant="contained"
                   fullWidth
-                  disabled={transitioning}
+                  disabled={transitioning || findingTenant}
                 >
-                  Log in
+                  {findingTenant ? "Zoeken..." : !isTenantDomain() ? "Zoek organisatie" : "Log in"}
                 </Button>
 
                 <Button
@@ -175,9 +343,24 @@ export default function LoginPage() {
 
                 <Typography variant="body2" sx={{ textAlign: "center" }}>
                   Nog geen account?{" "}
-                  <Link component={RouterLink} to="/register">
-                    Registreer
-                  </Link>
+                  {isTenantDomain() ? (
+                    <Link
+                      component="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const protocol = window.location.protocol;
+                        const port = window.location.port ? `:${window.location.port}` : "";
+                        window.location.href = `${protocol}//${getBaseDomain()}${port}/register`;
+                      }}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      Registreer nieuw account
+                    </Link>
+                  ) : (
+                    <Link component={RouterLink} to="/register">
+                      Registreer
+                    </Link>
+                  )}
                 </Typography>
               </Stack>
             </form>

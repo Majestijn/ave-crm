@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('account_activities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('candidate_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('contact_id')->nullable()->constrained()->nullOnDelete();
             // assignments table might be 'assignments'
             $table->foreignId('assignment_id')->nullable()->constrained()->nullOnDelete();
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
-class Candidate extends Model
+class Contact extends Model
 {
     use HasFactory, SoftDeletes, UsesTenantConnection;
 
@@ -17,13 +17,14 @@ class Candidate extends Model
         'first_name',
         'last_name',
         'gender',
-        'location',
-        'current_role',
-        'current_company',
-        'current_salary_cents',
-        'education',
         'email',
         'phone',
+        'location',
+        'current_company',
+        'company_role',
+        'network_role',
+        'current_salary_cents',
+        'education',
         'linkedin_url',
         'cv_url',
         'notes',
@@ -41,11 +42,10 @@ class Candidate extends Model
 
     protected static function booted(): void
     {
-        static::creating(function ($candidate) {
-            if (empty($candidate->uid)) {
-                $candidate->uid = (string) Str::ulid();
+        static::creating(function ($contact) {
+            if (empty($contact->uid)) {
+                $contact->uid = (string) Str::ulid();
             }
         });
     }
 }
-

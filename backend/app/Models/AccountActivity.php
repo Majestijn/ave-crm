@@ -12,7 +12,7 @@ class AccountActivity extends Model
 
     protected $fillable = [
         'account_id',
-        'candidate_id',
+        'contact_id',
         'assignment_id',
         'type',
         'description',
@@ -28,9 +28,9 @@ class AccountActivity extends Model
         return $this->belongsTo(Account::class);
     }
 
-    public function candidate(): BelongsTo
+    public function contact(): BelongsTo
     {
-        return $this->belongsTo(Candidate::class);
+        return $this->belongsTo(Contact::class, 'contact_id');
     }
 
     public function assignment(): BelongsTo

@@ -14,15 +14,11 @@ class AccountController extends Controller
     {
         $auth = $request->user();
 
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-
         if (!$auth->can('viewAny', Account::class)) {
             abort(403, 'This action is unauthorized.');
         }
 
-        $accounts = Account::where('tenant_id', $auth->tenant_id)
+        $accounts = Account::query()
             ->withCount('assignments')
             ->orderBy('name')
             ->get()
@@ -37,11 +33,6 @@ class AccountController extends Controller
     public function store(Request $request)
     {
         $auth = $request->user();
-
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
 
         // Authorization check
         if (!$auth->can('create', Account::class)) {
@@ -72,14 +63,8 @@ class AccountController extends Controller
     {
         $auth = $request->user();
 
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-
         // Find account by uid (route parameter name is 'account' but contains the uid value)
         $accountModel = Account::where('uid', $account)
-            ->where('tenant_id', $auth->tenant_id)
             ->with(['contacts', 'assignments'])
             ->firstOrFail();
 
@@ -157,4 +142,3 @@ class AccountController extends Controller
         return response()->json(['message' => 'Account succesvol verwijderd'], 200);
     }
 }
-

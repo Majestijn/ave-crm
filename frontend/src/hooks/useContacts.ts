@@ -1,9 +1,9 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import type { Contact } from "../types/contacts";
 import API from "../../axios-client";
 
-export const useCandidates = () => {
-  const [candidates, setCandidates] = useState<Contact[]>([]);
+export const useContacts = () => {
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,18 +11,18 @@ export const useCandidates = () => {
     setLoading(true);
     setError(null);
     try {
-      const responseData = await API.get<Contact[]>("/contacts/candidates");
+      const responseData = await API.get<Contact[]>("/contacts");
 
-      let candidateArray: Contact[];
+      let contactArray: Contact[];
       if (Array.isArray(responseData)) {
-        candidateArray = responseData;
+        contactArray = responseData;
       } else if (
         responseData &&
         typeof responseData === "object" &&
         "data" in responseData &&
         Array.isArray(responseData.data)
       ) {
-        candidateArray = responseData.data;
+        contactArray = responseData.data;
       } else {
         console.error("Unexpected response structure:", {
           responseData,
@@ -38,23 +38,17 @@ export const useCandidates = () => {
         );
       }
 
-      setCandidates(candidateArray);
+      setContacts(contactArray);
     } catch (e: any) {
       const errorMessage =
         e?.response?.data?.message || e?.message || "Onbekende fout";
       setError(errorMessage);
-      setCandidates([]);
-      console.error("Error fetching candidates:", e);
+      setContacts([]); // Reset to empty array on error
+      console.error("Error fetching contacts:", e);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Auto-refresh on mount
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return { candidates, loading, error, refresh };
+  return { contacts, loading, error, refresh };
 };
-

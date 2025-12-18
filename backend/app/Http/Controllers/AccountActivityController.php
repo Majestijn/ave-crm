@@ -15,7 +15,7 @@ class AccountActivityController extends Controller
     public function index(Request $request, Account $account)
     {
         $activities = $account->activities()
-            ->with(['candidate:id,uid,first_name,last_name', 'assignment:id,title'])
+            ->with(['contact:id,uid,first_name,last_name', 'assignment:id,title'])
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -32,16 +32,28 @@ class AccountActivityController extends Controller
             'type' => 'required|string',
             'description' => 'required|string',
             'date' => 'required|date',
-            'candidate_id' => 'nullable|exists:candidates,id',
+            'contact_uid' => 'nullable|exists:contacts,uid',
             'assignment_id' => 'nullable|exists:assignments,id',
         ]);
 
-        $activity = $account->activities()->create([
-            ...$validated,
-            'tenant_id' => $request->user()->tenant_id,
-        ]);
+        $data = [
+            'type' => $validated['type'],
+            'description' => $validated['description'],
+            'date' => $validated['date'],
+            'assignment_id' => $validated['assignment_id'] ?? null,
+        ];
 
-        return response()->json($activity->load(['candidate', 'assignment']), 201);
+        // Resolve contact_uid to contact_id
+        if (!empty($validated['contact_uid'])) {
+            $contact = \App\Models\Contact::where('uid', $validated['contact_uid'])->first();
+            if ($contact) {
+                $data['contact_id'] = $contact->id;
+            }
+        }
+
+        $activity = $account->activities()->create($data);
+
+        return response()->json($activity->load(['contact', 'assignment']), 201);
     }
 
     /**

@@ -1,21 +1,19 @@
-export type Candidate = {
-  id: number;
+export type Contact = {
   uid: string;
   first_name: string;
   last_name: string;
   gender?: string;
-  location?: string;
-  current_role?: string;
-  current_company?: string;
-  current_salary_cents?: number;
-  education?: string;
   email?: string;
   phone?: string;
+  location?: string;
+  current_company?: string;
+  company_role?: string;
+  network_role?: string;
+  current_salary_cents?: number;
+  education?: string;
   linkedin_url?: string;
   cv_url?: string;
   notes?: string;
-  created_at?: string;
-  updated_at?: string;
 };
 
 export type Paginated<T> = {
@@ -30,4 +28,3 @@ export type Paginated<T> = {
     last_page: number;
   };
 };
-

@@ -15,6 +15,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRef } from "react";
 import API from "../../../axios-client";
+import type { User } from "../../types/users";
 
 const TenantSchema = z
   .object({
@@ -34,6 +35,19 @@ const TenantSchema = z
   });
 
 type TenantForm = z.infer<typeof TenantSchema>;
+
+type Tenant = {
+  uid: string;
+  name: string;
+  slug: string;
+  domain: string;
+};
+
+type RegisterResponse = {
+  token: string;
+  user: User;
+  tenant: Tenant;
+};
 
 export default function Register() {
   const navigate = useNavigate();
@@ -76,14 +90,23 @@ export default function Register() {
     };
 
     try {
-      const response = await API.post("/auth/register-tenant", payload);
-      const { domain } = response.tenant;
+      const { token, user, tenant } = (await API.post(
+        "/auth/register-tenant",
+        payload
+      )) as RegisterResponse;
 
-      // Redirect to the new tenant domain
-      // We assume the port is the same as the current window (5173 for dev)
+      // Clear any existing tokens from base domain localStorage before redirect
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("current_user");
+
+      // Redirect to tenant domain with token in URL hash for auto-login
+      // Hash is not sent to server, more secure than query param
       const protocol = window.location.protocol;
       const port = window.location.port ? `:${window.location.port}` : "";
-      window.location.href = `${protocol}//${domain}${port}`;
+      const tokenHash = encodeURIComponent(token);
+      const userHash = encodeURIComponent(JSON.stringify(user));
+
+      window.location.href = `${protocol}//${tenant.domain}${port}/#token=${tokenHash}&user=${userHash}`;
     } catch (error) {
       console.log(error);
     }
@@ -230,11 +253,31 @@ export default function Register() {
                   confirmPassword: "Aveconsult1!",
                 };
                 // Set values and trigger focus/blur to animate Material UI labels
-                setValue("email", debugValues.email, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
-                setValue("company", debugValues.company, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
-                setValue("name", debugValues.name, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
-                setValue("password", debugValues.password, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
-                setValue("confirmPassword", debugValues.confirmPassword, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                setValue("email", debugValues.email, {
+                  shouldTouch: true,
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                setValue("company", debugValues.company, {
+                  shouldTouch: true,
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                setValue("name", debugValues.name, {
+                  shouldTouch: true,
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                setValue("password", debugValues.password, {
+                  shouldTouch: true,
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                setValue("confirmPassword", debugValues.confirmPassword, {
+                  shouldTouch: true,
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
 
                 // Trigger focus and blur on each field to animate Material UI labels
                 setTimeout(() => {

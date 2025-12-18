@@ -32,8 +32,8 @@ import {
 } from "@mui/icons-material";
 import API from "../../../axios-client";
 import type { Account, Assignment } from "../../types/accounts";
-import { useCandidates } from "../../hooks/useCandidates";
-import type { Candidate } from "../../types/candidates";
+import { useContacts } from "../../hooks/useContacts";
+import type { Contact } from "../../types/contacts";
 
 // Helper function to format revenue
 const formatRevenue = (revenueCents?: number): string => {
@@ -140,26 +140,38 @@ export default function AccountDetailPage() {
   // Activity State
   const [timeline, setTimeline] = useState<TimelineActivity[]>([]);
   const [openActivityDialog, setOpenActivityDialog] = useState(false);
-  const [newActivityType, setNewActivityType] = useState<TimelineActivity["type"]>("call");
+  const [newActivityType, setNewActivityType] =
+    useState<TimelineActivity["type"]>("call");
   const [newActivityDesc, setNewActivityDesc] = useState("");
-  const [newActivityDate, setNewActivityDate] = useState(new Date().toISOString().split("T")[0]);
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-
-  const { candidates, refresh: refreshCandidates } = useCandidates();
+  const [newActivityDate, setNewActivityDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [selectedCandidate, setSelectedCandidate] = useState<
+    Contact | null | undefined
+  >(null);
+  const { contacts, refresh: refreshContacts } = useContacts();
 
   const fetchActivities = async () => {
-    if (!uid) return;
+    if (!uid) {
+      return;
+    }
+
     try {
-      const response = await API.get(`/accounts/${uid}/activities`) as any[];
-      const mappedActivities: TimelineActivity[] = response.map((activity: any) => ({
-        id: activity.id,
-        type: activity.type,
-        description: activity.description,
-        date: activity.date.split("T")[0], // Handle ISO string if needed
-        candidate: activity.candidate
-          ? { uid: activity.candidate.uid, name: `${activity.candidate.first_name} ${activity.candidate.last_name}` }
-          : undefined,
-      }));
+      const response = (await API.get(`/accounts/${uid}/activities`)) as any[];
+      const mappedActivities: TimelineActivity[] = response.map(
+        (activity: any) => ({
+          id: activity.id,
+          type: activity.type,
+          description: activity.description,
+          date: activity.date.split("T")[0], // Handle ISO string if needed
+          candidate: activity.candidate
+            ? {
+                uid: activity.candidate.uid,
+                name: `${activity.candidate.first_name} ${activity.candidate.last_name}`,
+              }
+            : undefined,
+        })
+      );
       setTimeline(mappedActivities);
     } catch (err) {
       console.error("Error fetching activities:", err);
@@ -167,8 +179,8 @@ export default function AccountDetailPage() {
   };
 
   useEffect(() => {
-    refreshCandidates();
-  }, [refreshCandidates]);
+    refreshContacts();
+  }, [refreshContacts]);
 
   useEffect(() => {
     if (uid) {
@@ -214,28 +226,13 @@ export default function AccountDetailPage() {
         type: newActivityType,
         description: newActivityDesc,
         date: newActivityDate,
-        candidate_id: selectedCandidate?.id, // We need ID for backend, but frontend Candidate type uses UID?
-        // Wait, useCandidates returns Candidate type which has UID. 
-        // Does it have ID? The type definition says NO.
-        // I need to check if the API returns ID in useCandidates.
-        // If not, I need to send candidate_uid or update useCandidates/Type.
-        // Let's assume for now I need to fix this.
+        candidate_uid: selectedCandidate?.uid,
       };
 
-      // FIX: The backend expects candidate_id (integer). 
-      // But my frontend Candidate type only has UID.
-      // I should check if the actual API response for candidates includes ID.
-      // If so, I should update the type.
-      // If not, I should update the backend to accept candidate_uid.
-
-      // Let's assume I'll update the backend to accept candidate_uid or I'll check the type.
-      // For now, I'll try to send what I have.
-
-      // Actually, I'll update the backend controller to accept candidate_uid if I can't find ID.
-      // But let's look at the Candidate type again.
-
-      // ... (I will pause here to check Candidate type/response or just update backend to support UID)
-      const response = await API.post(`/accounts/${uid}/activities`, payload) as any;
+      const response = (await API.post(
+        `/accounts/${uid}/activities`,
+        payload
+      )) as any;
 
       const newActivity: TimelineActivity = {
         id: response.id,
@@ -243,7 +240,10 @@ export default function AccountDetailPage() {
         description: response.description,
         date: response.date.split("T")[0],
         candidate: response.candidate
-          ? { uid: response.candidate.uid, name: `${response.candidate.first_name} ${response.candidate.last_name}` }
+          ? {
+              uid: response.candidate.uid,
+              name: `${response.candidate.first_name} ${response.candidate.last_name}`,
+            }
           : undefined,
       };
 
@@ -269,7 +269,9 @@ export default function AccountDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await API.get<Account>(`/accounts/${uid}`) as unknown as Account;
+        const response = (await API.get<Account>(
+          `/accounts/${uid}`
+        )) as unknown as Account;
         setAccount(response);
       } catch (err: any) {
         console.error("Error fetching account:", err);
@@ -283,13 +285,24 @@ export default function AccountDetailPage() {
   }, [uid]);
 
   if (loading) return <Box sx={{ p: 3 }}>Laden…</Box>;
-  if (error || !account) return <Box sx={{ p: 3 }}>{error || "Account niet gevonden"}</Box>;
+  if (error || !account)
+    return <Box sx={{ p: 3 }}>{error || "Account niet gevonden"}</Box>;
 
-  const activeAssignments = dummyAssignments.filter((a) => a.status === "active");
+  const activeAssignments = dummyAssignments.filter(
+    (a) => a.status === "active"
+  );
   const totalAssignments = dummyAssignments.length;
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1600, margin: "0 auto", bgcolor: "#f8f9fa", minHeight: "100vh" }}>
+    <Box
+      sx={{
+        p: 3,
+        maxWidth: 1600,
+        margin: "0 auto",
+        bgcolor: "#f8f9fa",
+        minHeight: "100vh",
+      }}
+    >
       {/* Header Section */}
       <Paper
         elevation={0}
@@ -360,7 +373,9 @@ export default function AccountDetailPage() {
                 </Box>
                 <Box display="flex" justifyContent="space-between">
                   <Typography color="text.secondary">Locatie</Typography>
-                  <Typography fontWeight="bold">{account.location || "-"}</Typography>
+                  <Typography fontWeight="bold">
+                    {account.location || "-"}
+                  </Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between">
                   <Typography color="text.secondary">Website</Typography>
@@ -383,10 +398,13 @@ export default function AccountDetailPage() {
                   <Typography color="text.secondary">Omzet</Typography>
                   <Typography fontWeight="bold">
                     {account.revenue_cents
-                      ? `€${(account.revenue_cents / 100).toLocaleString("nl-NL", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })},-`
+                      ? `€${(account.revenue_cents / 100).toLocaleString(
+                          "nl-NL",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }
+                        )},-`
                       : "-"}
                   </Typography>
                 </Box>
@@ -449,7 +467,12 @@ export default function AccountDetailPage() {
 
         {/* Right Column */}
         <Grid size={{ xs: 12, md: 8, lg: 9 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={4}
+          >
             {/* Assignment Selector */}
             <Paper
               elevation={0}
@@ -465,7 +488,9 @@ export default function AccountDetailPage() {
               <FormControl variant="standard" sx={{ minWidth: 200 }}>
                 <Select
                   value={selectedAssignment}
-                  onChange={(e) => setSelectedAssignment(e.target.value as number)}
+                  onChange={(e) =>
+                    setSelectedAssignment(e.target.value as number)
+                  }
                   disableUnderline
                   displayEmpty
                   sx={{ fontWeight: 600 }}
@@ -512,7 +537,10 @@ export default function AccountDetailPage() {
 
             <Stack spacing={4}>
               {[...timeline]
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                )
                 .map((activity) => (
                   <Box
                     key={activity.id}
@@ -552,7 +580,10 @@ export default function AccountDetailPage() {
                     >
                       <Typography
                         sx={{
-                          "& span": { textDecoration: "underline", cursor: "pointer" },
+                          "& span": {
+                            textDecoration: "underline",
+                            cursor: "pointer",
+                          },
                         }}
                       >
                         {/* Simple parsing for "John Doe" or "Peter" to underline? 
@@ -560,8 +591,24 @@ export default function AccountDetailPage() {
                           In a real app, we'd parse links. */}
                         {activity.description}
                         {activity.candidate && (
-                          <Typography component="span" sx={{ display: "block", fontSize: "0.875rem", color: "text.secondary", mt: 0.5 }}>
-                            met <span style={{ textDecoration: "underline", cursor: "pointer" }}>{activity.candidate.name}</span>
+                          <Typography
+                            component="span"
+                            sx={{
+                              display: "block",
+                              fontSize: "0.875rem",
+                              color: "text.secondary",
+                              mt: 0.5,
+                            }}
+                          >
+                            met{" "}
+                            <span
+                              style={{
+                                textDecoration: "underline",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {activity.candidate.name}
+                            </span>
                           </Typography>
                         )}
                       </Typography>
@@ -585,7 +632,12 @@ export default function AccountDetailPage() {
       </Grid>
 
       {/* Add Activity Dialog */}
-      <Dialog open={openActivityDialog} onClose={() => setOpenActivityDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={openActivityDialog}
+        onClose={() => setOpenActivityDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Nieuwe activiteit toevoegen</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
@@ -594,7 +646,9 @@ export default function AccountDetailPage() {
               <Select
                 value={newActivityType}
                 label="Type activiteit"
-                onChange={(e) => setNewActivityType(e.target.value as TimelineActivity["type"])}
+                onChange={(e) =>
+                  setNewActivityType(e.target.value as TimelineActivity["type"])
+                }
               >
                 <MenuItem value="call">Gebeld</MenuItem>
                 <MenuItem value="proposal">Voorgesteld</MenuItem>
@@ -605,11 +659,15 @@ export default function AccountDetailPage() {
             </FormControl>
 
             <Autocomplete
-              options={candidates}
-              getOptionLabel={(option) => `${option.first_name} ${option.last_name}`}
+              options={contacts}
+              getOptionLabel={(option) =>
+                `${option.first_name} ${option.last_name}`
+              }
               value={selectedCandidate}
               onChange={(_, newValue) => setSelectedCandidate(newValue)}
-              renderInput={(params) => <TextField {...params} label="Kandidaat (optioneel)" />}
+              renderInput={(params) => (
+                <TextField {...params} label="Kandidaat (optioneel)" />
+              )}
             />
 
             <TextField
@@ -631,7 +689,9 @@ export default function AccountDetailPage() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setOpenActivityDialog(false)}>Annuleren</Button>
+          <Button onClick={() => setOpenActivityDialog(false)}>
+            Annuleren
+          </Button>
           <Button
             variant="contained"
             onClick={handleAddActivity}

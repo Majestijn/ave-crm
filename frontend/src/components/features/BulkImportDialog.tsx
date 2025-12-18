@@ -57,7 +57,7 @@ export default function BulkImportDialog({
       const formData = new FormData();
       formData.append("cv_file", selectedFile);
 
-      await API.post("/candidates/bulk-import", formData, {
+      await API.post("/contacts/bulk-import", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -70,7 +70,9 @@ export default function BulkImportDialog({
       if (err?.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError("Er is iets misgegaan bij het importeren. Probeer het opnieuw.");
+        setError(
+          "Er is iets misgegaan bij het importeren. Probeer het opnieuw."
+        );
       }
     } finally {
       setIsImporting(false);
@@ -84,17 +86,13 @@ export default function BulkImportDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      fullWidth
-      maxWidth="sm"
-      onClose={handleClose}
-    >
+    <Dialog open={open} fullWidth maxWidth="sm" onClose={handleClose}>
       <DialogTitle>Bulk Import - 50 Kandidaten</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            Selecteer een CV bestand (PDF of Word). Er worden 50 kandidaten aangemaakt met willekeurige gegevens, allemaal met hetzelfde CV.
+            Selecteer een CV bestand (PDF of Word). Er worden 50 kandidaten
+            aangemaakt met willekeurige gegevens, allemaal met hetzelfde CV.
           </Typography>
 
           <Button
@@ -126,10 +124,7 @@ export default function BulkImportDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={handleClose}
-          disabled={isImporting}
-        >
+        <Button onClick={handleClose} disabled={isImporting}>
           Annuleren
         </Button>
         <Button
@@ -144,4 +139,3 @@ export default function BulkImportDialog({
     </Dialog>
   );
 }
-

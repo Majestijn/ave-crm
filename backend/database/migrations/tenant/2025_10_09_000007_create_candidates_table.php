@@ -10,25 +10,36 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('candidates', function (Blueprint $table) {
+        Schema::create('contacts', function (Blueprint $table) {
+            // Primary identifiers
             $table->id();
             $table->ulid('uid')->unique();
 
+            // Personal information
             $table->string('first_name');
             $table->string('last_name');
             $table->string('gender', 16)->nullable();
-            $table->string('location')->nullable();
 
-            $table->string('current_role')->nullable();
-            $table->string('current_company')->nullable();
-            $table->integer('current_salary_cents')->nullable();
-            $table->string('education')->nullable();
+            // Contact information
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
+            $table->string('location')->nullable();
+
+            // Professional information
+            $table->string('current_company')->nullable();
+            $table->string('company_role')->nullable();
+            $table->string('network_role')->nullable();
+            $table->integer('current_salary_cents')->nullable();
+            $table->string('education')->nullable();
+
+            // External links
             $table->string('linkedin_url')->nullable();
             $table->string('cv_url')->nullable();
+
+            // Additional information
             $table->text('notes')->nullable();
 
+            // Timestamps
             $table->timestamps();
             $table->softDeletes();
         });
@@ -39,6 +50,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('candidates');
+        Schema::dropIfExists('contacts');
     }
 };
