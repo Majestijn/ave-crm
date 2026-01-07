@@ -18,10 +18,22 @@ class Assignment extends Model
         'title',
         'description',
         'status',
+        'salary_min',
+        'salary_max',
+        'has_bonus',
+        'has_car',
+        'vacation_days',
+        'location',
+        'employment_type',
     ];
 
     protected $casts = [
         'uid' => 'string',
+        'salary_min' => 'integer',
+        'salary_max' => 'integer',
+        'has_bonus' => 'boolean',
+        'has_car' => 'boolean',
+        'vacation_days' => 'integer',
     ];
 
     public function getRouteKeyName(): string
@@ -41,5 +53,12 @@ class Assignment extends Model
     public function account()
     {
         return $this->belongsTo(Account::class);
+    }
+
+    public function candidates()
+    {
+        return $this->belongsToMany(Contact::class, 'assignment_contact')
+            ->withPivot('id', 'status')
+            ->withTimestamps();
     }
 }

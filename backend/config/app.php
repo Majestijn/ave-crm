@@ -54,6 +54,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Public URL for calendar feeds (can be ngrok URL for development)
+    'feed_url' => env('APP_FEED_URL', env('APP_URL', 'http://localhost')),
+
     'tenant_domain_suffix' => env('TENANT_DOMAIN_SUFFIX', 'localhost'),
 
     'asset_url' => env('ASSET_URL'),

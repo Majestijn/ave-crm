@@ -29,11 +29,17 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Add as AddIcon,
+  DeleteOutline as DeleteOutlineIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { Assignment } from "../../types/accounts";
 import type { Contact } from "../../types/contacts";
 import { useCandidates } from "../../hooks/useCandidates";
+import { useAssignments, type AssignmentFromAPI } from "../../hooks/useAssignments";
+import { useAccounts } from "../../hooks/useAccounts";
+import API from "../../../axios-client";
+import { useDisclosure } from "../../hooks/useDisclosure";
+import { Alert } from "@mui/material";
 import {
   Dialog,
   DialogTitle,
@@ -45,6 +51,9 @@ import {
   ListItemButton,
   ListItemText,
   ListItemIcon,
+  IconButton,
+  Tooltip,
+  FormControlLabel,
 } from "@mui/material";
 
 // Extended Assignment type for the UI (will be updated when backend is ready)
@@ -56,9 +65,11 @@ type AssignmentWithDetails = Assignment & {
   };
   location?: string;
   employment_type?: string; // "Fulltime", "Parttime", etc.
-  salary_indication?: number; // in EUR
+  salary_min?: number; // Minimum salary in EUR
+  salary_max?: number; // Maximum salary in EUR
   has_car?: boolean;
   has_bonus?: boolean;
+  vacation_days?: number;
   candidates?: CandidateAssignment[];
 };
 
@@ -84,7 +95,8 @@ const mockAssignments: AssignmentWithDetails[] = [
     },
     location: "Zevenaar",
     employment_type: "Fulltime",
-    salary_indication: 4500,
+    salary_min: 4000,
+    salary_max: 5000,
     has_car: true,
     has_bonus: true,
     candidates: [
@@ -187,7 +199,8 @@ const mockAssignments: AssignmentWithDetails[] = [
     },
     location: "Amsterdam",
     employment_type: "Fulltime",
-    salary_indication: 5500,
+    salary_min: 5000,
+    salary_max: 6000,
     has_car: false,
     has_bonus: true,
     candidates: [
@@ -230,7 +243,8 @@ const mockAssignments: AssignmentWithDetails[] = [
     },
     location: "Rotterdam",
     employment_type: "Parttime",
-    salary_indication: 4000,
+    salary_min: 3500,
+    salary_max: 4500,
     has_car: true,
     has_bonus: false,
     candidates: [
@@ -273,7 +287,8 @@ const mockAssignments: AssignmentWithDetails[] = [
     },
     location: "Utrecht",
     employment_type: "Fulltime",
-    salary_indication: 5000,
+    salary_min: 4500,
+    salary_max: 5500,
     has_car: false,
     has_bonus: true,
     candidates: [
@@ -313,6 +328,15 @@ const statusOptions = [
   { value: "cancelled", label: "Geannuleerd" },
 ];
 
+const candidateStatusOptions: { value: CandidateAssignment["status"]; label: string }[] = [
+  { value: "called", label: "Gebeld" },
+  { value: "proposed", label: "Voorgesteld" },
+  { value: "first_interview", label: "1e gesprek" },
+  { value: "second_interview", label: "2e gesprek" },
+  { value: "hired", label: "Aangenomen" },
+  { value: "rejected", label: "Afgewezen" },
+];
+
 const getStatusColor = (status: string): "default" | "primary" | "success" | "error" | "warning" => {
   switch (status) {
     case "hired":
@@ -348,19 +372,153 @@ const getCandidateStatusColor = (status: CandidateAssignment["status"]): string 
 export default function AssignmentsPage() {
   const navigate = useNavigate();
   const { candidates, loading: candidatesLoading } = useCandidates();
+  const { assignments: apiAssignments, loading: assignmentsLoading, error: assignmentsError, refresh: refreshAssignments } = useAssignments();
+  const { accounts, loading: accountsLoading, refresh: refreshAccounts } = useAccounts();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [expandedAssignments, setExpandedAssignments] = useState<Set<number>>(new Set());
   const [statusMenuAnchor, setStatusMenuAnchor] = useState<{ [key: number]: HTMLElement | null }>({});
-  const [assignmentStatuses, setAssignmentStatuses] = useState<{ [key: number]: string }>({
-    1: "proposed",
-  });
+  const [assignmentStatuses, setAssignmentStatuses] = useState<{ [key: number]: string }>({});
   const [addCandidateDialogOpen, setAddCandidateDialogOpen] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(new Set());
-  const [assignments, setAssignments] = useState<AssignmentWithDetails[]>(mockAssignments);
   const [companyRoleFilter, setCompanyRoleFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
+  const [candidateStatusMenuAnchor, setCandidateStatusMenuAnchor] = useState<{
+    [key: string]: HTMLElement | null;
+  }>({});
+
+  // Create assignment dialog state
+  const createAssignmentDialog = useDisclosure();
+  const [newAssignmentTitle, setNewAssignmentTitle] = useState("");
+  const [newAssignmentDescription, setNewAssignmentDescription] = useState("");
+  const [newAssignmentAccountUid, setNewAssignmentAccountUid] = useState("");
+  const [newAssignmentSalaryMin, setNewAssignmentSalaryMin] = useState<number | "">("");
+  const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState<number | "">("");
+  const [newAssignmentHasBonus, setNewAssignmentHasBonus] = useState(false);
+  const [newAssignmentHasCar, setNewAssignmentHasCar] = useState(false);
+  const [newAssignmentVacationDays, setNewAssignmentVacationDays] = useState<number | "">("");
+  const [newAssignmentLocation, setNewAssignmentLocation] = useState("");
+  const [newAssignmentEmploymentType, setNewAssignmentEmploymentType] = useState("");
+  const [createAssignmentError, setCreateAssignmentError] = useState<string | null>(null);
+  const [isCreatingAssignment, setIsCreatingAssignment] = useState(false);
+
+  // State for candidate assignments per assignment
+  const [localCandidateAssignments, setLocalCandidateAssignments] = useState<{
+    [assignmentId: number]: CandidateAssignment[];
+  }>({});
+  const [loadingCandidates, setLoadingCandidates] = useState<{ [assignmentId: number]: boolean }>({});
+
+  // Load accounts on mount
+  React.useEffect(() => {
+    refreshAccounts();
+  }, [refreshAccounts]);
+
+  // Load candidates for all assignments when assignments are loaded
+  React.useEffect(() => {
+    const loadCandidatesForAssignments = async () => {
+      for (const assignment of apiAssignments) {
+        if (!assignment.uid) continue;
+        
+        setLoadingCandidates(prev => ({ ...prev, [assignment.id]: true }));
+        try {
+          const response = await API.get<CandidateAssignment[]>(
+            `/assignments/${assignment.uid}/candidates`
+          );
+          setLocalCandidateAssignments(prev => ({
+            ...prev,
+            [assignment.id]: response || [],
+          }));
+        } catch (e: any) {
+          console.error(`Error loading candidates for assignment ${assignment.id}:`, e);
+          // Set empty array on error
+          setLocalCandidateAssignments(prev => ({
+            ...prev,
+            [assignment.id]: [],
+          }));
+        } finally {
+          setLoadingCandidates(prev => ({ ...prev, [assignment.id]: false }));
+        }
+      }
+    };
+
+    if (apiAssignments.length > 0) {
+      loadCandidatesForAssignments();
+    }
+  }, [apiAssignments]);
+
+  // Transform API assignments to the extended type with local candidate data
+  const assignments: AssignmentWithDetails[] = React.useMemo(() => {
+    return apiAssignments.map((a) => ({
+      id: a.id,
+      uid: a.uid,
+      account_id: a.account_id,
+      title: a.title,
+      description: a.description,
+      status: a.status,
+      account: a.account,
+      salary_min: a.salary_min,
+      salary_max: a.salary_max,
+      has_bonus: a.has_bonus,
+      has_car: a.has_car,
+      vacation_days: a.vacation_days,
+      location: a.location,
+      employment_type: a.employment_type,
+      candidates: localCandidateAssignments[a.id] || [],
+    }));
+  }, [apiAssignments, localCandidateAssignments]);
+
+  const handleCreateAssignment = async () => {
+    if (!newAssignmentAccountUid) {
+      setCreateAssignmentError("Selecteer een klant");
+      return;
+    }
+    if (!newAssignmentTitle.trim()) {
+      setCreateAssignmentError("Vul een titel in");
+      return;
+    }
+
+    setIsCreatingAssignment(true);
+    setCreateAssignmentError(null);
+
+    try {
+      await API.post("/assignments", {
+        account_uid: newAssignmentAccountUid,
+        title: newAssignmentTitle.trim(),
+        description: newAssignmentDescription.trim() || null,
+        salary_min: newAssignmentSalaryMin || null,
+        salary_max: newAssignmentSalaryMax || null,
+        has_bonus: newAssignmentHasBonus,
+        has_car: newAssignmentHasCar,
+        vacation_days: newAssignmentVacationDays || null,
+        location: newAssignmentLocation.trim() || null,
+        employment_type: newAssignmentEmploymentType || null,
+      });
+
+      // Reset form and close dialog
+      setNewAssignmentTitle("");
+      setNewAssignmentDescription("");
+      setNewAssignmentAccountUid("");
+      setNewAssignmentSalaryMin("");
+      setNewAssignmentSalaryMax("");
+      setNewAssignmentHasBonus(false);
+      setNewAssignmentHasCar(false);
+      setNewAssignmentVacationDays("");
+      setNewAssignmentLocation("");
+      setNewAssignmentEmploymentType("");
+      createAssignmentDialog.close();
+
+      // Refresh assignments list
+      await refreshAssignments();
+    } catch (err: any) {
+      console.error("Error creating assignment:", err);
+      setCreateAssignmentError(
+        err?.response?.data?.message || "Er is iets misgegaan bij het aanmaken"
+      );
+    } finally {
+      setIsCreatingAssignment(false);
+    }
+  };
 
   const toggleExpanded = (assignmentId: number) => {
     setExpandedAssignments((prev) => {
@@ -385,6 +543,66 @@ export default function AssignmentsPage() {
   const handleStatusChange = (assignmentId: number, newStatus: string) => {
     setAssignmentStatuses((prev) => ({ ...prev, [assignmentId]: newStatus }));
     handleStatusMenuClose(assignmentId);
+  };
+
+  const handleCandidateStatusMenuOpen = (
+    assignmentId: number,
+    candidateId: number,
+    event: React.MouseEvent<HTMLElement>
+  ) => {
+    event.stopPropagation();
+    const key = `${assignmentId}-${candidateId}`;
+    setCandidateStatusMenuAnchor((prev) => ({ ...prev, [key]: event.currentTarget }));
+  };
+
+  const handleCandidateStatusMenuClose = (assignmentId: number, candidateId: number) => {
+    const key = `${assignmentId}-${candidateId}`;
+    setCandidateStatusMenuAnchor((prev) => ({ ...prev, [key]: null }));
+  };
+
+  const handleCandidateStatusChange = async (
+    assignmentId: number,
+    candidateId: number,
+    newStatus: CandidateAssignment["status"]
+  ) => {
+    const assignment = assignments.find((a) => a.id === assignmentId);
+    if (!assignment || !assignment.uid) return;
+
+    const candidateToUpdate = localCandidateAssignments[assignmentId]?.find((c) => c.id === candidateId);
+    if (!candidateToUpdate) return;
+
+    const statusLabel = candidateStatusOptions.find((opt) => opt.value === newStatus)?.label || newStatus;
+
+    // Optimistic update
+    setLocalCandidateAssignments((prev) => ({
+      ...prev,
+      [assignmentId]: (prev[assignmentId] || []).map((c) =>
+        c.id === candidateId
+          ? { ...c, status: newStatus, status_label: statusLabel }
+          : c
+      ),
+    }));
+
+    handleCandidateStatusMenuClose(assignmentId, candidateId);
+
+    try {
+      // Make API call to update status
+      await API.put(`/assignments/${assignment.uid}/candidates/${candidateToUpdate.contact.uid}`, {
+        status: newStatus,
+      });
+    } catch (e: any) {
+      console.error("Error updating candidate status:", e);
+      // Revert optimistic update on error
+      setLocalCandidateAssignments((prev) => ({
+        ...prev,
+        [assignmentId]: (prev[assignmentId] || []).map((c) =>
+          c.id === candidateId
+            ? { ...c, status: candidateToUpdate.status, status_label: candidateToUpdate.status_label }
+            : c
+        ),
+      }));
+      alert(e?.response?.data?.message || "Fout bij bijwerken van status");
+    }
   };
 
   const handleOpenAddCandidateDialog = (assignmentId: number) => {
@@ -415,44 +633,79 @@ export default function AssignmentsPage() {
     });
   };
 
-  const handleAddCandidatesToAssignment = () => {
+  const handleAddCandidatesToAssignment = async () => {
     if (!selectedAssignmentId) return;
 
     const assignment = assignments.find((a) => a.id === selectedAssignmentId);
-    if (!assignment) return;
+    if (!assignment || !assignment.uid) return;
 
     // Get selected candidates
     const selectedCandidates = candidates.filter((c) => selectedCandidateIds.has(c.uid));
 
     // Check which candidates are already in the assignment
-    const existingCandidateUids = new Set(
-      (assignment.candidates || []).map((c) => c.contact.uid)
-    );
+    const existingCandidates = localCandidateAssignments[selectedAssignmentId] || [];
+    const existingCandidateUids = new Set(existingCandidates.map((c) => c.contact.uid));
 
     // Filter out already added candidates
     const newCandidates = selectedCandidates.filter((c) => !existingCandidateUids.has(c.uid));
 
-    // Create new candidate assignments with default status
-    const newCandidateAssignments: CandidateAssignment[] = newCandidates.map((contact, index) => ({
-      id: (assignment.candidates?.length || 0) + index + 1,
-      contact,
-      status: "called",
-      status_label: "Gebeld",
-    }));
+    if (newCandidates.length === 0) {
+      handleCloseAddCandidateDialog();
+      return;
+    }
 
-    // Update the assignment
-    setAssignments((prev) =>
-      prev.map((a) =>
-        a.id === selectedAssignmentId
-          ? {
-              ...a,
-              candidates: [...(a.candidates || []), ...newCandidateAssignments],
-            }
-          : a
-      )
-    );
+    // Get UIDs of new candidates to add
+    const contactUids = newCandidates.map((c) => c.uid);
 
-    handleCloseAddCandidateDialog();
+    try {
+      setLoadingCandidates(prev => ({ ...prev, [selectedAssignmentId]: true }));
+      
+      // Make API call to add candidates
+      const response = await API.post<CandidateAssignment[]>(
+        `/assignments/${assignment.uid}/candidates`,
+        { contact_uids: contactUids }
+      );
+
+      // Update local state with response from API
+      setLocalCandidateAssignments((prev) => ({
+        ...prev,
+        [selectedAssignmentId]: response || [],
+      }));
+
+      handleCloseAddCandidateDialog();
+    } catch (e: any) {
+      console.error("Error adding candidates to assignment:", e);
+      // Show error to user (you might want to add a toast/alert here)
+      alert(e?.response?.data?.message || "Fout bij toevoegen van kandidaten");
+    } finally {
+      setLoadingCandidates(prev => ({ ...prev, [selectedAssignmentId]: false }));
+    }
+  };
+
+  const handleRemoveCandidateFromAssignment = async (assignmentId: number, candidateId: number) => {
+    const assignment = assignments.find((a) => a.id === assignmentId);
+    if (!assignment || !assignment.uid) return;
+
+    const candidateToRemove = localCandidateAssignments[assignmentId]?.find((c) => c.id === candidateId);
+    if (!candidateToRemove) return;
+
+    try {
+      setLoadingCandidates(prev => ({ ...prev, [assignmentId]: true }));
+      
+      // Make API call to remove candidate
+      await API.delete(`/assignments/${assignment.uid}/candidates/${candidateToRemove.contact.uid}`);
+
+      // Update local state
+      setLocalCandidateAssignments((prev) => ({
+        ...prev,
+        [assignmentId]: (prev[assignmentId] || []).filter((c) => c.id !== candidateId),
+      }));
+    } catch (e: any) {
+      console.error("Error removing candidate from assignment:", e);
+      alert(e?.response?.data?.message || "Fout bij verwijderen van kandidaat");
+    } finally {
+      setLoadingCandidates(prev => ({ ...prev, [assignmentId]: false }));
+    }
   };
 
   // Get available candidates for the selected assignment (candidates not already added)
@@ -503,7 +756,7 @@ export default function AssignmentsPage() {
   return (
     <Box>
       <Stack spacing={3}>
-        {/* Header with Search, Sort, and Filter */}
+        {/* Header with Search, Sort, Filter, and Add Button */}
         <Stack direction="row" spacing={2} alignItems="center">
           <TextField
             placeholder="Zoeken..."
@@ -533,7 +786,34 @@ export default function AssignmentsPage() {
           >
             Filteren
           </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={createAssignmentDialog.open}
+            disabled={accounts.length === 0}
+          >
+            Opdracht toevoegen
+          </Button>
         </Stack>
+
+        {/* Warning if no accounts */}
+        {!accountsLoading && accounts.length === 0 && (
+          <Alert severity="warning">
+            Je hebt nog geen klanten. Voeg eerst een klant toe voordat je een opdracht kunt aanmaken.
+          </Alert>
+        )}
+
+        {/* Loading state */}
+        {assignmentsLoading && (
+          <Typography variant="body2" color="text.secondary">
+            Laden...
+          </Typography>
+        )}
+
+        {/* Error state */}
+        {assignmentsError && (
+          <Alert severity="error">{assignmentsError}</Alert>
+        )}
 
         {/* Assignments List */}
         {filteredAssignments.map((assignment) => {
@@ -654,12 +934,18 @@ export default function AssignmentsPage() {
                             <Typography variant="body2">{assignment.employment_type}</Typography>
                           </Box>
                         )}
-                        {assignment.salary_indication && (
+                        {(assignment.salary_min || assignment.salary_max) && (
                           <Box>
                             <Typography variant="caption" color="text.secondary">
                               Salarisindicatie
                             </Typography>
-                            <Typography variant="body2">{assignment.salary_indication} EUR</Typography>
+                            <Typography variant="body2">
+                              {assignment.salary_min && assignment.salary_max
+                                ? `€${assignment.salary_min.toLocaleString()} - €${assignment.salary_max.toLocaleString()}`
+                                : assignment.salary_min
+                                ? `vanaf €${assignment.salary_min.toLocaleString()}`
+                                : `tot €${assignment.salary_max?.toLocaleString()}`}
+                            </Typography>
                           </Box>
                         )}
                         {assignment.has_car && (
@@ -667,7 +953,7 @@ export default function AssignmentsPage() {
                             <Typography variant="caption" color="text.secondary">
                               Auto
                             </Typography>
-                            <Typography variant="body2">-</Typography>
+                            <Typography variant="body2">Ja</Typography>
                           </Box>
                         )}
                         {assignment.has_bonus && (
@@ -675,7 +961,15 @@ export default function AssignmentsPage() {
                             <Typography variant="caption" color="text.secondary">
                               Bonusregeling
                             </Typography>
-                            <Typography variant="body2">-</Typography>
+                            <Typography variant="body2">Ja</Typography>
+                          </Box>
+                        )}
+                        {assignment.vacation_days && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              Vakantiedagen
+                            </Typography>
+                            <Typography variant="body2">{assignment.vacation_days} dagen</Typography>
                           </Box>
                         )}
                       </Stack>
@@ -709,6 +1003,7 @@ export default function AssignmentsPage() {
                                   <TableCell>Functie</TableCell>
                                   <TableCell>Bedrijf</TableCell>
                                   <TableCell>Status</TableCell>
+                                  <TableCell align="right">Acties</TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
@@ -734,7 +1029,23 @@ export default function AssignmentsPage() {
                                     <TableCell>{candidate.contact.company_role || "-"}</TableCell>
                                     <TableCell>{candidate.contact.current_company || "-"}</TableCell>
                                     <TableCell>
-                                      <Stack direction="row" alignItems="center" spacing={1}>
+                                      <Box
+                                        onClick={(e) =>
+                                          handleCandidateStatusMenuOpen(assignment.id, candidate.id, e)
+                                        }
+                                        sx={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: 1,
+                                          cursor: "pointer",
+                                          px: 1,
+                                          py: 0.5,
+                                          borderRadius: 1,
+                                          "&:hover": {
+                                            bgcolor: "action.hover",
+                                          },
+                                        }}
+                                      >
                                         <Box
                                           sx={{
                                             width: 8,
@@ -744,7 +1055,59 @@ export default function AssignmentsPage() {
                                           }}
                                         />
                                         <Typography variant="body2">{candidate.status_label}</Typography>
-                                      </Stack>
+                                        <SwapVertIcon fontSize="small" sx={{ opacity: 0.5 }} />
+                                      </Box>
+                                      <Menu
+                                        anchorEl={
+                                          candidateStatusMenuAnchor[`${assignment.id}-${candidate.id}`]
+                                        }
+                                        open={Boolean(
+                                          candidateStatusMenuAnchor[`${assignment.id}-${candidate.id}`]
+                                        )}
+                                        onClose={() =>
+                                          handleCandidateStatusMenuClose(assignment.id, candidate.id)
+                                        }
+                                      >
+                                        {candidateStatusOptions.map((option) => (
+                                          <MenuItem
+                                            key={option.value}
+                                            onClick={() =>
+                                              handleCandidateStatusChange(
+                                                assignment.id,
+                                                candidate.id,
+                                                option.value
+                                              )
+                                            }
+                                            selected={candidate.status === option.value}
+                                          >
+                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                              <Box
+                                                sx={{
+                                                  width: 8,
+                                                  height: 8,
+                                                  borderRadius: "50%",
+                                                  bgcolor: getCandidateStatusColor(option.value),
+                                                }}
+                                              />
+                                              <Typography variant="body2">{option.label}</Typography>
+                                            </Stack>
+                                          </MenuItem>
+                                        ))}
+                                      </Menu>
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      <Tooltip title="Verwijderen uit opdracht">
+                                        <IconButton
+                                          size="small"
+                                          color="error"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveCandidateFromAssignment(assignment.id, candidate.id);
+                                          }}
+                                        >
+                                          <DeleteOutlineIcon fontSize="small" />
+                                        </IconButton>
+                                      </Tooltip>
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -882,6 +1245,31 @@ export default function AssignmentsPage() {
                 </Button>
               </Stack>
 
+              {/* Select All / Deselect All */}
+              {getAvailableCandidates().length > 0 && (
+                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      const allFilteredUids = getAvailableCandidates().map((c) => c.uid);
+                      setSelectedCandidateIds(new Set(allFilteredUids));
+                    }}
+                    disabled={selectedCandidateIds.size === getAvailableCandidates().length}
+                  >
+                    Selecteer alle ({getAvailableCandidates().length})
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setSelectedCandidateIds(new Set())}
+                    disabled={selectedCandidateIds.size === 0}
+                  >
+                    Deselecteer alle
+                  </Button>
+                </Stack>
+              )}
+
               {/* Candidates List */}
               {getAvailableCandidates().length === 0 ? (
                 <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
@@ -936,13 +1324,178 @@ export default function AssignmentsPage() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAddCandidateDialog}>Annuleren</Button>
+          <Button onClick={handleCloseAddCandidateDialog} disabled={loadingCandidates[selectedAssignmentId || 0]}>
+            Annuleren
+          </Button>
           <Button
             onClick={handleAddCandidatesToAssignment}
             variant="contained"
-            disabled={selectedCandidateIds.size === 0}
+            disabled={selectedCandidateIds.size === 0 || loadingCandidates[selectedAssignmentId || 0]}
           >
-            Toevoegen ({selectedCandidateIds.size})
+            {loadingCandidates[selectedAssignmentId || 0] ? "Bezig..." : `Toevoegen (${selectedCandidateIds.size})`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Assignment Dialog */}
+      <Dialog
+        open={createAssignmentDialog.isOpen}
+        onClose={() => {
+          createAssignmentDialog.close();
+          setCreateAssignmentError(null);
+          setNewAssignmentTitle("");
+          setNewAssignmentDescription("");
+          setNewAssignmentAccountUid("");
+          setNewAssignmentSalaryMin("");
+          setNewAssignmentSalaryMax("");
+          setNewAssignmentHasBonus(false);
+          setNewAssignmentHasCar(false);
+          setNewAssignmentVacationDays("");
+          setNewAssignmentLocation("");
+          setNewAssignmentEmploymentType("");
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Nieuwe opdracht aanmaken</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3} sx={{ pt: 1 }}>
+            <FormControl fullWidth required error={!newAssignmentAccountUid && !!createAssignmentError}>
+              <InputLabel>Klant</InputLabel>
+              <Select
+                value={newAssignmentAccountUid}
+                onChange={(e) => setNewAssignmentAccountUid(e.target.value)}
+                label="Klant"
+              >
+                {accounts.map((account) => (
+                  <MenuItem key={account.uid} value={account.uid}>
+                    {account.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Titel"
+              required
+              fullWidth
+              value={newAssignmentTitle}
+              onChange={(e) => setNewAssignmentTitle(e.target.value)}
+              error={!newAssignmentTitle.trim() && !!createAssignmentError}
+            />
+
+            <TextField
+              label="Omschrijving"
+              fullWidth
+              multiline
+              rows={3}
+              value={newAssignmentDescription}
+              onChange={(e) => setNewAssignmentDescription(e.target.value)}
+            />
+
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Locatie"
+                fullWidth
+                value={newAssignmentLocation}
+                onChange={(e) => setNewAssignmentLocation(e.target.value)}
+              />
+              <FormControl fullWidth>
+                <InputLabel>Dienstverband</InputLabel>
+                <Select
+                  value={newAssignmentEmploymentType}
+                  onChange={(e) => setNewAssignmentEmploymentType(e.target.value)}
+                  label="Dienstverband"
+                >
+                  <MenuItem value="">Geen</MenuItem>
+                  <MenuItem value="Fulltime">Fulltime</MenuItem>
+                  <MenuItem value="Parttime">Parttime</MenuItem>
+                  <MenuItem value="Freelance">Freelance</MenuItem>
+                  <MenuItem value="Interim">Interim</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+
+            <Stack direction="row" spacing={2} alignItems="center">
+              <TextField
+                label="Salaris min (EUR/maand)"
+                type="number"
+                fullWidth
+                value={newAssignmentSalaryMin}
+                onChange={(e) => setNewAssignmentSalaryMin(e.target.value ? parseInt(e.target.value) : "")}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+              <TextField
+                label="Salaris max (EUR/maand)"
+                type="number"
+                fullWidth
+                value={newAssignmentSalaryMax}
+                onChange={(e) => setNewAssignmentSalaryMax(e.target.value ? parseInt(e.target.value) : "")}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+            </Stack>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={newAssignmentHasBonus}
+                    onChange={(e) => setNewAssignmentHasBonus(e.target.checked)}
+                  />
+                }
+                label="Bonus"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={newAssignmentHasCar}
+                    onChange={(e) => setNewAssignmentHasCar(e.target.checked)}
+                  />
+                }
+                label="Auto"
+              />
+              <TextField
+                label="Vakantiedagen"
+                type="number"
+                value={newAssignmentVacationDays}
+                onChange={(e) => setNewAssignmentVacationDays(e.target.value ? parseInt(e.target.value) : "")}
+                InputProps={{ inputProps: { min: 0, max: 100 } }}
+                sx={{ width: 140 }}
+              />
+            </Stack>
+
+            {createAssignmentError && (
+              <Alert severity="error" onClose={() => setCreateAssignmentError(null)}>
+                {createAssignmentError}
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              createAssignmentDialog.close();
+              setCreateAssignmentError(null);
+              setNewAssignmentTitle("");
+              setNewAssignmentDescription("");
+              setNewAssignmentAccountUid("");
+              setNewAssignmentSalaryMin("");
+              setNewAssignmentSalaryMax("");
+              setNewAssignmentHasBonus(false);
+              setNewAssignmentHasCar(false);
+              setNewAssignmentVacationDays("");
+              setNewAssignmentLocation("");
+              setNewAssignmentEmploymentType("");
+            }}
+            disabled={isCreatingAssignment}
+          >
+            Annuleren
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleCreateAssignment}
+            disabled={isCreatingAssignment}
+          >
+            {isCreatingAssignment ? "Bezig..." : "Aanmaken"}
           </Button>
         </DialogActions>
       </Dialog>

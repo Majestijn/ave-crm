@@ -11,6 +11,7 @@ import AccountDetail from "./pages/default/account-detail";
 import Assignments from "./pages/default/assignments";
 import Agenda from "./pages/default/agenda";
 import SettingsPage from "./pages/default/settings.tsx";
+import Network from "./pages/default/network";
 import NotFound from "./pages/not-found";
 
 const router = createBrowserRouter([
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
       { path: "/accounts/:uid", element: <AccountDetail /> },
       { path: "/assignments", element: <Assignments /> },
       { path: "/agenda", element: <Agenda /> },
+      { path: "/network", element: <Network /> },
       { path: "/settings", element: <SettingsPage /> },
     ],
   },

@@ -133,13 +133,17 @@ class ContactController extends Controller
 
     /**
      * Get all contacts with candidate network roles
-     * Returns contacts where network_role is: candidate, candidate_placed, or candidate_rejected
+     * Returns contacts where network_roles contains: candidate, candidate_placed, or candidate_rejected
      */
     public function candidates(Request $request)
     {
         // Same pattern as index() - no tenant_id check needed in database-per-tenant setup
         $candidates = Contact::query()
-            ->whereIn('network_role', ['candidate', 'candidate_placed', 'candidate_rejected'])
+            ->where(function ($query) {
+                $query->whereJsonContains('network_roles', 'candidate')
+                    ->orWhereJsonContains('network_roles', 'candidate_placed')
+                    ->orWhereJsonContains('network_roles', 'candidate_rejected');
+            })
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get()
@@ -172,31 +176,42 @@ class ContactController extends Controller
 
         // Generate 50 random contacts
         $firstNames = ['Jan', 'Piet', 'Klaas', 'Emma', 'Sophie', 'Lucas', 'Noah', 'Anna', 'Milan', 'Eva', 'Daan', 'Julia', 'Sem', 'Lieke', 'Finn', 'Saar', 'Bram', 'Noor', 'Jesse', 'Roos'];
-        $lastNames = ['de Vries', 'Jansen', 'de Boer', 'Bakker', 'Visser', 'Smit', 'Meijer', 'de Boer', 'Mulder', 'de Groot', 'Dijkstra', 'Janssen', 'Visser', 'de Wit', 'Smeets', 'de Jong', 'van den Berg', 'van Dijk', 'van der Berg', 'van Leeuwen'];
+        $prefixes = [null, null, null, 'de', 'van', 'van de', 'van der', 'van den', 'ter', 'ten']; // null = no prefix (more common)
+        $lastNames = ['Vries', 'Jansen', 'Boer', 'Bakker', 'Visser', 'Smit', 'Meijer', 'Mulder', 'Groot', 'Dijkstra', 'Janssen', 'Wit', 'Smeets', 'Jong', 'Berg', 'Dijk', 'Leeuwen', 'Bruin', 'Kok', 'Peters'];
         $cities = ['Amsterdam', 'Rotterdam', 'Den Haag', 'Utrecht', 'Eindhoven', 'Groningen', 'Tilburg', 'Almere', 'Breda', 'Nijmegen'];
         $roles = ['Software Developer', 'Project Manager', 'Marketing Manager', 'Sales Representative', 'HR Manager', 'Financial Analyst', 'Designer', 'Consultant', 'Engineer', 'Analyst'];
         $companies = ['TechCorp', 'Innovate BV', 'Digital Solutions', 'Future Systems', 'SmartTech', 'Global Inc', 'Local Business', 'StartupXYZ', 'Enterprise Ltd', 'Company ABC'];
         $educations = ['MBO', 'HBO', 'UNI'];
-        $networkRoles = ['candidate', 'candidate_placed', 'candidate_rejected', 'ambassador', 'client_decision', 'client_no_decision'];
+        $networkRoles = ['invoice_contact', 'candidate', 'interim', 'ambassador', 'potential_management', 'co_decision_maker', 'potential_directie', 'candidate_reference', 'hr_employment', 'hr_recruiters', 'directie', 'owner', 'expert', 'coach', 'former_owner', 'former_director', 'commissioner', 'investor', 'network_group'];
 
         $contacts = [];
         for ($i = 0; $i < 50; $i++) {
             $firstName = $firstNames[array_rand($firstNames)];
+            $prefix = $prefixes[array_rand($prefixes)];
             $lastName = $lastNames[array_rand($lastNames)];
+
+            // Randomly pick 1-2 network roles
+            $numRoles = rand(1, 2);
+            $randomRoles = array_rand(array_flip($networkRoles), $numRoles);
+            $selectedRoles = is_array($randomRoles) ? $randomRoles : [$randomRoles];
+
+            // Build email-safe name
+            $emailName = strtolower($firstName . '.' . ($prefix ? str_replace(' ', '', $prefix) . '.' : '') . $lastName);
 
             $contacts[] = Contact::create([
                 'first_name' => $firstName,
+                'prefix' => $prefix,
                 'last_name' => $lastName,
                 'gender' => rand(0, 1) ? 'male' : 'female',
                 'location' => $cities[array_rand($cities)],
                 'company_role' => $roles[array_rand($roles)],
-                'network_role' => $networkRoles[array_rand($networkRoles)],
+                'network_roles' => $selectedRoles,
                 'current_company' => $companies[array_rand($companies)],
                 'current_salary_cents' => rand(30000, 100000) * 100,
                 'education' => $educations[array_rand($educations)],
-                'email' => strtolower($firstName . '.' . $lastName . rand(1, 999) . '@example.com'),
+                'email' => $emailName . rand(1, 999) . '@example.com',
                 'phone' => '+31 6 ' . rand(10000000, 99999999),
-                'linkedin_url' => 'https://linkedin.com/in/' . strtolower($firstName . '-' . $lastName),
+                'linkedin_url' => 'https://linkedin.com/in/' . str_replace('.', '-', $emailName),
                 'cv_url' => $cvUrl,
                 'notes' => 'Bulk imported contact #' . ($i + 1),
             ]);

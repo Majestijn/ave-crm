@@ -65,7 +65,7 @@ class AccountController extends Controller
 
         // Find account by uid (route parameter name is 'account' but contains the uid value)
         $accountModel = Account::where('uid', $account)
-            ->with(['contacts', 'assignments'])
+            ->with(['contacts.contact', 'assignments'])
             ->firstOrFail();
 
         // Authorization check

@@ -1,10 +1,16 @@
 export type AccountContact = {
   id: number;
-  account_id: number;
+  contact_id: number;
+  contact?: {
+    uid: string;
+    first_name: string;
+    last_name: string;
   name: string;
+    email?: string;
   phone?: string;
-  email?: string;
-  role?: string;
+    company_role?: string;
+    network_roles?: string[];
+  };
   created_at?: string;
   updated_at?: string;
 };
@@ -33,4 +39,3 @@ export type Account = {
   created_at?: string;
   updated_at?: string;
 };
-

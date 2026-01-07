@@ -17,6 +17,7 @@ return new class extends Migration {
 
             // Personal information
             $table->string('first_name');
+            $table->string('prefix')->nullable(); // Tussenvoegsels (van, de, van der, etc.)
             $table->string('last_name');
             $table->string('gender', 16)->nullable();
 
@@ -28,7 +29,7 @@ return new class extends Migration {
             // Professional information
             $table->string('current_company')->nullable();
             $table->string('company_role')->nullable();
-            $table->string('network_role')->nullable();
+            $table->json('network_roles')->nullable(); // Array of roles: candidate, ambassador, client_decision, etc.
             $table->integer('current_salary_cents')->nullable();
             $table->string('education')->nullable();
 

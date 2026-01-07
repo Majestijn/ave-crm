@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->foreignId('contact_id')->nullable()->constrained()->nullOnDelete();
             // assignments table might be 'assignments'
             $table->foreignId('assignment_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete(); // Who created the activity
 
             $table->string('type'); // call, proposal, etc.
             $table->text('description');

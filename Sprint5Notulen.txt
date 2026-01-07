@@ -1,0 +1,3116 @@
+Speaker 1  (00:00)
+Trouwens vallen, qua druppels wijn, rooie wijn. Precies wil krijgen. 
+
+Speaker 2  (00:03)
+Wat zo'n plekje. 
+
+Speaker 1  (00:06)
+Mara. Ik kan dat heel lachen jonge. 
+
+Speaker 2  (00:09)
+Lawine, of niet? 
+
+Speaker 1  (00:10)
+Ja, die had, weet je? Ja, ik heb gekocht in brand. Die komt er naast me een keer nauwelijks, ja, wees gewaarschuwd. 
+
+Speaker 1  (00:16)
+Nee, ik weet niet, nu moet je aan, ja. 
+
+Speaker 3  (00:18)
+Het zou mooi zijn. 
+
+Speaker 2  (00:20)
+Lust ik graag eens. Wel wat broodje naar uh naar dat gangetje. Maar dan heb jij, jij hebt die uhm. 
+
+Speaker 1  (00:27)
+Ik heb de ene dat ik wel zin om. 
+
+Speaker 2  (00:29)
+Ja, omdat je echt niet mijn heerlijke kerstbrood gehad heb. Oké, die moet je ook nog nemen zo, ach nee jo. 
+
+Speaker 3  (00:35)
+Christiaan huygens. 
+
+Speaker 2  (00:36)
+60 euro in kerstblo. 
+
+Speaker 1  (00:39)
+Sorry, serieus. Helemaal slapen. 
+
+Speaker 2  (00:42)
+Ja. Mevrouw gordijntjes dicht. Zo. 
+
+Speaker 3  (01:04)
+Zo, hè? Jongens. Waarom grap je eraan, of wat, wat betreft, zitten? 
+
+Speaker 3  (01:24)
+Jij hoeft niet de bar. 
+
+Speaker 2  (01:26)
+Jawel, maar dat is een snoepje aan het knap. 
+
+Speaker 3  (01:28)
+Oh. Je bent, je hebt een snoepje hier. 
+
+Speaker 2  (01:30)
+Ik had hem niet dichtgewerkt, maar als ik een. 
+
+Speaker 3  (01:33)
+Ik kan ook gewoon licht uitdoen. 
+
+Speaker 4  (01:34)
+Ja. Nou ja. Worden ook allemaal liggen doek. 
+
+Speaker 4  (01:37)
+Nou, ik denk dat het donker genoeg is. 
+
+Speaker 3  (01:40)
+Oké, dus prima, toch? Keuken of kunnen we elkaar ook nog een beetje zien? 
+
+Speaker 4  (01:47)
+Hoe oud ben je? 
+
+Speaker 5  (01:49)
+Ja. Hé shake. Zoek jij hier eentje. 
+
+Speaker 3  (01:57)
+Legde het. 
+
+Speaker 1  (01:59)
+Luister je dan? 
+
+Speaker 4  (02:02)
+Man, lekker Man. Voor jacques, ik neem een gesprek altijd op, zodat ik niks over het hoofd zie. Wat voor heen er was gebeurd. 
+
+Speaker 4  (02:11)
+Voor de notulen, voor de notulen. Ak. 
+
+Speaker 3  (02:16)
+Wist je. 
+
+Speaker 5  (02:21)
+Hou je bedoelde dit? Dat mooi. 
+
+Speaker 4  (02:23)
+Hmm. Nou n tribunaal nomber minder. Universiteit sprint rivier vijf? 
+
+Speaker 4  (02:31)
+De laatste sfeer. De agenda van vandaag is uitgebreider dan normaal. Ik ga eerst de werkzaamheden doornemen en een demoge van. 
+
+Speaker 4  (02:46)
+De hele software zoals die er nu is. Zoals je die beeld hebben verwerk staan we nou eigenlijk met software en voor hoeveel procent is ongeveer af? Dan ga ik even kort de planning doornemen voor de komende weken. 
+
+Speaker 4  (03:02)
+Wordt het te maken. Tweelingen buck fixing valt daar onder. Wat niets meer voor uitweiden. 
+
+Speaker 4  (03:10)
+Dit is. Stage voortgang, ga ik even bespreken, lijkt me ook wel een ongeveer beeldvorming verwerk ik nu sta in stage, qua evaluaties en wat dat moet gebeuren. Dan de lange termijnplanning. 
+
+Speaker 4  (03:30)
+En ik zal eigenlijk gaan over de komende jaar hoe ik dat. Voor muziek qua software. En daar kunnen we dan ook effen over sparen. 
+
+Speaker 4  (03:44)
+Maar al binnen de ave, dat. Omvat ook in ieder geval de komende jaren. Vroeg ik, dat zie je dat je zouden insteken, dat dat ook een beetje opgesproken wordt. 
+
+Speaker 3  (03:57)
+Even, even barsten op de terugweg, toen ik net effen heel lang daar gezeten. Volgens mij was 1e insteek van gaan de voorpresentatie van eindpresentatie, waar je aan het mis nu een heel groot gedeelte in je inleiding, wat denk ik het belangrijkste is waarom er nu op dit punt staan en niet op de eindprestatie. Ja. 
+
+Speaker 3  (04:24)
+We hebben dat net besproken. 
+
+Speaker 4  (04:27)
+Ja, dat komt vooral omdat het afgelopen paar weken met turbulent waren voor mij. En omdat ik eigenlijk meer mijn hoofd had tot ijkpresentatie echt op 16 januari of 19 januari was, met mijn stagebegeleider en dit meerde sprint vijf. Presentatie. 
+
+Speaker 3  (04:50)
+Maar wat is het doel van deze prestatie nu dan. 
+
+Speaker 4  (04:53)
+In ieder geval ook om invulling te geven over de eindpresentatie. 
+
+Speaker 3  (04:59)
+Haar hemel zette mee voordat we echt in dit begin even je afgelopen drie weken, ik vind het wel even belangrijk voordat we hieraan beginnen om dat even nu getekend te hebben. Het is er allemaal gebeurd. Wat is de reden dat we nu hier staan, hield daar. 
+
+Speaker 2  (05:17)
+Ja, ja, dat. 
+
+Speaker 4  (05:20)
+Ja, dat is vooral persoonlijk vlak, dat. Ik heb veel. Om me af heb ze komen en daar niet goed mee om dealen. 
+
+Speaker 4  (05:34)
+En daar besloot ik een beetje af eigenlijk, in plaats van dat het de juiste communiceren. En das niet Jan. Dat is, dat is eigenlijk. 
+
+Speaker 4  (05:49)
+De grootste reden geweest. We moeten toch wel over gehad letten. Ja, dat en. 
+
+Speaker 4  (06:00)
+Jij was ook niet op de hoogte, dus van mijn persoonlijke situatie. 
+
+Speaker 2  (06:08)
+Als bij iets verteld wordt, kijk. 
+
+Speaker 4  (06:10)
+Nee, nee, ja, ik ben iemand die dat ook liever niet vertelt eigenlijk. Ja, het is een dispuut. 
+
+Speaker 2  (06:18)
+Persoonlijk te vertellen, zegt u. Nee, maar hij is een Kroatië, als je hier zit, is het misschien wel. Maar ik denk dat ja. 
+
+Speaker 3  (06:28)
+Even losontwerp handiger, maar ik ik hoop ook dat er een omgeving gecreëerd is waarin je wel veilig voelt omdat dat. 
+
+Speaker 2  (06:35)
+Ja, te vertellen. Ja, uiteindelijk nik. 
+
+Speaker 3  (06:37)
+Ja, het zijn hier ook om elkaar te helpen. 
+
+Speaker 4  (06:39)
+Uh en dat is natuurlijk niet. Dus werken een soort eigen. Ja, beschermen of eigenwaarde, zodat je dat gewoon liever niet wilt vertellen omdat je. 
+
+Speaker 4  (06:52)
+Liever wegstopt of zo, en dat dat je. Er ging last van beelden hebben of zo. 
+
+Speaker 2  (06:59)
+Mijn dochtertje eten zeg maar, maar ik weet wel dat hij wel mensen zijn die kunnen helpen ook jacques zelfs. Maar ook nogmaals hoeft het niet te zeggen. Wat is jouw, jouw dingetje? 
+
+Speaker 2  (07:09)
+Dat weet ik het niet bewegen. Maar het is jou. Eisen, die moet. 
+
+Speaker 2  (07:16)
+Jäger kent soms is je kwetsbaar opstelling betekent ook echt je echt niet goed. Dat je golft. Mensen inzicht hebben, hebben bijvoorbeeld problemen die proberen mee te helpen in een onbegrijpelijk. 
+
+Speaker 2  (07:31)
+Wij hebben vorige week geleden. Toen dacht ik, ik had toen ook dat aangeboren gekregen, dus ja, met hem. Eens effen kijken of er een schok effect gaat bren. 
+
+Speaker 2  (07:43)
+Met de kennis die ik daarna pas kreeg. Waar jij ook last van hebt, ja, laat het ook misschien. 
+
+Speaker 4  (07:50)
+Ik heb hem aangepakt. En starbucks, aardappelen kwijt. 
+
+Speaker 2  (07:53)
+En dat kon ik niet weten waarom. Bij Hugo werkt het altijd wel goed. En bij victor werkt het redelijk. 
+
+Speaker 3  (08:00)
+We zijn niet allemaal hetzelfde. 
+
+Speaker 2  (08:02)
+We zijn hier hetzelfde. Je probeert op wat liggen. Dus. 
+
+Speaker 2  (08:09)
+Ja, dus dat is, die keuzes aan jou. Ja. Wil je niet? 
+
+Speaker 3  (08:14)
+Ik wennen wat uh aan de hand is of heb je dat liever niet? 
+
+Speaker 4  (08:17)
+Dat hou ik ja, ik heb angst en paniek gestolen. Gedicht bestudeerd. Ja, nee, ja, al 10 jaar. 
+
+Speaker 4  (08:29)
+Medicatie voorhoofd en ik had er de afgelopen nou ja. Jarennaag was het ging gewoon goed, stabiel om de afgelopen paar weken wat er gewoon veel gebeurd nu ook eraf verhuizen. Merlijn stage was zaterdag allemaal druk. 
+
+Speaker 4  (08:48)
+We kwamen ongedwongen, het vervelend nieuws van mijn vriendin gehoord. Ze waren gewoon allemaal dingen en dat kon mijn hoofd even niet aan of zo, dus ik heb daar de afgelopen paar weken wel meer last van gehad weer. 
+
+Speaker 1  (09:01)
+Maar wat, wat doet het dan met je? 
+
+Speaker 4  (09:05)
+Ik had dus hier nergens ook wel concentreren eigenlijk dat je gaat Malen in je hoofd en ook dus via paniek aanvallen krijgen als je dat hebt hermans. Dat huizen gebouwen heel fysiek en ik moet nu doodgaan. Dus dat ja. 
+
+Speaker 4  (09:31)
+Nee maar dat dat dat. Kijk, ik denk dat het goed is om, maar dat excuseert ook of er is gelukkig nog wel voorbij zeggen dat excuseert dit niet dat je niet communiceert. 
+
+Speaker 3  (09:44)
+Nadat ze hem verdwijnen. 
+
+Speaker 2  (09:46)
+Ja, ja. 
+
+Speaker 3  (09:47)
+Een Abu actief kijkend. 
+
+Speaker 2  (09:49)
+Ja, als jij jezelf. 
+
+Speaker 3  (09:51)
+Het gestelde eens zou jezelf in de rol van adriaan of jacques voor mij zetten en nu was mijn rol natuurlijk niet relevant, want ik wilde weg, maar ieder. Ik wil hem op een smaakje, wat afspraken staan met de hier al een van de twee her. Die wel of te laat genieten was hij nagekomen. 
+
+Speaker 3  (10:10)
+Kijk een app bestuur of even bellen is natuurlijk nooit verkeerd en. Wat ik al zeg, ik hoop gewoon dat je in ieder geval. Zo comfortabel voelt om dit soort dingen te kunnen delen, alles wat hier besproken wordt blijft ook altijd hier, wij zullen dat nooit. 
+
+Speaker 2  (10:25)
+Met andere mensen deden. 
+
+Speaker 3  (10:27)
+Dat is even een ding wat we helemaal niet willen hebben. Maar dat moet er ook vooral zijn om jou te helpen en als dat even niet gaat over je skills brengen het werkveld, kan het ook gaan natuurlijk over hoe die persoonlijk gewoon in staat. En dan heb je misschien andere dingen nodig dan wat adelaar met jou heeft gedaan de laatste keer. 
+
+Speaker 3  (10:47)
+Maar ja, goed, als dat, als dat, als daar geen kennis over is, is het lastig. 
+
+Speaker 4  (10:51)
+Ja, en. 
+
+Speaker 3  (10:52)
+Dus het stukje communicatie. Blijft voor jou denkt het belangrijk om nou over na te denk. 
+
+Speaker 2  (10:59)
+Ja. 
+
+Speaker 3  (11:00)
+Met ik communiceren wat wil ik communiceren, maar vooral wanneer wil ik het communiceren. 
+
+Speaker 2  (11:06)
+Ja, Nederland. 
+
+Speaker 3  (11:09)
+Achteraf. Is het goed dat je de dat je er vooruit komt? Want dat is gebeurd met je wat er aan de hand is, maar het is nog beter om daar natuurlijk vooraf ons hoofd te roepen. 
+
+Speaker 1  (11:21)
+Nee, nee, nee, maar wat, wat was er, wat was er, wat zei je van jou, zeg maar, de gevolgen als je in zo'n staat bent? 
+
+Speaker 4  (11:27)
+Een migraine dat ze de grootste. 
+
+Speaker 1  (11:30)
+Wat, wat, wat, wat, wat, wat, wat dat betekent dat dan voor zakelijke afspraken. We duurde wel een zakelijke afspra. 
+
+Speaker 4  (11:37)
+Dat dient er niet op. 
+
+Speaker 1  (11:39)
+En wat doe je normaal privé als je afspraken niet nadoet, of niet nat komen? 
+
+Speaker 4  (11:45)
+Anna heldere ja, dat is. 
+
+Speaker 1  (11:50)
+Hoe kom je nou, hè? Stel ik ben werkgever, en het maakt jou nog mee. Hoe betrouwbaar kom je nu over mij? 
+
+Speaker 1  (11:57)
+Gas in Nijmegen mee schoenen zitten. Kijk eens naar waarschijnlijk. 
+
+Speaker 4  (12:03)
+Met kennis die ik nu hebt. Ja, je hebt niet onttrouwbaar. 
+
+Speaker 1  (12:08)
+Zo is het de proeftermijn, zal ik het overlengen, dat geeft ook niet meemaakt. Ik zou jij dan sijvelen? 
+
+Speaker 4  (12:15)
+Nee, maar ligt ook aan de werkgever? 
+
+Speaker 3  (12:23)
+Ik proef periodes kom je niet doorheen. Is dit gebeurd in de kofferbak? 
+
+Speaker 2  (12:29)
+Dan moet je gewoon heel erg bewust van zijn. 
+
+Speaker 1  (12:32)
+Je, je speelt met je betrouwbaarheid, de dingen niet, niet te vertellen en niet transparant te zijn in dit gebeurt mij aan, dat is het. 
+
+Speaker 4  (12:40)
+Ja dat wel. 
+
+Speaker 2  (12:41)
+Je bent voor mij na het respect met jacques, ik ben voor mij gewoon of the greth geweest. Ondanks een enkel appjes, drie belletjes, neem ik. En ondanks de fijne territiame zeggen we ons middens een opties koude kloppen gegeven, weet je ook nog? 
+
+Speaker 2  (12:57)
+Fysiek schouderklopje heeft ie misschien nodig en een beetje komt wel op. Wat ik ga waar je graag is proactiviteit, want dat was natuurlijk belangrijke dingen. Waar het over ging. 
+
+Speaker 2  (13:10)
+Want dat kwartiertje is natuurlijk maar een kwartiertje, maar het gaat natuurlijk om de film thuis die we hebben. Dat als je twee dagen wil komen en je komt één dag en dat ik niet mee oké, maar dan kom je die dag ook nog met afspraken te laat. Ja dan ontstaat het. 
+
+Speaker 2  (13:26)
+Iets heeft aan ons spiegelkat altijd gedronken in de ronde, zoute zout of. Ja, maar ik ga even een keer uitgroeien. Dat had, dat had ze, als je daarna ga appen en bellen en in een film. 
+
+Speaker 2  (13:40)
+Voor mij het gevoel echt even oproepen van. Later op. 
+
+Speaker 1  (13:45)
+Je werkt afschaffen. Ja, contact te maken bij betrouwbare. Ze miste niet vertrouwd en niks te lang. 
+
+Speaker 1  (13:53)
+Je vrienden, vriendinnen, Maria, familie. 
+
+Speaker 4  (13:56)
+Ja. 
+
+Speaker 2  (13:58)
+Ik ben echt de broers. 
+
+Speaker 4  (13:59)
+Het gaat ook realiseren. 
+
+Speaker 2  (14:02)
+Het gaat over oplossingen, en dat is, dat is het belangrijke punt hier. Nu het weten en. Kun je niet voor elke parkeer. 
+
+Speaker 2  (14:11)
+Zeg maar altijd als excuus gebruiken. Natuurlijk, want we kunnen ook andere redenen. 
+
+Speaker 3  (14:15)
+Ja, ja, ik hoor, ik hoor echt van, want hoe, hoe, hoe gaan we dat in het vervolg? Anders. Hoe kijk je er zelf aan? 
+
+Speaker 4  (14:23)
+Nou, ik verwacht dat na die verhuizing ook. Als deze stage is afgerond dat er dan weer wat meer rust is dat het dan wel weer gaat. 
+
+Speaker 3  (14:33)
+Nee, maar dat, dat is nog maar hoe als het weer gaat voorkomen, hoe gaan we. 
+
+Speaker 4  (14:37)
+Anders doen. Was het weer zo ja. 
+
+Speaker 3  (14:40)
+Het kan natuurlijk altijd een keer gebeuren. Maar het is ook meer voor jezelf. Het is niet eens alleen. 
+
+Speaker 3  (14:44)
+In deze setting. Ja, maar ook als je bij dennis straks zit of je weet ik veel voor welke opdrachtgever dan ook. Kijk ons doel is altijd geweest dat je je wegloopt als een projectage. 
+
+Speaker 3  (14:53)
+Nou ja, als jij dit soort dingen bij jou. Bij een project te gaan doen, ben je op de agenda's. Prinsjes en valt helemaal niemand. 
+
+Speaker 1  (15:00)
+De neerjaar met een vijf maanden vier maanden zijn in Amsterdam. 
+
+Speaker 3  (15:03)
+Pieter, ja, dus hoe, hoe ga je dat anders doen? Niet vervolgd wat, hoe ziet dat? 
+
+Speaker 4  (15:11)
+Daardoor moet heel erg over nagedacht los van. Het feit dat ik gewoon moet blijven communiceren. Ja, dat, dat is gewoon een kwestie van doel. 
+
+Speaker 3  (15:27)
+Ik zie het niet zo zitten op dit moment per se met school te delen, maar misschien is het wel even een goede opdracht voor jou om concreet te maken hoe je dit in de toekomst anders kan gaan doen. En laat het me dit dan ook alsjeblieft volgende week even weer bespreken. 
+
+Speaker 2  (15:41)
+Mag ik naartoe voorstellen? Ja, dat is zeker. Als je dan volgende week eens meeneemt, dan gebruik rationeel. 
+
+Speaker 2  (15:51)
+Cherry smaakt. Met wat je gaat doen op het moment dat dit de situatie is. 
+
+Speaker 3  (15:58)
+In de cheque is de laatste plannen. 
+
+Speaker 2  (15:59)
+En jackies schrijf je ook mee je telefoon, maar ook in een harde computer is het biefstukje allemaal in je agenda. Een letterlijke ommeting, je weet dat je in zo'n situatie ziet. Kijk je naar je en check is wat ga ik doen? 
+
+Speaker 2  (16:15)
+Het ga je dan eerst uitvoeren, want dan is aan jouw lijntje. Weet het ervaring met het mijn persoonlijkheid? Anna zie je niet. 
+
+Speaker 2  (16:26)
+Dat dat ik kan helpen. Nou, dat zou mijn idee, maar kon vooral op zelf met andere ideeën, want dat is jouw leven. 
+
+Speaker 4  (16:34)
+Kan zeker helpen, denk ik ja. 
+
+Speaker 3  (16:37)
+En want toen ik jou aan de telefoon had. Eergisteren zat de dag daarvoor, ben je weer, maar toen zei je ook letterlijk weer tegen me, maar ik ik ben het overzichtelijk kwijt. Maar dat is dan een van de uitkomsten. 
+
+Speaker 3  (16:51)
+En toen hebben wij gebeld, hebben we gespard, zei hij. Ik heb nu het overzicht weer. Jo, het geeft me wel de energie, tja. 
+
+Speaker 2  (17:02)
+Alle wijn is ook kunnen en niet niet in middel. Hugo was weg, ik wil hem nergens mee lastig vallen natuurlijk. Nou, maar toen ik mij belde, moest ik met stijn. 
+
+Speaker 2  (17:09)
+Ja, ik kom niet anders dan ergens ergens uit. Een steen had op werkgever. We zijn, als je achternaam en je gevuld is, is dat er een stukje verwijdering naar ons staat in, ook in mijn beeld. 
+
+Speaker 1  (17:24)
+Heb je nog meer? Weet je wel? Ja, dan moet ik zeggen jongen, dan stop ik er nog tijd in jouw of nee, dan ga ik hem afvragen. 
+
+Speaker 1  (17:30)
+Ja, die keuze maken je echt hoor. Bij mij is al heel simpel, sommige mensen ook echt afscheid van hem. Sommige mensen zijn meer dan waard om energie in te zijn. 
+
+Speaker 1  (17:42)
+De keus maakt zich af. Af. Is de vrouw wat je denkt van de vraag voor mensen. 
+
+Speaker 5  (17:46)
+Ja, ja. 
+
+Speaker 3  (17:47)
+Ja, maar dat is echt, ja, ja. 
+
+Speaker 2  (17:50)
+Dat ze een beetje leeg moeten zijn. Oh dat is wel. Het is toch raar en je wilt niet gestopt. 
+
+Speaker 2  (17:53)
+Dan krijg je. 
+
+Speaker 1  (17:55)
+Maar je hebt soms wel bij die andere moet je dat zeggen. 
+
+Speaker 4  (17:58)
+Ja. Ja. Ja. 
+
+Speaker 4  (17:58)
+Ja. Ja. Ja. 
+
+Speaker 4  (17:58)
+Als je niet voorzichtig bent. 
+
+Speaker 3  (17:59)
+Hoeveel? 
+
+Speaker 1  (18:00)
+Het was een van. 
+
+Speaker 3  (18:02)
+Kan je vermenigvuldigen of. 
+
+Speaker 2  (18:03)
+Ja. 
+
+Speaker 1  (18:07)
+Ja, ja, ja, ja. De kerstvolle zit ook iets in. 
+
+Speaker 2  (18:11)
+Ja, hij is niet stoppen. Ja, ja, ja. 
+
+Speaker 1  (18:12)
+Neem een grapje. Ja. 
+
+Speaker 3  (18:13)
+Waar dan? Nee, maar het is natuurlijk een serieus onderdeel. En ik denk dat voor nu ook even voldoende is om het nu af te sluiten dit onderdeel, maar ik vond dat evenveel belangrijker dan eigenlijk wat er gebeurde, maar ik heb bewust daar niet gezegd. 
+
+Speaker 3  (18:25)
+En wat ik wilde lucht. Uh graag klaar en ik denk ook. Ja, je hoeft me niet eens sorry te zeggen, maar je moet straks sorry naar jezelf zijn, want zeggen, want het is natuurlijk. 
+
+Speaker 3  (18:39)
+Ja, misschien ie wel even flexibiliteit, maar in ieder geval voor de, voor de. 
+
+Speaker 1  (18:41)
+En dan spreek ik niet in medaan gekomen. Ja, dat is. Het duurt ook nog wel heel logisch voor als je, jij kijkt naar ons, wij kijken naar jou en. 
+
+Speaker 1  (18:54)
+Het grappige is blijft allemaal mensen. We hebben allemaal kennis en kunnen niet helemaal leuke dingen kunnen doen, maar ook een heleboel handicaps. En als je je bewust, bewuster gaat worden van de handicaps. 
+
+Speaker 1  (19:07)
+En als je dan eens doorheen ik heb, val ik de trap in die controle. Ik kan wel zo wat dan ook. Weet je eigenlijk altijd zeg maar, de, de, de, de, de rust en planningstructuur, overzicht naast je hebt, omdat het wat aanlegt. 
+
+Speaker 1  (19:21)
+Gewoon. Het is voor een dingetje. Hè, ik weet hem heel mijn leven rollen, maar dat is het even te maken met wat depressiviteit met de familie. 
+
+Speaker 1  (19:29)
+En soms heb ik dat een twee weken en sta ik s'ochtends op, dus heb ik een beetje een soort missie. Ik, ik kan dat niet benoemen, hè? Maar dan kan ik niet zo helpen denk ik. 
+
+Speaker 1  (19:40)
+Maar dat weet ik gewoon, ik heb dat lerare kennen. Ik ik heb. Onderzoeksgraven ziet het ergens bij verkeerd leven, ziet er gewoon gekke dingen. 
+
+Speaker 1  (19:47)
+Zit bij ons gewoon in de familie. Mijn vaders kansen hebben allemaal gehad. Dus soms een twee weken en dan voel ik me minder vrolijk ben ik minder scherp. 
+
+Speaker 1  (19:54)
+Ben ik wat rustiger. En dan ben ik dus ook een beetje kwijt. Ja, dat voelt heel onaangenaam. 
+
+Speaker 1  (19:59)
+Dat is geen gevoel, dat wist ik niemand, een dag. Is scooter, maar een week is best wel lang. Echt grappig is, die mist die komt in een keer s'ochtends. 
+
+Speaker 1  (20:05)
+En ik word twee weken klaar voor ik soms een keer soms wakker. Ik sla mijn spiegel iets weg. Hetzelfde, weet je wel, met soldaten en mislukt, ja. 
+
+Speaker 1  (20:13)
+En ik heb geleerd die dat te herkennen, dus om een soort Hendrik heb ik die ergens in, in de familie zit. Nou kan er niks aan doen. Dat komt omdat het komt omdat het gaat op de meest gek moment. 
+
+Speaker 1  (20:22)
+Wat zomer zijn wintersport, helemaal niet uit, maar ik heb er wel leren herkennen, dus het is gewoon een handicap die ik heb. Ja, en als ik dan in ieder geval in die periode doe is altijd een structuurlijstje handhaven. Ik zit altijd een beetje in een beetje een onzekere. 
+
+Speaker 1  (20:37)
+Een heel heel rare fase is dat. De structuurlijstjes hele belangrijke beslissingen, die sterk aan. Want ik kan niet zo helder rekenen. 
+
+Speaker 1  (20:48)
+Ja, ik doe gewoon mijn ding. En als je. En ik ga veel buiten wandelen en sporten, want dan kan je de vrienden krijgen goede, dan krijg je een goede zin. 
+
+Speaker 4  (20:56)
+En als je dan bijvoorbeeld een belangrijke afspraak hebt en zo een beetje. Dat je niet. Niet. 
+
+Speaker 3  (21:00)
+Liever. 
+
+Speaker 1  (21:01)
+Ik ik heb wel eens gehad, ik heb wel eens eentje, ik heb wel eens een week van school. Bewust gezegd. 
+
+Speaker 3  (21:06)
+Kan wel voor mij. En dan heb je wel gecommuniceerd aan het valt. Ja. 
+
+Speaker 4  (21:09)
+Ja ja ja ja ja. 
+
+Speaker 1  (21:10)
+Of een collega mij die ik nooit zo scherp, dan houd ik me al rustig nu, stel hem een vraag, ik luister, ja. Er is, en zo heeft Hugo zijn dingetjes, aanleiding en zekertjes, we hebben het allemaal, hè. Het is alleen de vraag hoe gij herken je het hè, maar dat je het overkomt. 
+
+Speaker 1  (21:26)
+En wat doe je er dan mee? 
+
+Speaker 2  (21:28)
+Elke ochtend de meeste. 
+
+Speaker 1  (21:31)
+Oh, je hebt echt geen mensen. Dat kan geen mens meer. Ja, nee. 
+
+Speaker 2  (21:35)
+Ja. Of dat. Oh, zeker. 
+
+Speaker 2  (21:36)
+Infectie. Ze blijft d'r effen nu niet. 
+
+Speaker 1  (21:38)
+Dat regelen ze. Welk, nou ja, ik weet ook sochtends ben ik veel minder schetsen, als middag, dus hele belangrijke dingen en dossiers en analyses doe ik smiddags, en niet s'ocht. 
+
+Speaker 2  (21:47)
+Heb ik veel scher. 
+
+Speaker 1  (21:48)
+Is er ook genoeg? 
+
+Speaker 2  (21:50)
+Jij om te vertellen bij schiet mee een keer en ik heb een boekje ooit van jou gekregen. Ja, dat wil zeggen. Via jou? 
+
+Speaker 2  (21:56)
+Ja. En dan wil ik dit dan ook een beetje meer afsluiten. Ik ben ook helemaal naartoe. 
+
+Speaker 2  (22:03)
+Ja, ja, maar dat was een presentatie. Misschien kijk nog een remde van tom, d punt opent n. Ja, ja, het is een boekje en dat boekje ligt nog steeds ergens bij mij thuis. 
+
+Speaker 2  (22:15)
+De amateur heeft er ook nog een dingetje ingekrabbeld. Dat was toen in Oostenrijk. Die is verhaal gegeven, maar die wil ik hem meegeven. 
+
+Speaker 2  (22:23)
+Dat gaat oma. Ieder mens nodig heeft, doelen, doelen in je leven. Ik klap lijkelijk, ben je het overzicht over je doelen kwijt in ieder geval, niet om je kortetermijndoelen wat een. 
+
+Speaker 2  (22:36)
+Hoge oplaadpunt is dat ieder mens dringend nodig heeft bij die energie krijgt. Nou niet meer opzoeken voor hem is dat is wandelen en een duur brides. 
+
+Speaker 1  (22:46)
+En het prijsmaker voor de vereniging. 
+
+Speaker 2  (22:48)
+Ja. Ja. Ja. 
+
+Speaker 2  (22:49)
+Heel leuke dingen. De hele belangrijke is mensen, maar wat jij doet in zo'n situatie doelenoverzicht heb je niet oplaatpunt, ja, je weet hoe wij het niet te vinden onderzoeken. En de mensen die laaien links leren en zien van, dus komt in kaas. 
+
+Speaker 2  (23:03)
+Je doet er niks meer mee. Nou, dat is dus. 
+
+Speaker 1  (23:06)
+Ik knap de jongentjes weg. 
+
+Speaker 4  (23:08)
+De, de, de, de, de tafel was ik de deur duurder. 
+
+Speaker 2  (23:11)
+Dus ja precies dat gaat deurtje dicht. Nou deze kan je heel makkelijk wat dan doen. Nog gewoon te communiceren. 
+
+Speaker 1  (23:17)
+En dan dan gaan die andere trema. 
+
+Speaker 2  (23:19)
+En nog precies en dan wordt dit, want mens wordt het humor. 
+
+Speaker 4  (23:23)
+Anneke. 
+
+Speaker 2  (23:25)
+Yeah yeah. In ieder geval je doelen weer overzicht. Ik heb wat huren zeggen structuur. 
+
+Speaker 2  (23:28)
+Het zit een beetje in doelen ook. Ja. 
+
+Speaker 3  (23:31)
+Ja, best goed te maken. Oh ja mooie afsluiting. Allright, oké, laat het me lekker naar de presentatie toe gaan. 
+
+Speaker 3  (23:37)
+Tenzij je zelf nog iets over wilt zeggen. 
+
+Speaker 1  (23:38)
+Of frank. Het is geen eindhuis automatisch de sprinter. 
+
+Speaker 2  (23:41)
+En da's zeker ja. Oké. 
+
+Speaker 1  (23:43)
+Ja. 
+
+Speaker 4  (23:45)
+Een klaverde zaak om aan het einde kunnen we het even hebben over wat er het is. Van de eindpresentaties worden wat er allemaal ontmoet komen. De scho. 
+
+Speaker 4  (23:59)
+De de werkzaamheden van onze prins vijf, waar opdrachten weer geïmplementeerd, dus gebruiken ze hun opdrachten toevoegen. De netwerk rollen geïmplementeerd, dus ik slaap voorbij gekomen, maar dat. Ik werk nu ook. 
+
+Speaker 4  (24:12)
+En je kunt nu ook of er is meerdere netwerken online een persoontje vinden. Heel goed waar het over gaat. Het agenda weer, dat is nog een work onprogress. 
+
+Speaker 4  (24:27)
+In zo'n verre dat het alleen nog gesignaliseerd moet worden met. Een externe mail programma. Dus wat je nu wat later zal zien wat je nu wel kan doen is je de agenda binnen het crem, koppelen aan je. 
+
+Speaker 4  (24:45)
+Hopelijk agenda behoorde, maar zijn afspraak in outlook zet wordt het niet gekoppeld in wordt niet zichtbaar in het zeer rem. Die koppeling moet komen. 
+
+Speaker 3  (24:56)
+Is dat makkelijk te doen? 
+
+Speaker 4  (24:58)
+Dat maximaal maximaal nog een dag werken, dat heb ik ook. In de planning van bijgezegd. Dan ga ik nu even door het hele systeem heen voor wat er nu staat, zo zie je ook een beeld hebben van. 
+
+Speaker 4  (25:19)
+Ja, wat is er nou. 
+
+Speaker 3  (25:21)
+Uh hartstikke benieuwd. 
+
+Speaker 4  (25:24)
+Afgelopen maand. Effen kijken. Je kan dus hier een een nieuwe tennis registreren. 
+
+Speaker 4  (25:37)
+Kunt u aanmaken? Maar kom je in het dashboard? Dan wat er nu is toegevoegd is uh de netwerk dat. 
+
+Speaker 4  (25:49)
+Dit is dus bestand van je hele netwerk, dus dat omvat de kandidaten ambassadeurs en opdrachtgevers. Een galaxy, ik heb een beeld eigenlijk al. Ja, ik heb een test in een potje gemaakt. 
+
+Speaker 4  (26:04)
+Kunnen zien. 
+
+Speaker 1  (26:06)
+Iets groter dan, dat wil ik niet. 
+
+Speaker 4  (26:09)
+Een grotere lid kan niet bieden niet. Ja, ik kan misschien wel. 
+
+Speaker 1  (26:12)
+Het is wel een scherm draaien deze is voor mij. 
+
+Speaker 2  (26:14)
+Ja, ja, ja. Uh zo serieus. 
+
+Speaker 3  (26:17)
+Voor je die is het zo. 
+
+Speaker 1  (26:22)
+A b l 99. 
+
+Speaker 2  (26:22)
+Ja. Ja. 
+
+Speaker 4  (26:26)
+Wat ga je nou uitleggen? Dat is uh tabel meer gave, nou ja, daar kan je gewoon op sorteren en filteren. Je hebt dus een netwerk hollen. 
+
+Speaker 4  (26:36)
+Daar kun je dus meerdere van hebben, deze bijvoorbeeld is des data, dus de kandidaat-draaggevende bevoegdheid. 
+
+Speaker 3  (26:44)
+Gaan we daarna nog? Kleuren aangegeven denk ik. Ik heb een handige kleur. 
+
+Speaker 4  (26:50)
+Dat kan. Ik kan er van die chips van maken met de kleurtjes, dus dat. 
+
+Speaker 3  (26:56)
+Wij zullen succes. Geen, maar dat is ook weer een vraag als jacques moet ik meer met dit soort systemen werken. Dat is misschien meer een primaire rol hebben en ontsecundaire rol. 
+
+Speaker 1  (27:09)
+Ja, ik heb in principe ook een rolstoel is prima, of in Amsterdam is kandidaat erbij, even belangrijk. 
+
+Speaker 2  (27:17)
+Dus maar je kan lossen, kandidaten als je nog oppassen. 
+
+Speaker 4  (27:22)
+Ja. 
+
+Speaker 3  (27:22)
+Niels, die films. Kan je veels. 
+
+Speaker 4  (27:24)
+Ja, toch? Ik kan dat hier in de netwerktape kan je dat doen. Als je alleen dan kandidaat onderzoeken is daar een snelle knop voor, dat zit hier links gewoon in de, als je daar kandidaten gaat dan filteren, krijg je automatisch je lijst van alleen kandidaten. 
+
+Speaker 4  (27:39)
+Is dat zo onhandig en daar kan je dan ook de cv's inzien. 
+
+Speaker 3  (27:43)
+Oh, maar oké, ja, check. 
+
+Speaker 1  (27:44)
+Ja, dus je vliegt via de kandidatenkant aan, en je hebt daar namelijk ongeveer algemene lijst, ja, opdrachtgevers, die geen kandidaat zijn of. 
+
+Speaker 2  (27:53)
+Ja en uh dit is een ingewikkelde dingetje h maar ik vind het leuk van uh als je eentje wilt. Ja vroeger deed je toch vroeger echt nieuw. 
+
+Speaker 3  (28:03)
+Nou, kan ik ook straat hier allemaal. Welke functie? Kunnen we daar ook nog eh, kunnen we daar ook nog bullijsten voor maken? 
+
+Speaker 2  (28:23)
+Dat je, dat je zeg maar de. 
+
+Speaker 3  (28:25)
+Ronald die we veel hebben inkopen, na kettingen et cetera. Ja, gaat ie dat automatisch zetten die dat automatisch in beeld blijst. Ja, tuurlijk kan je filteren. 
+
+Speaker 4  (28:35)
+Maar ik kan, ik. 
+
+Speaker 3  (28:36)
+Wat heb je ook bedoel je? Met een soort van snelkoppeling. 
+
+Speaker 4  (28:39)
+Ik heb dat je gewoon zoiets als dit hebt. Ja. 
+
+Speaker 1  (28:41)
+Een kousenlijstje. 
+
+Speaker 3  (28:42)
+De functies. Ja want anders want dat wel zeker. Wat wat wat ik wat ik weet, maar dat is ook vanuit mijn tijd bij koop komt anders een product lenen. 
+
+Speaker 3  (28:50)
+Ja ik ik in groepen. Nou ja, als je nou al een klein verschil in maakte dan mis je dus misschien al 10% van je van jou appartement. 
+
+Speaker 4  (28:57)
+Ja, nee dat is wel zo lastiger op het sorteren veel te als je allemaal andere namen hebt voor, je moet mensen nooit teveel keuken. 
+
+Speaker 3  (29:04)
+Conducteur ja. Want een inkopen kan natuurlijk een bayern zijn kan ook. 
+
+Speaker 4  (29:07)
+Ook een uh goedkoper soort. 
+
+Speaker 3  (29:09)
+Nee you are you can i pick up i? 
+
+Speaker 1  (29:11)
+10, 10 10 titels van onge. 
+
+Speaker 3  (29:12)
+Precies. 
+
+Speaker 2  (29:13)
+Dit zijn, dit zijn alle functies. 
+
+Speaker 3  (29:17)
+Kijk, ik. 
+
+Speaker 4  (29:17)
+Dat is. Dit zijn de netwerken. 
+
+Speaker 3  (29:19)
+Wat ik denk wat ik denk wat goed. 
+
+Speaker 2  (29:21)
+Ja, ja. Ja, ja, ja. Met g t toch? 
+
+Speaker 2  (29:24)
+Abc d. 
+
+Speaker 1  (29:25)
+Ja, ja, ja, wat is er veel meer. 
+
+Speaker 2  (29:26)
+Het is wel een. 
+
+Speaker 4  (29:27)
+Of meer. Ik heb deze er nu even ingezet voor om te testen, maar die dat lijstje ja. 
+
+Speaker 2  (29:34)
+Nee. 
+
+Speaker 3  (29:34)
+Nee, zeker. Nee, hoor, zeker, ja. Staan die d'rin? 
+
+Speaker 3  (29:37)
+Of niet? 
+
+Speaker 4  (29:39)
+Het systeem, ja, het systeem nog niet, maar dat is zo. 
+
+Speaker 1  (29:45)
+Ja, voeg, vochtig. 
+
+Speaker 3  (29:47)
+Bestaat daar. Dat gebeuren. 
+
+Speaker 2  (29:48)
+Nee, ja, ja, ja. 
+
+Speaker 1  (29:49)
+Nadat alweer gebeurd kunnen zijn. 
+
+Speaker 3  (29:51)
+Effen kijken hoe mij had ik, ik heb dat allemaal naar jou toegestuurd toch? Per mail denk ik zelfs. 
+
+Speaker 2  (29:55)
+Bij kimberley, ik had dat gezien, dus ik, ik zat hier te kijken, ik denk, mismat. Maar ook zo'n. 
+
+Speaker 3  (30:02)
+Ja, mag ik een een opmerking maken? Want ik denk dat handig is met het labelen van functies, is dat je ze wel een eigen functietitel geeft die ze gewoon hebben, maar dat je ook een bulkfunctietitel hebt, dus dat dit valt onder de inkomens. Ja, of valt onder kennis die management, of valt onder, snap je en dan kunnen ze ook meerdere hebben natuurlijk, want er iemand kan ook inkopen. 
+
+Speaker 3  (30:24)
+De rest is een cadeaumanage, weet je zeker? Snap je wat ik bedoel? Dus die lijst, maar 1000 heb ik nooit over gehad, die moeten wij een keer aanmaken, want wij willen het niet precies. 
+
+Speaker 1  (30:32)
+Ja, vrije veld is uh de functie. Juist dan uh ja dan kun je wel eens. 
+
+Speaker 4  (30:36)
+Dat groei van ja. 
+
+Speaker 1  (30:38)
+Ja. 
+
+Speaker 2  (30:38)
+Dat functie. 
+
+Speaker 4  (30:40)
+Juist. Ja ja ja. 
+
+Speaker 3  (30:42)
+Juist, juist. 
+
+Speaker 2  (30:43)
+Veel dingen. Als je gaat zoeken en dan staat er straks 3 1000 mannetjes in. En je zoekt een linko functie wil je op inkopen kunnen zoeken, maar ook misschien dat soort single realiseert dat ze vaak realisme. 
+
+Speaker 2  (30:53)
+Ja dat valt onder een categorie. 
+
+Speaker 4  (30:56)
+Ja, dus als je dan op inkopen zoekt, dan krijg je dus allemaal mensen die inkoper zijn of parkeerman of schorseneer juist. De bureau. 
+
+Speaker 1  (31:04)
+Je hebt eigenlijk wat je doet je al die die mooie functie tussen tegenwoordig maak je zelf een dinges nadat die zitten in de winkel. 
+
+Speaker 4  (31:10)
+Die snij je gewoon een beetje plat, gewoon tot een. Ja, tot een functioneel inkoper ja. 
+
+Speaker 1  (31:16)
+Je gaat aardrijkskunde management functies, hè? Ja, of aanrijden, teamleider management functies, die. 
+
+Speaker 3  (31:22)
+Eén december heb ik een stalen toegestuurd. Alle dat het hebben uitgeschreven, zeg maar je, alle functies, en je tot en met. 
+
+Speaker 2  (31:31)
+Em, zelfs, na het was een rem. 
+
+Speaker 3  (31:35)
+Er mis netwerkgroepen investeerde ik moest aan. 
+
+Speaker 4  (31:37)
+Ja, zou kunnen. Omlaag in zaterdag. 
+
+Speaker 3  (31:42)
+Ja, dus dat is echt effen een actiepunt van vandaag, want. 
+
+Speaker 4  (31:45)
+Yo. Moest dat trouwens niet ook heb je dat zelf kunnen liggen? Per bedrijf verschillende netwerken. 
+
+Speaker 2  (31:53)
+Ja, misschien. 
+
+Speaker 3  (31:54)
+Nee je hebt gewoon je bulklijst en dan wil je het zenden wil je. 
+
+Speaker 1  (31:57)
+Dat je kost jaren of zoiets, maar het begrijpt niet. 
+
+Speaker 3  (32:00)
+En dan voor geprogrammeerd zijn. 
+
+Speaker 2  (32:04)
+En ik dacht dat we dat letterlijk, maar misschien is dat niet zo verklarend, omdat. 
+
+Speaker 3  (32:08)
+Plattevrouw. Ja, ik heb, ik heb die erbij gezegd. 
+
+Speaker 1  (32:12)
+Ja of in ieder geval de naam of wat dan ook. 
+
+Speaker 3  (32:14)
+Cijfers en letters zoals wet hebben besproken, dus een abc twee a e gf a twee a één bla bla bla. Dat staat allebei in principe. 
+
+Speaker 4  (32:26)
+En maar wil je dan per letter of wat? 
+
+Speaker 3  (32:29)
+Ja ja dat weet ik niet. Ja ja ja. 
+
+Speaker 1  (32:31)
+Grappig is. Als je door, als je die a één doet, hè. Je hebt aanleggen. 
+
+Speaker 1  (32:34)
+Dat is een directie. Ja, ja. Je hebt blevel, management en c level uitvoerend, dat is een beetje. 
+
+Speaker 1  (32:41)
+Ja, ik had zo. 
+
+Speaker 3  (32:42)
+Ja, je zou natuurlijk ook, je zou het natuurlijk ook kunnen uitschrijven, dat je gewoon management niveau directe niveau management niveau ook origineel niveau hebt. 
+
+Speaker 4  (32:50)
+Ik zou jou kunnen doen. 
+
+Speaker 2  (32:51)
+Dat beteken. 
+
+Speaker 3  (32:52)
+Met, met letters maar merk je gewoon met de woorden als het handiger is. 
+
+Speaker 2  (32:56)
+Leuker waarom duiken gewoon. En is dat uh overleggen met stijl? En dan ga ik weer gewoon kom. 
+
+Speaker 2  (33:01)
+Komt er iets wat jij denkt hiervoor komt. Comfortabeler. 
+
+Speaker 1  (33:04)
+Hij was wat duidelijker. 
+
+Speaker 3  (33:05)
+Ja. 
+
+Speaker 4  (33:06)
+Ja. Met de groene treinen. De meeste is duidelijk als je het gewoon zo dit uitschrijft. 
+
+Speaker 3  (33:09)
+En ik denk dat ook omdat, als ik dat ie komt, ik denk dat het leren. Ja, of iemand zonder een hoekje weggeeft, want het leer maar uit jouw hoofd. 
+
+Speaker 4  (33:15)
+Ja. Waarschijnlijk niet handig nee. 
+
+Speaker 2  (33:16)
+Nee, je gaat niet in me een nemen. 
+
+Speaker 3  (33:18)
+Je zou natuurlijk wel met afkortingen kunnen werken. 
+
+Speaker 2  (33:20)
+Dan kun je me knappe ook doen. Nee, driendertig. 
+
+Speaker 5  (33:24)
+Ja, ja, ja, ja, ja, ja, ja, ja, ja, nee, nee. Ja, ja, ja, ja, ja. 
+
+Speaker 1  (33:27)
+Ja, ja. Ja, hey, skaat, hier zeg maar. Ja, ja, ja. 
+
+Speaker 1  (33:28)
+Ja, ja, ja, ja. Een nummer 66. Ja, ja, ja. 
+
+Speaker 5  (33:30)
+Ja, klopt. 
+
+Speaker 1  (33:32)
+Je kan die raam aaien. Ja, dat, nee, dat is echt een drietje. Ja, ja, ja, ja. 
+
+Speaker 1  (33:40)
+Hij zei dat ie afgewezen. 
+
+Speaker 3  (33:42)
+Heeft ie, misschien afkortingen zoals. Mgmt management. Dirk directeur. 
+
+Speaker 1  (33:50)
+Nou ja, weet je, ik zeg, als je zeker bent, die nieuwe ring werkt hè? Zal ik hem gewoon de dingen zoeken, waarschijnlijk uitschrijven. Het is een. 
+
+Speaker 3  (33:57)
+Ja. Volgens mij is het gewoon, ja inderdaad dat klopt met je extra, je toch? 
+
+Speaker 4  (34:00)
+Dat is hem zo, nou het is, je krijgt gewoon dropdage met alles met alle dingen gewoon uitgeschreven, krijg je gewoon kiezen van welk netwerk of zo. 
+
+Speaker 3  (34:07)
+Jack. 
+
+Speaker 1  (34:07)
+Hoeveel kun je de maximaal aangeven dan. 
+
+Speaker 4  (34:09)
+Het is leuk. 
+
+Speaker 2  (34:11)
+En nu was het de vraag of ik niet heel belangrijk. Ik zie je heel veel Antwerpen ontstaan. Dan gaan we. 
+
+Speaker 2  (34:26)
+Deze hoes kweek jij die die dingen erin of gaat dat ook niet gebeuren. 
+
+Speaker 4  (34:31)
+Dat gaat wel gebeuren. Wanneer weet ik nog niet. 
+
+Speaker 2  (34:39)
+Het leidde natuurlijk bijna alles u ook gesorteerd om algeme. 
+
+Speaker 4  (34:44)
+In het, in de, in sommige, maar ja. 
+
+Speaker 2  (34:48)
+Dus we hebben a en voor de aanstaat, beginnen met de achternaam. 
+
+Speaker 3  (34:52)
+Ja, ik vind het eigenlijk snel wel tof. Los moet staan vanochtend op alfabets Samen, dat als je een p d f bestand erin gooit dat dit gewoon begreep. Ja. 
+
+Speaker 1  (35:01)
+Heb je echt wel een dingetje, want ik zie dat de naam sla hem. Een veld voor een achternaam. Dat was je die wil gaan koppelen met bestanden. 
+
+Speaker 1  (35:07)
+Ga je auto debiteu. Dus die namens de werkelijkheid gewoon na de achternaam en tussen voedsel. Alexysteem heeft dat. 
+
+Speaker 2  (35:15)
+Dat moet je echt doen. 
+
+Speaker 1  (35:17)
+Ja onderbreekt namelijk koppeling aan bestanden. Dat je de hier kreinproblemen hebt. En dan heel veel handwerken. 
+
+Speaker 3  (35:23)
+Maar hey, als je kan niet meer voorkomen? Ja, nee, maar dat gaan we, ik moet niet doen, dat gaan we gewoon niet doen, punten. Maar ey kan die dat niet geloven of? 
+
+Speaker 4  (35:31)
+Ja, daar zijn we wel, er zijn zeker, dat is moeilijk. Die heeft stukken software, die cv's kunnen screpen en de data daaruit kunnen halen en die al die 3000 cv's die je hebt, nu. Gewoon automatisch in het systeem zit. 
+
+Speaker 3  (35:50)
+Want dat is wel een heel goed punt, dat uh wij gaan de commando. 
+
+Speaker 4  (35:53)
+Zouden inzetten? Dat is nog een belangrijke inderdaad. Nou. 
+
+Speaker 1  (35:56)
+Ik verander ook mee naar adriaan. Als je je bedrijf heel veel verwerk krijg je heel veel waakhonden. Is het daar te overwegen waakt om de namen adressen die de afgelopen 10 20 jaar gesproken? 
+
+Speaker 1  (36:07)
+Ja. 
+
+Speaker 2  (36:08)
+Al moet ik systeem doen, ja. Hij werd ook over gehad, maar al die mensen die hebben gesproken, die zitten helemaal in mijn kampioen. 
+
+Speaker 3  (36:16)
+Nee en dat en wat dacht je van de opdrachtgevers? 
+
+Speaker 1  (36:18)
+Ja ja dat zou wel. 
+
+Speaker 3  (36:20)
+Andijvie met ook over. 
+
+Speaker 1  (36:21)
+Ja. Dat is echt zo. Maar. 
+
+Speaker 3  (36:23)
+Potje bedrijf. Hij zei moet ik de opdracht geven van 30 jaar geleden, ik zweer het, ga jij mij lekker even uitzoeken wat je allemaal hebt gedaan? 
+
+Speaker 1  (36:30)
+Maar we hebben nog altijd zo'n fusie van stagiaire. Matthijs heeft een topclub, ook als zijn remmen. 
+
+Speaker 2  (36:36)
+Al die opdrachten. Gegevens. 
+
+Speaker 3  (36:38)
+Vind ik wel, ja, toch. 
+
+Speaker 2  (36:40)
+IJsland zit je, of niet? 
+
+Speaker 4  (36:42)
+Ja, bij mij wel. 
+
+Speaker 2  (36:43)
+Maar ook al die opdrachtgevers, die heb ik al een opvolger. Ja, en hoe heet, hoe heb ik dat ooit gedaan? Ik dacht bedacht ooit elke factuur die ik stuur. 
+
+Speaker 2  (36:53)
+Die zet ik in alfabet bij clides, dus die hebben allemaal. Maar dan is het allemaal ja. En sterker nog, in de factuur staat gewoon precies aan wie ik het verstuurd heb. 
+
+Speaker 2  (37:02)
+Ja, maar dat is ook makkelijk. 
+
+Speaker 3  (37:05)
+Nee, dus daar zit, er zitten nog wel wat haak in ogensteen. 
+
+Speaker 2  (37:10)
+Maar dit is wel een belangrijke, voor tussen voedsel, achternaam. 
+
+Speaker 4  (37:16)
+Voordat de zwoele achternaam en. 
+
+Speaker 2  (37:20)
+John van het schip. Betreft de Bakker. Ja ja sjakie zwart. 
+
+Speaker 4  (37:26)
+Pietje en de slager. 
+
+Speaker 2  (37:30)
+Sanne in het hof, Kees ja. 
+
+Speaker 1  (37:35)
+Het wel, Jan van der plein. 
+
+Speaker 2  (37:37)
+Shit. Eind. Van der neut. 
+
+Speaker 1  (37:40)
+Ja. Ja. Ja, ja. 
+
+Speaker 1  (37:41)
+Ja, ja, ja, ja, ja, ja, ja. 
+
+Speaker 2  (37:42)
+Ja, föhnt, ja, Feyenoord, die naam. 
+
+Speaker 1  (37:44)
+Nou, ja, scheurt he, ja, ja, g**********, gelachen meneer, dat scheelt niks te schaatsen hè. Man, Man, Man. Puntje van storm zei. 
+
+Speaker 2  (37:52)
+Printer vond fantastisch. 
+
+Speaker 4  (37:53)
+Maar dat is inderdaad nog een punt wat ik ga uitzoeken. Ik ga dat in. 
+
+Speaker 3  (38:00)
+Hmm. Twee aardige. Kijk ik wil, ik kom straks bij je planning toch? 
+
+Speaker 3  (38:03)
+Denk. 
+
+Speaker 4  (38:04)
+Om te vereenigen, ja, goed. Klanten, de klanten tap. Je kan meer een klant toevoegen. 
+
+Speaker 1  (38:12)
+Even misschien nog een gek dingetje. 
+
+Speaker 2  (38:14)
+Ik ben uh uhm. 
+
+Speaker 1  (38:16)
+Als je naar kandidaat kijkt, dan krijg je dan een factuur aanvragen, waar kijken we eigenlijk het 1e na. Er begonnen bedreigende vacature te krijgen. De concurrenten. 
+
+Speaker 1  (38:27)
+Dat heb ik pas volgens mij het 1e waar ik echt. 
+
+Speaker 2  (38:30)
+Oh, je bedoelt van de facturen? 
+
+Speaker 3  (38:32)
+En die vacature. Een salaris. 
+
+Speaker 2  (38:34)
+Uh verschillende relax. 
+
+Speaker 1  (38:35)
+Volgens mij gaat het bedrijf ziet. Ik zie die lekkere Groningen of ziet ie nou in limbur. 
+
+Speaker 2  (38:40)
+Ja ja ja ja ja. 
+
+Speaker 3  (38:41)
+Ik bedoel het woonplaat. 
+
+Speaker 2  (38:43)
+Ja, plaats, Man. 
+
+Speaker 3  (38:44)
+Hij staat op de bal staat er nu allemaal bij dan. 
+
+Speaker 2  (38:46)
+Ja, dat doen we nou. 
+
+Speaker 1  (38:48)
+En je hoeft, je hoeft mensen helemaal niet veel neer te. 
+
+Speaker 3  (38:50)
+De locatie staat h? 
+
+Speaker 1  (38:52)
+Ja, kan ik zeggen. Ik zou, ja, ik zat woonplaats op locaties van een bedrijf. 
+
+Speaker 4  (38:56)
+Ja, nee, precies. Nee, maar dit is van sanker, ja, ja, dat vind ik ook zo. Dit is locatie. 
+
+Speaker 3  (39:01)
+Ja, ja. Ja, dus dat klopt wel, toch? Oh, denk je erbij zo een? 
+
+Speaker 3  (39:03)
+Ja, ja, ja. Want dit dit is ook goed. Maar luister toch? 
+
+Speaker 3  (39:06)
+Salaris is misschien ook nog wel goed. Goede hoor. Die. 
+
+Speaker 2  (39:11)
+Ja, ja, ja. Ja, stond voorbij. De twee woonplaats inderdaad al, zo logisch dat je inderdaad. 
+
+Speaker 1  (39:18)
+Uh ja eigenlijk het eerst Man. En dan kijkt. Want ze kijkt naar wel 15. 
+
+Speaker 1  (39:21)
+Qua soosgegevens. En dan zeg je de franse bedrijven die investigingen in het midden noord of oost h? 
+
+Speaker 2  (39:26)
+Hoezo ik op LinkedIn? Nou ik zoek eerst een functie uh doek in. Ja, dan uh dan kijk ik eventjes nog naar welke branche zit en vind ik ook wel handig. 
+
+Speaker 2  (39:34)
+Ja. En dan vervolgens zoek ik een Harry uit waar ik woon. 
+
+Speaker 3  (39:40)
+Beetje midden of een beetje raar. Kan hij, kan die automatisch. De, dat, dat is misschien ook voor het volk, maar zou die automatisch regio's hieraan kunnen binden? 
+
+Speaker 3  (39:52)
+Zoals Randstad, of. 
+
+Speaker 2  (39:54)
+En niks. Zoals in nickerie. Die brown of city rolf. 
+
+Speaker 3  (39:57)
+Uh ook misschien wel provincies. 
+
+Speaker 2  (39:58)
+Hij kan toch gewoon Google maps. 
+
+Speaker 3  (40:00)
+Uh bijvoorbeeld. Maar dan want dat maakt het natuurlijk soepgebied makkelijker. 
+
+Speaker 1  (40:04)
+Om te definiëren, zo'n zo'n zo'n extra straat. 
+
+Speaker 4  (40:07)
+Ja maar ook al die dingen wel of definitief of op die manier inderdaad gewoon. 
+
+Speaker 3  (40:11)
+Dat zou echt top zijn. Want dat kan dus niet dan want dat kan dus niet in likt in. Wat van een straal binnen. 
+
+Speaker 3  (40:17)
+Ja klopt. 
+
+Speaker 4  (40:18)
+Het was een heel raar. 
+
+Speaker 3  (40:19)
+Je kan alleen maar locaties definiëren, de regio. 
+
+Speaker 2  (40:22)
+Ja. Kijk. Als jij kan zeggen Amsterdam, 30 kilometer. 
+
+Speaker 3  (40:26)
+Kan, en dat zou top zijn, want dan dan heb je iets nieuws. 
+
+Speaker 2  (40:29)
+En dan heb je wat. Maar dat kan. Dat weet je zeker. 
+
+Speaker 4  (40:35)
+Zo, ja, dat is gewoon, gewoon coördinator van een, van een plaats voor je in en dan doe je wat rekeningetjes achter bakjes straal. 
+
+Speaker 1  (40:44)
+Ergens had een selectie van kandidaats. 
+
+Speaker 3  (40:47)
+Ja, ja. Want die is best belangrijk, want het is een heel volle punt ja, als je iets in in. 
+
+Speaker 2  (40:53)
+De burger heeft geen ingroning is. Locatie locatie locatie. Het is uit die brede. 
+
+Speaker 1  (40:58)
+Ja, maar dat ligt op Maleisië. 
+
+Speaker 4  (40:59)
+Ja. Dus inderdaad ook geprobeerd op brandstoffen. 
+
+Speaker 3  (41:01)
+Ja, ja, je weet toch. Maar dat beperkt ook. 
+
+Speaker 2  (41:03)
+Ja, onderzoek betekent dat het is een redelijk sneller ja, onderzoekt. 
+
+Speaker 4  (41:07)
+Ik ben serieus dan. 
+
+Speaker 1  (41:09)
+De hoeveelheid kost. 
+
+Speaker 3  (41:13)
+Oké, missen we hier iets naam dus naam veranderen. De leeftijd nog de inzetten, geboortedatum of zo. Een beetje gelijk hoe oud iemand is. 
+
+Speaker 3  (41:26)
+Kan natuurlijk ook eens cv gezien worden, maar als we dat kunstgrepen, dan zou ik die top zijn leeftijd. Nee, hoorde dat. 
+
+Speaker 4  (41:35)
+Dus na mijn leeftijd. 
+
+Speaker 1  (41:38)
+Naar de zakgevoortersnaam. 
+
+Speaker 4  (41:40)
+De heerser leek het straal te verzoeken, ja. En dus ai-spreker, onze VS. De automatische Train. 
+
+Speaker 3  (41:52)
+En, want je hebt nu bedrijven waar ze zitten, maar oude bedrijven. 
+
+Speaker 4  (41:59)
+Die zwaan in het cv maar kan ook uitgelezen worden en hier ingezet worden. 
+
+Speaker 3  (42:05)
+Ik zou zoveel mogelijk willen uitlezen, want serveer. Vooral als je dat je gewoon werkt. Kan je makkelijk sorteren? 
+
+Speaker 4  (42:17)
+Dus oude bedrijven ook. 
+
+Speaker 1  (42:20)
+Dan praat je eigenlijk zeg maar over zulke kandidaat-filters, hè? Dan zet je weer alle kandidaten zien. Dat is volgens mij soort soort commercile film te diep. 
+
+Speaker 1  (42:31)
+Waarbij je zegt dan een 2e filter is die ooit bij jumbo gewerkt hebben. 
+
+Speaker 2  (42:36)
+Precies. 
+
+Speaker 3  (42:37)
+Weet je wat ie dat? 
+
+Speaker 1  (42:38)
+Klopt, ruikt en haalde zich na, dat zijn deze 15. 
+
+Speaker 3  (42:40)
+En ieder voor functies enthousiasme zeiden. 
+
+Speaker 1  (42:44)
+Dat is kreper uit de cv's de humor's baan haalt zich nou deze 15 zijn het. 
+
+Speaker 4  (42:48)
+Ja, kan zeker. 
+
+Speaker 2  (42:49)
+Kijk, wat, wat een LinkedIn, wat ik heel vaak doe, is dan denk ik, nou we gaan even naar bast kijken en dan doe ik gewoon de retailers waar hij gezeten hebben, ook ondertussen invullen, doe ik eerst op inbouwen en een habel en een plus. 
+
+Speaker 4  (43:03)
+Hij deed veel en al, en gewoon een past. Ja, enzo die FIL. 
+
+Speaker 2  (43:07)
+Wat LinkedIn doet is dat ze alvast weten wie wat als jij je kunt algemeen zeggen, past hè, maar dan is het een hoog veel te. Als het subveilter is van de selectie, dan laat ie alleen zien. Wat heeft reus, als er niemand ooit bij je in het raam heeft gewerkt, laat het dan niet zien. 
+
+Speaker 2  (43:25)
+Dan stop je toch niet om na te denken? 
+
+Speaker 3  (43:28)
+Ik denk dat je eigenlijk me jezelf met jef je zoekt als. 
+
+Speaker 4  (43:32)
+En dat vind je leuk. 
+
+Speaker 3  (43:34)
+Welke filters gebruik je er zelf. 
+
+Speaker 4  (43:36)
+Ik gebruik die pas veel terwijl ja. 
+
+Speaker 3  (43:40)
+Er zijn ook aan die hindoestree, die je mist. 
+
+Speaker 4  (43:42)
+Dat is verveelder. Ja. Gebruiken we ook vaak. 
+
+Speaker 4  (43:44)
+Nou ja, industrie komt uh. Wel een goede. En is goedkoper. 
+
+Speaker 4  (43:47)
+Donnie hoort die culturele filter gebruiken. Bijvoorbeeld. 
+
+Speaker 2  (43:50)
+Ik heb jou een. In, in het begin niet aan valentijnsdag, ze hebben mij voorzi. 
+
+Speaker 4  (43:57)
+Ja, dat luke. 
+
+Speaker 2  (43:59)
+Dus ik heb jou met school gestuurd waarvan ik zei ga ik met de mensen bellen of kijk even wat het is. Ja. De vraag is heb je dat gedaan waarschijnlijk niet, maar zou je dat nog? 
+
+Speaker 4  (44:09)
+Ja. 
+
+Speaker 2  (44:10)
+Dit is gewoon precies het aanbod precies. Wat zijn ons bieren, zij zeggen, wij hebben het doel. Wat voor ben je in selectieloos verschil is? 
+
+Speaker 2  (44:20)
+Wie kijken, nou, dus die hebben mij doorgestuurd om dat te onderzoeken. Dat is doel natuurlijk, ruk wat missen we. 
+
+Speaker 3  (44:28)
+Ja, ja. Ja. Wees weer niet. 
+
+Speaker 3  (44:29)
+En je wilt gewoon in dienst van ons he, dus je bent. 
+
+Speaker 2  (44:30)
+En dat gewoon. En ik wil dit gewoon zien. 
+
+Speaker 4  (44:32)
+Allemaal gewoon demo aanvragen. 
+
+Speaker 2  (44:35)
+Dat was wel een vraag. Had je gesteld? 
+
+Speaker 1  (44:37)
+Een vraagje überhaupt noteren er niks. 
+
+Speaker 4  (44:39)
+Dat valt mee. 
+
+Speaker 2  (44:44)
+Waar. Ondanks twee letteropnemen kan deze heb jij al een keer. 
+
+Speaker 1  (44:47)
+Nou ik zou het ook altijd op zijn. Ja dit had ik ook niet opgemerkt. Even de acties die je gesproken wordt. 
+
+Speaker 1  (44:53)
+Wat was meer eigenlijk ingedoe toch. 
+
+Speaker 3  (44:56)
+Ja, maar dat duurt meer om dan te continueren straks. 
+
+Speaker 2  (44:59)
+Alleen maar plakken. Ja. Ja. 
+
+Speaker 2  (45:01)
+Perfect is het chill. 
+
+Speaker 3  (45:02)
+Ja, het effect is hetzelfde. 
+
+Speaker 1  (45:04)
+Als je plotseling hebt. Heb je me al een heel geheugen zitten. Dat is ook lang niet voor nog. 
+
+Speaker 3  (45:08)
+Ik zou het natuurlijk niet alle kleine met die grittie maar wel grote dingen hoor. Ja, Man. 
+
+Speaker 2  (45:13)
+Kijk, het munt is een beetje wat we ontstaan is hierdoor nogmaals in negatief omvatten. Is dat wij dingen opschrijven? Ik ben gewend als er iemand wat vraagt gebeurt het ook. 
+
+Speaker 2  (45:24)
+Het is niet wat vragen of je die niet rond te kijken. Het is een incidentele keer en ik oh ja. Bij jou heb ik de neiging en ik weet het eigenlijk niet. 
+
+Speaker 2  (45:33)
+Appelsap. Dat betekent omdat ik al het vermoeden heb dat ik dat zou kunnen gaan vergeten. 
+
+Speaker 1  (45:40)
+Ja, gezond. Is gewoon werken voor jou. Door hoe werkt het? 
+
+Speaker 2  (45:44)
+Ja, want hij doet jou werk. Precies wat ze jou zeggen. Ja, ik heb er eigenlijk. 
+
+Speaker 2  (45:52)
+Ja, ja. Ja, dat snap ik niet. Ja, ja. 
+
+Speaker 1  (45:55)
+Ik ga hem wel effen allemaal niet doen. Nou, je moet allemaal bepaald hebben allemaal. Wat ze dus wel. 
+
+Speaker 1  (46:04)
+Anders moet ie een deel van de slagerij. Hebben. Ik was gezegd. 
+
+Speaker 1  (46:08)
+Ja, ja, ja. En de straat weer. Werelden niet uit 10.00 uur geweten. 
+
+Speaker 1  (46:10)
+Wat drugs aan nederlandjes d'raf. Welke dit dat ik ze nou volgende keer redelijk zeg, ik ga in kwart weer ergens maken, hoezo? Ja, 15 over niet, zie ik continu überhaupt een te vullen. 
+
+Speaker 3  (46:19)
+Ja, bij jou in ene kant toch? 
+
+Speaker 1  (46:20)
+Je bent verdient. Of je gaat niet veranderen. En anders werkt het weer een beetje. 
+
+Speaker 1  (46:24)
+Nou. 
+
+Speaker 3  (46:26)
+De keuze was nergens, maar dat is hoe het in echte bedrijven werkt. 
+
+Speaker 1  (46:31)
+Het is inderdaad bedrijven. 
+
+Speaker 3  (46:34)
+Het is wel een echte. Ja, het is ook een echte bedrijf. 
+
+Speaker 4  (46:36)
+Ga. 
+
+Speaker 2  (46:37)
+Je wilt echt de punten verdient, vriend. 
+
+Speaker 1  (46:39)
+En als adia's aansmaak die naar ons, dan komt er geen factuur de deur uit. De gratis geeft u redden, dan hoi. 
+
+Speaker 3  (46:46)
+Ja. Ja. Nee, nee, nee, snap je? 
+
+Speaker 3  (46:47)
+Met z'n allen. Kunnen die kerstman in de container gooien, die beneden staat. Misschien heb ik gewoon bijna. 
+
+Speaker 5  (46:53)
+Die had ie geneigd, nee, nee, nee, nee. 
+
+Speaker 2  (46:55)
+En die wie behoorlijk ook een uh. 
+
+Speaker 5  (46:56)
+Ja. Ja. Ja. 
+
+Speaker 5  (46:59)
+Ja. Ja, ja, ja, ja. Ja, streetman. 
+
+Speaker 5  (46:59)
+Ja. Ja. Ja, ja, ja. 
+
+Speaker 5  (47:00)
+Ja, ja, ja, ja. 
+
+Speaker 2  (47:07)
+Dus dat. 
+
+Speaker 1  (47:08)
+En dan staan we gewoon een pizza en dan gaan we pizza doen vooruit h? 
+
+Speaker 3  (47:11)
+Maar, heb jij niet een aparte tabblad gewoon op je computer, dat je af en toe snel notitie, dat je gewoon alleen een bullet poort maakt met deze, met dit punt zeg maar. 
+
+Speaker 4  (47:21)
+Ja. Ja. Ja. 
+
+Speaker 4  (47:21)
+De normale gesproken heb ik ook dan. 
+
+Speaker 3  (47:29)
+Kijk tenzij je zichts van dat AI hier opnemen werkt zo goed, maar ik heb wel het idee dat ik niet altijd alles opneem. Ja, niet alles op maar niet alles zo goed uitschrijft, want ik heb best wel vaak mocht, maar ja wat feedback geeft om dit en dit mis ik nog wel, komt eigenlijk concretiseert het niet altijd. 
+
+Speaker 4  (47:45)
+Dat is het verschil. Nee, klopt. Dus dat is wel waar. 
+
+Speaker 3  (48:02)
+Oké, ik had nog even over kandidaten. Waar gaan we verder? Laat het me even een klein beetje tempo erin gaan brengen, want het is nu half 4. 
+
+Speaker 3  (48:11)
+Ik wil haar 15 voor wil ik hier wel klaar mee zijn. 
+
+Speaker 4  (48:15)
+Effen kijken dicks. Locatie en toen ze even naar huis waren. Dan komt hier het bedrijf staan. 
+
+Speaker 4  (48:38)
+Dan kan je vervolgens dan naar de detail pagina gaan. 
+
+Speaker 2  (48:46)
+Godzijdank zijn we alsjeblieft als je wilt onthouden. 
+
+Speaker 3  (48:59)
+Hallo, wacht, wacht, wacht, wacht, wacht, wacht, wacht, wacht, wacht. Nee, nee, nee, nee, ga maar door. Ja. 
+
+Speaker 3  (49:04)
+Hetzelfde toiletten? 
+
+Speaker 4  (49:05)
+Dan zou ik het vergeten, nou rico dan dus een tak persoon uit je eigen netwerk. Toevoegen wat. Het is een beslissing. 
+
+Speaker 4  (49:17)
+Hopelijk. Compagnie staan met name telefoonnummers. Het is een contactpersoonlijke bedrijf. 
+
+Speaker 4  (49:27)
+Ik zie wat informatie. Ik zie je daar lopen, opdrachten voor die klant, maar je die zijn er dus nog niet, dus. Aanmaking opdracht. 
+
+Speaker 1  (49:36)
+Is is het mogelijk bij die ping Mulder? Laat je twee dingen zien hè? Dat is de dame in de telefoon hoor. 
+
+Speaker 1  (49:40)
+Om ook zijn functie uh de toets te zetten, werd een editie manager en directeur. Want dan heb je twee drie vier mensen. Dus hier meteen oh ja die oh ja. 
+
+Speaker 3  (49:49)
+Vroeger. Je wilde d m gelijk in kaart hebben. 
+
+Speaker 1  (49:51)
+Ja, de herfst, alleen de naam, zij was het vrije functieveld. Ja, precies. Met zijn telefoon, ja. 
+
+Speaker 1  (49:57)
+Dan heb je, hè? Want als je de drie of vier onder elkaar hebt, dan kun je natuurlijk meer dan gekocht worden. Ja, ja, ja, zelfde zijn er vier of vijf, kun je een hogesnelheid heel snel. 
+
+Speaker 1  (50:04)
+Oh ja, ik zit nu met die, en oké, nee, die ja zie je dat niet. 
+
+Speaker 4  (50:07)
+Ben je d'ronder? Ja da's wel handig ja. 
+
+Speaker 3  (50:09)
+Ja, zitten we hier alleen. Echt puur de contactpersoon in, of gewoon iedereen van dat. Dat bedrijf, dus stel ook in een cadeauman in je die ooit hebben geplaatst, heb je die dan? 
+
+Speaker 1  (50:16)
+Ook iedereen onder bedrijf is. 
+
+Speaker 3  (50:18)
+Ze pakken ze precies. Dus maar dat. Dan, dan vind ik het hier wel handig als we met kleurtjes ervoor wordt gewerkt. 
+
+Speaker 3  (50:24)
+Als je hier het verschil klinkt, dan zie je ineens opslag, bijvoorbeeld rood is dat het beslist is, een beetje gelijk de rooie mensen die. Dat kan dat keuren natuurlijk. Maar dat dat zei, dat ze in details. 
+
+Speaker 3  (50:32)
+Nee even kijken. 
+
+Speaker 1  (50:34)
+Omdat ik in Engeland geslaagd ben de organisatie in beeld. Uh organisatie. Dus uh. 
+
+Speaker 3  (50:38)
+Het het doelseifijn van opdrachten, je kan daar activiteiten toevoegen, of is het. 
+
+Speaker 4  (50:43)
+Ja, dat komen ze nu nog niet, dat je geen opdracht hebt. 
+
+Speaker 3  (50:45)
+Oh, waarom niet dan? 
+
+Speaker 4  (50:49)
+Omdat maakt dat niet uit, een activiteit is altijd gevuld dan opdracht nu. 
+
+Speaker 3  (50:56)
+Oh, dat is een activiteit, sorry, ja, excuus, ga door. 
+
+Speaker 4  (51:00)
+Dat was niet koud. Op de dag. Ff kijken, kijk een opdrachten, zussen, groep, aan de krant. 
+
+Speaker 4  (51:05)
+Ja, die wordt dan opgehaald uit de krant. Die hebt, dat is nu dus alleen d'r is. En dat is toch bijvoorbeeld een. 
+
+Speaker 4  (51:12)
+Ik koop er een kaart informatie neerzetten. Ze heeft een narre, dinsdagband, fulltime, salarissen en kaarsen, schrijf ik 100, boonsregeling, auto van zaak. 
+
+Speaker 3  (51:32)
+Ik ga salaris in de kaart is altijd een Man bereiken neerzetten. Minimaal maximaal salaris, een bonus moet je ook definiëren. Dat zijn natuurlijk extra hele monumenten die je erbij. 
+
+Speaker 4  (51:47)
+En toen zag, hij hoorde waarschijnlijk wel een omschrijving zelf erbij zitten, want de bomen is regelingen verschil dat per bedrijf wel. 
+
+Speaker 3  (51:52)
+Jawel, maar ik denk dat dat hier komt juist weer een soort indeatachtig naar boven. Ik ben een shirt van allerlei mensen. Dingen die wij gebruiken kan je instop in die heeft altijd van die koppelingen mee maximum Max bonus, auto, laptop, telefoon, vakantiedagen, weet ik veel. 
+
+Speaker 3  (52:09)
+Je kan ze geen niet bedenken. Dat kan je allemaal toevoegen. En dan kunnen we dat heel makkelijk aanklikken, oftewel niet bijzitten en wat het is en ik mis iets heel belangrijks. 
+
+Speaker 3  (52:18)
+Dat weet je wat het is. Want dat sturen wij naar kandidaten toe? Ongeveer. 
+
+Speaker 4  (52:31)
+Wij maken al het rolbegil van de opdracht natuurlijk ja. 
+
+Speaker 3  (52:36)
+Je lijkt me wel, en ik zou het nog mooier vinden als. 
+
+Speaker 4  (52:42)
+Wij dat gewoon dan kunnen u uploaden. 
+
+Speaker 3  (52:45)
+Ik zit even wat waar ik even mee zit nu is als het hebben over automatisering, wij gaan natuurlijk naar klanten toe, wij schrijven dingen op, eigenlijk wil je dat gewoon kunnen uittypen en dat daar dus een rolprevel uitgepoetst wordt en dat kan natuurlijk heel makkelijk gewoon met je gpd even aanmaken en een soort soort opzet maken, zeker. Maar dat zou ik eigenlijk gewoon een systeem stevig koppelen, en wat, wat doen wij überhaupt als wij notities hebben, we hebben deze opdracht nu opgehaald. Nu komen wij terug, nu willen we hem erin zetten, nu hebben we allemaal notities, waar zitten we die dan in bij de omschrijving. 
+
+Speaker 4  (53:17)
+Ja, de, de kustennotities krijgen gebakken schrijven neerzetten. 
+
+Speaker 3  (53:21)
+Oké, maar wat gebeurt er dan mee? 
+
+Speaker 4  (53:25)
+Dat dat kan je gewoon dat krijg je om te zien. 
+
+Speaker 3  (53:29)
+Wat een omschrijving is voor mij meer een beklopt, knopte omschrijving van de opdracht. 
+
+Speaker 4  (53:37)
+Ja, ja, ja, ik weet niet wat. 
+
+Speaker 3  (53:41)
+Ja, nee, ja, ik zit effen na te denken. Ik weet ook nog niet zo goed hoe we dat dan moeten ingieten, maar ik mis een beetje de notitie zeg maar. 
+
+Speaker 1  (53:49)
+Ja, ik, ik, ik, ik ben ervan. Het is een beetje fout wat je erin wilt hebben h? De cockpit van deze is gewoon foto maken van van mijn krabbelen. 
+
+Speaker 1  (53:57)
+Ook al toevoegen, even twee, drie dingen in. 
+
+Speaker 3  (54:00)
+Al klaar, ook al. 
+
+Speaker 1  (54:01)
+Ja, maar je hebt misschien dat je heel veel dichtbij. 
+
+Speaker 4  (54:06)
+Dan zullen we. 
+
+Speaker 3  (54:07)
+Ik kan, dat kan checken, je bedient toch tegenwoordig ook uitleven. Ja. Ik weet het. 
+
+Speaker 1  (54:13)
+Ja, omschreven de toekomst, maar dat je in ieder geval alleen maar een bijlage des voorbij kan plakken, met de jpje over dingetje. 
+
+Speaker 3  (54:19)
+Foto. Want dat is wel vaak dat aria moet aan mij vragen omdat ik altijd een notities ma. 
+
+Speaker 2  (54:24)
+Ja, wat allemaal gebeurt. 
+
+Speaker 3  (54:26)
+Ja dat zijn die schade ook alweer, en dan weet ik dat en dat en die is prima. Maar het is nog andere als wij een keer thuis denken dan hoeft hij niet. 
+
+Speaker 1  (54:32)
+Jij hebt liever dat die jongen ticket te redden, prima. Ja, je moet, je moet je allebei kunnen doen. Dat je twee opties hebt je horen en soms 07.00 uur pagina's sommige dingen rennen. 
+
+Speaker 1  (54:39)
+Twee drie foto's erbij heb ik. 
+
+Speaker 4  (54:40)
+En veel effectief was wel wat makkelijk. 
+
+Speaker 1  (54:42)
+Ja, ja, ja. Ja. Notities zie je foto's. 
+
+Speaker 1  (54:43)
+Ik zie uh verslag. 
+
+Speaker 4  (54:45)
+Precies. Uh blote veldje hiervan dat dietjes. 
+
+Speaker 3  (54:47)
+Ja notities en het robuelse natuurlijk gewoon nog. Het zou ook mooi zijn als we dat auto me kunnen automatisch. 
+
+Speaker 4  (54:55)
+Wat die automatische wolken viel op zee gemaakt. 
+
+Speaker 3  (54:58)
+Precies, want dat kan natuurlijk ook gewoon met je gps om het zo moeilijk. 
+
+Speaker 4  (55:01)
+Ja, dat, ja, ja, je zou wel opnieuw dat kunnen automatiseren. 
+
+Speaker 5  (55:07)
+Ja. 
+
+Speaker 2  (55:09)
+Ja, je hebt, je. 
+
+Speaker 1  (55:10)
+Ja, gezin. Jeren niet hard. 
+
+Speaker 2  (55:11)
+De univer. 
+
+Speaker 3  (55:12)
+Is we nu nog hier, snap je? Oké, maar waar waren we deze. 
+
+Speaker 2  (55:17)
+Gewoon loszitten. Ja. 
+
+Speaker 1  (55:19)
+Ik dacht, ik doe altijd vroeger de hele tijd door, ik weet niet hoe dat. 
+
+Speaker 4  (55:22)
+Ja, zo'n dingen. Maar je status stukje bezig. Dus bijvoorbeeld uh incasso voorgesteld. 
+
+Speaker 4  (55:26)
+Geen. 
+
+Speaker 1  (55:27)
+Dit. Heb je wonen nog bij m'n moeders? 
+
+Speaker 2  (55:30)
+En wat haast wat dadelijk boys staat beweert. 
+
+Speaker 3  (55:32)
+Maar wat bedoel je met voorgesteld dat er iemand is voorgesteld? 
+
+Speaker 4  (55:35)
+Ja, dat, dit is gewoon de huidige status, dus voorgesteld is dat er, dat u is voorgesteld voor. Maar dit is ook allemaal nog aan te passen, aan te passen. En als je dan hier tot België klimt, dan krijg je hier. 
+
+Speaker 4  (55:51)
+Meer informatie dus over de opdracht, dus wat locatie is de voorwaarde. 
+
+Speaker 2  (55:57)
+Maar ik vind die keuken, hoe krijg ik die toekomstige wat je? Die kandidaten blijft, want die hebben echt gemaakt. Ik vind het altijd, ik vind het wel van dat handig bijvoorbeeld. 
+
+Speaker 3  (56:09)
+Maar dit gaat nu niet meer over kandidaten luisteren. 
+
+Speaker 2  (56:12)
+Ik heb nog nooit van gehoord. Robotonderdraagt. Ja, ja. 
+
+Speaker 4  (56:14)
+Je gaat hier wel kan je aanrijden. Je gaat hier wel kandidaten luisteren. 
+
+Speaker 3  (56:17)
+Ja maar ik kan niet bij dat toevoegen. 
+
+Speaker 4  (56:18)
+Laat het me hier naartoe. Ja dit is dus een opdracht. 
+
+Speaker 3  (56:20)
+Maar, eentje voor mijn, mijn korte conclusie over dit soort, ik vind het nog wel te mager wat er is. 
+
+Speaker 4  (56:26)
+Ja, hier moet dus inderdaad dan nog. 
+
+Speaker 3  (56:27)
+Oh heel veel bij. Uh troep. 
+
+Speaker 4  (56:29)
+Ja, ja. Poker viel kabinet op. Bij de notities kunnen je die dan nog bij en inderdaad. 
+
+Speaker 3  (56:36)
+Ja, ook qua voorwaarde natuurlijk hè, daar behoeven niet alles erin te zetten, maar wel even het belangrijke zaken. Ja, wind. Een aantal vakantiedagen vind ik best wel belangrijk. 
+
+Speaker 3  (56:49)
+Ze speelde ja, of het op locatie is of hybride werken, of wat dan ook. Het is een aantal dingen die je gewoon in een hoog opslag wil zien wanneer je kandidaten spreken dat je gelijk pap. Dit kan ik zeggen. 
+
+Speaker 4  (57:02)
+Ja dat lijkt me wel handig als je die gewoon even lijstje maken van wat zij nou echt dingen van dat willen we hebben inderdaad hoeveel vakantie. 
+
+Speaker 1  (57:09)
+Van uh die uh screenprintje. 
+
+Speaker 3  (57:11)
+Ook de dingen. Prima. Exact dat dat was uh niet veel leuker h? 
+
+Speaker 2  (57:15)
+Ik zou, ja, gemiddeld, en dan en dan iets anders soms, en iets soms iets korter, en soms iets uitbreiden. Dus dat zou ik inderdaad als leider laten gebruiken, zoals je bij kandidaten de soort filters hebt of bij LinkedIn, want die vind ik toch de meest makkelijke. 
+
+Speaker 3  (57:29)
+Die Tool zien we nu gebruiken. We d'r allemaal nu uit n systeem hebben. 
+
+Speaker 2  (57:32)
+Eigenlijk hebben we een doel gesproken, want anders we kunnen het gebruiken. De eend betaalt ander onbetaald. Maar ja, dat zijn wel handige dingen. 
+
+Speaker 2  (57:40)
+Ja, volgens mij kun jij overal eens zijn. Heb jij overal excessies? Daarom wil ik ook even die concurrentie. 
+
+Speaker 2  (57:48)
+Die had ik voor je uitgezocht om te zeggen, kijk daar nou eens effen na. En wat hebben die nou, dat zijn natuurlijk je reurnix voor bereiken. Volgens mij is dat een klein woordje. 
+
+Speaker 3  (58:00)
+Het is een strafschop, een actiepunt. Oké, hey, en en kunnen we ook een koppeling naar de website straks maken? Dat die automatisch een factuur. 
+
+Speaker 2  (58:13)
+De post over deze opdracht. 
+
+Speaker 4  (58:17)
+Dat kan wel ja. 
+
+Speaker 3  (58:18)
+Hoeft niet nu hè, maar dat is wel voor ons handen te weten. 
+
+Speaker 2  (58:21)
+De toekomst. Ik zou leren, dat vind ik gecompliceerd. 
+
+Speaker 4  (58:24)
+Valt voor nu over buiten te scoren, maar dat kan wel. Dus als je hier opdrachten aanmaakt inderdaad dat die dan automatisch factuur op de websit. 
+
+Speaker 3  (58:31)
+Waarom, ik dat handig vind is het omdat als we nu dingen willen aanmaken, dan moeten we dus echt helemaal in het systeem van de website. Ja, dat ga ik ook met mensen die hier komen werken, ga ik inderdaad doen. Onzin, die hoeven niet alles er alles te zien, alle wachtwoorden. 
+
+Speaker 4  (58:45)
+Proberen het heet. Ja ik loop weer. 
+
+Speaker 3  (58:47)
+Jij doet het nu maar dat is prima. 
+
+Speaker 4  (58:49)
+In een omslachtig inderdaad is handig als het inderdaad gewoon een geautomatiseerde actie. Precies. Maar dat ze, dat kan zeker. 
+
+Speaker 3  (58:58)
+Dus vervolgonderzoek website betreft. 
+
+Speaker 1  (59:05)
+Ik zei, weet je wat het ook een beetje mis zeg maar in de planning is, structuur? Dat hebben je die heb je sprintsen en dat soort dingen? Dat is een onvoorzichtige tijd. 
+
+Speaker 1  (59:17)
+Je elke keer laat zien. 
+
+Speaker 3  (59:19)
+Dankjewel, Leiden heeft, is. 
+
+Speaker 2  (59:21)
+Nee, die heeft, ja, die heeft. Oké, leuk maken. Maar kun je eraan denken? 
+
+Speaker 2  (59:23)
+Maar. Maar ik ik ben het een beetje eens. Maar wat dan word jij altijd mee beginnen? 
+
+Speaker 2  (59:27)
+Ja. 
+
+Speaker 1  (59:28)
+Plus daarbij zeg maar de acties die je nu hanteert hè, in welke ziekte die zit nu in de sprinses, die je eens kunt achterstellen. 
+
+Speaker 3  (59:36)
+Maar misschien, misschien trek ik wel effen laten zien, want dan is dat maar gelijk getikkeld. Ja. 
+
+Speaker 1  (59:41)
+Eva van mijn beeld, oh je vond het. 
+
+Speaker 3  (59:43)
+Ja ja ja. Is er wel goed hoor want je heeft die wel. Die hebben, hebben we wel effen drie maanden over gedaan hè. 
+
+Speaker 3  (59:49)
+Oké, top. 
+
+Speaker 1  (59:50)
+Nee, Man. Dat hoef ik niks te doen. Nee, complimenten. 
+
+Speaker 1  (59:51)
+G uh uh etik-tine. Ja. Ja. 
+
+Speaker 1  (59:53)
+Ja, ik heb ook een handicap. Dat kun je niet weten. 
+
+Speaker 3  (59:56)
+Ja, nee, maar dat is echt. 
+
+Speaker 2  (59:58)
+Nee, maar hartstikke logisch en eigenlijk moet ik ook mee. 
+
+Speaker 3  (01:00:00)
+Ja, misschien, misschien is dat. 
+
+Speaker 2  (01:00:02)
+Hey, en hoe ken je hem mee? Eindigen? We gingen echt niet meer. 
+
+Speaker 2  (01:00:05)
+Squaran, rileys, ik zou dit ook doen voor jou, voor jouw presentatie stra. 
+
+Speaker 3  (01:00:10)
+Ja, jongen. Wat heb je nou gedaan? 
+
+Speaker 2  (01:00:12)
+Dit hebben we omgedaan. Drie keer of zes geweest. 
+
+Speaker 1  (01:00:14)
+De planning laten zien in een kauwgomtje even een siertje erin plakken. Ja omdat je niet laat zien. Dat is een heuvel als jij mag ranice. 
+
+Speaker 3  (01:00:23)
+Kandidaten? 
+
+Speaker 2  (01:00:24)
+Hé. Ja, was je mee bezig? Ja, hier, ik ga. 
+
+Speaker 2  (01:00:27)
+Hé maar even voor mij belt vorming, je hebt nu, we hadden het überhaupt bij opdrachten en je hoefde het niet na terug. Hoeveel tijd heb jij dan nodig om die opdrachten over te maken? Want opdrachten blad af te nemen? 
+
+Speaker 4  (01:00:41)
+Een dag dat ik. 
+
+Speaker 3  (01:00:44)
+Maar daar kom je ook zometeen nog op terug toch, op de. 
+
+Speaker 4  (01:00:47)
+Nou ja, er zijn sowieso wel wat dingetjes inderdaad die ik nog wil plekken en dan komen we nog wat dingetjes bij nu dus. 
+
+Speaker 3  (01:00:56)
+Nou, dat, het is nu 36, ik zei 15 voor, dan wil ik dit echt klaar hebben, dus we hebben negen minuten om hier nu nog doorheen te lopen en dan gaan we daarna even naar de rest kijken voor de rest. 
+
+Speaker 4  (01:01:06)
+Ja, oké, dus. 
+
+Speaker 3  (01:01:07)
+Wij houden nu ook gewoon effen onze mond. 
+
+Speaker 4  (01:01:10)
+Nou, als je zo'n opdracht zit en die uitgeklopt hebt, dan ga je dus in die opdracht die je zelf de kandidaat-lijst aanmaken, duurt dus. Nou ja, dan kan je bijvoorbeeld veel te redden op inkopen, ik heb zin om bijvoorbeeld een inko. Je kan hier ook filtere blokkade en hier zou dan dus ook bijkomen van een straal. 
+
+Speaker 4  (01:01:31)
+Dat je iedereen krijgt in een straal. 
+
+Speaker 2  (01:01:34)
+30 kilometer. Maar je kan ze ook in en uitschakelen, dus kort omdat je een filter inschakelt, bijschakelt uitschakelen. 
+
+Speaker 4  (01:01:41)
+Ja, ja, ja, zeker, dat wordt gewoon. Dat wordt gewoon een model. Schoonmoeder, akelig die je wil gaan benaderen ofzo. 
+
+Speaker 3  (01:01:55)
+Van dat ook in één. 
+
+Speaker 2  (01:01:56)
+Als je in ons. 
+
+Speaker 3  (01:01:58)
+Klinkt koper, het is Nederlands. 
+
+Speaker 1  (01:02:01)
+Als je een keer gaat. 
+
+Speaker 2  (01:02:02)
+Ja, dat klopt. 
+
+Speaker 3  (01:02:06)
+Gebruikers denken. 
+
+Speaker 1  (01:02:11)
+Oké, stel, ik heb nog een vraagje stel je zit hier met twee, drie vier mensen te werken. Hoe kan ik dan zien dat Hugo me toen al bezig is op dat jantje of aanrijding nu al bezig is? Hoe kan ik dat zien hè? 
+
+Speaker 4  (01:02:26)
+Nu nog niet? Maar dat is wel een goede in. 
+
+Speaker 3  (01:02:31)
+Stratenstraat, toch, geweld. 
+
+Speaker 4  (01:02:33)
+Ja, dat staat hier wel status. En niet doen wie, nou niet. 
+
+Speaker 1  (01:02:36)
+Ja, als jij inlogt via dinges, dan heb jij het op je contact hoor. Ja, als aanrijding loopt hij. 
+
+Speaker 3  (01:02:40)
+Als je wil, je wilde activiteiten hier gaan en wil je ook gekoppeld hebben in een bulk. 
+
+Speaker 2  (01:02:45)
+Ja, wat heb je gedaan? Nee. Ik wil, ik wil als het duurt gedaan. 
+
+Speaker 2  (01:02:48)
+Heb ik ook kunnen zien. Ja. Ja. 
+
+Speaker 2  (01:02:49)
+Ja. Ja. Ja. 
+
+Speaker 2  (01:02:50)
+Ja. Ik wil alles zien. Ja, dus van iedereen. 
+
+Speaker 1  (01:02:53)
+Ja, qua individueel, op iedereen. Maar dat uh dat stonden filter. Maar het gaat erom wat de activiteiten hier h? 
+
+Speaker 1  (01:02:57)
+Daar had je, daar kan zien dat Hugo gebeld heeft. Uh de ene is daar vier vijf mensen hoe vragen mensen al jaren jij belt. Ja dat mij dus doorgang. 
+
+Speaker 2  (01:03:04)
+Als je, als je met z'n drieën bent, dan is het allemaal nog wat te doen. Ja wat ga jij met z'n vrije en dan wordt het. 
+
+Speaker 1  (01:03:08)
+Ja dat was dat was toch chaos. 
+
+Speaker 2  (01:03:09)
+Ja, was je? Nee, maar dat is, ja, eens. 
+
+Speaker 3  (01:03:12)
+Dus de stijl je hebt een met jou. Ergens had je activiteit. Toevoegen. 
+
+Speaker 4  (01:03:16)
+Ja, dat ga ik. Nee, maar toen maakte hij helemaal niks gedaan. Opdracht aan zat ik altijd makkelijk en aangezien ik kan hier trouwens ook gewoon, dit is een actieve link naar het bedrijf, dus dan kan je meteen ook klikken en zo meteen maar ja. 
+
+Speaker 2  (01:03:28)
+De uitdrukking. 
+
+Speaker 4  (01:03:30)
+Nou, nu hebben je die dus hier bij deze staan dus die opdrachten die net aangemaakt is staan nou weer de chef de inkopen opdrachten en salesmanager opdracht. Daar kan je eens activiteit aan gaan tro. 
+
+Speaker 3  (01:03:39)
+Maar waar is nu de lijst toch, die je net hebt aangegeven? 
+
+Speaker 4  (01:03:45)
+Die is hier niet zichtbaar. Is een ondacht pagina zich waar, maar. 
+
+Speaker 3  (01:03:55)
+Aangezien de beste supermarkt. Het is handig als we een lijst maken. 
+
+Speaker 5  (01:04:02)
+Eergisteren is wie toch. 
+
+Speaker 4  (01:04:04)
+Ja, ja, ja. 
+
+Speaker 2  (01:04:04)
+Ja. Ja. Ja. 
+
+Speaker 2  (01:04:05)
+Terug gaan halen. Da's nog wel een onderwerp. Goh, ik wil een pagina verder. 
+
+Speaker 2  (01:04:08)
+Sorry, lijst opnieuw aanmaken. 
+
+Speaker 1  (01:04:10)
+Ja. Nee, ik vind het niet als een spelletje. Ja, gozer, mooi. 
+
+Speaker 5  (01:04:11)
+Ja ja ja ja. Ja. 
+
+Speaker 3  (01:04:14)
+Een shit, ik ga de hele tijd terug naar me af. 
+
+Speaker 1  (01:04:16)
+Oh, leuk, spaghetti bolognese trouwens. 
+
+Speaker 3  (01:04:19)
+Oké. 
+
+Speaker 4  (01:04:19)
+Ja. Effen kijken, ja, nou ja, dat is dus een dingetje, dat. Ik kan ook nog geïmplementeerd worden dat je lijst ook hier ziet. 
+
+Speaker 4  (01:04:29)
+Ja, zo handig. Ja, klopt klopt. Een goede kans om activiteit toevoegen, nee dit zijn de activiteiten voor nu, kunnen er meer zijn, het is niet te veel bespreken. 
+
+Speaker 3  (01:04:37)
+Je moet je gewoon gebeld en door wie. 
+
+Speaker 4  (01:04:40)
+Ja, dus je hebt hier gebeld, dan heb je hier eh met wie. Kan je de datum aangeven wanneer heb je met diegene gebeld? Op zich zijn natuurlijk. 
+
+Speaker 3  (01:04:48)
+Kinderen in omschrijvingen. Maar je wil gewoon ook door wie toch? 
+
+Speaker 2  (01:04:51)
+Italiaans, maar door wie wil je dat tussentijds nemen? Kijk de ene keer bel ik. En de andere keer belt hugh al. 
+
+Speaker 2  (01:04:56)
+Maar u wilt het je wilt het activiteit kunnen leveren? Ik bel iemand en ondertussen moet je eigenlijk in je systeem zitten en dan zeg je puck gebeld. 
+
+Speaker 3  (01:05:03)
+Ja, ja. Ja, het is ook lekker, want je kan dan ook, als je iemand belt, kan je gewoon de geschiedenis terugleggen. Als je, ja. 
+
+Speaker 3  (01:05:09)
+We hebben dan en dan contact gehad en hoe dat en dat. 
+
+Speaker 4  (01:05:11)
+Ja dat hoop ik. 
+
+Speaker 2  (01:05:12)
+Voor dezelfde. Heb je dat gebeld? Wat zeg je? 
+
+Speaker 2  (01:05:14)
+Ja. 
+
+Speaker 3  (01:05:15)
+En dan belt hij morgen. 
+
+Speaker 1  (01:05:15)
+Ik mis nog wat te vertellen. Onder andere dus gevolgd door de test afgenomen. 
+
+Speaker 2  (01:05:21)
+Ja, test afgelopen test af en toe een robot, ja. 
+
+Speaker 1  (01:05:24)
+Dus we waren belangrijk hè? 
+
+Speaker 3  (01:05:26)
+Maar de missie nog wel, meer activiteiten toch? 
+
+Speaker 4  (01:05:28)
+Ik zie er wel ongetwijfeld op kantoor. 
+
+Speaker 1  (01:05:30)
+Ja, oké. Nee. Hé, was voor een paar d'r ook eentje? 
+
+Speaker 1  (01:05:32)
+Dus gewoon loopbaan advies. Want er gebeurt weer. Carro, dat dat dat vrij. 
+
+Speaker 3  (01:05:37)
+Ja, dat is gewoon, nou ja, en daar komen we vaak dingen uit van nee, ik bellen over een half jaar, wo. 
+
+Speaker 2  (01:05:41)
+Een beetje of zo. Ik weet niet. En dan en dan moeten eigenlijk. 
+
+Speaker 2  (01:05:44)
+Dat moet dan in dat Engels dan een half jaar moet ik in de agenda kunnen zetten, dat ik hem een open half jaar ben en dan wil ik daar niet in mijn in m'n papieren agendatje zitten. Snap je? Ja, dan moet er op die datum moet er een ding komen. 
+
+Speaker 2  (01:05:56)
+Je moet bietje puck bellen. 
+
+Speaker 3  (01:06:02)
+Zeker, ik heb wel eens gehoord. Oké, nou ja, goed, weet je, er zijn nog wel wat dingen die we missen, maar misschien moeten we er ook een beetje aan de slag gaan. 
+
+Speaker 4  (01:06:12)
+Nee, ik denk het wel. Ja, ja, ja, ja. Dit zijn ook dus alle activiteiten. 
+
+Speaker 4  (01:06:14)
+En wat dan eigenlijk mijn idee inderdaad om gewoon automatisch met het account waarmee ze ingelogd die naam komt dan gewoon hier zo te staan. 
+
+Speaker 3  (01:06:23)
+Easy je wel een soort tijdje. Dat vind ik dan wel mooi. 
+
+Speaker 4  (01:06:26)
+Shit, ja. 
+
+Speaker 1  (01:06:28)
+Zelfs bij de bedrijfsrelatie zit er nog over gehad, hè, dat is. En de centraal? Je doet heel veel ketting groeien management, ja in functies. 
+
+Speaker 3  (01:06:37)
+Maar ja. 
+
+Speaker 1  (01:06:39)
+Per bedrijf, hoeveel fte zit er op je. 
+
+Speaker 2  (01:06:42)
+Ja, geweldig. 
+
+Speaker 3  (01:06:43)
+Ja da's de ja de bedrijf zeg maar. 
+
+Speaker 1  (01:06:45)
+Ruimte is altijd wel een omzet daar. Dus om van. 
+
+Speaker 3  (01:06:49)
+Omvang en de afdeling. 
+
+Speaker 1  (01:06:51)
+Van de kerstbureau afdeling of zo, weet je, dat is. Weet je waarom amerikaans je op kan rijden? En dan weet je ook dat je voorkaar stinkt, hè? 
+
+Speaker 1  (01:07:01)
+Ja, wat ik al zei. Ja, een op de vijfjarige switch iemand van baan, dus dat is 20% per. 
+
+Speaker 3  (01:07:07)
+Een functies en het is ook handig als je erbij zit waar ze in de camera staan en dus de retailers. 
+
+Speaker 1  (01:07:12)
+Volgens mij degene die d'r ook dan nog bij woont h. Dan heb je uh de kerstmuur manager in de afleiding h. Ja uh aantal omvangen hij heeft de ezels is. 
+
+Speaker 1  (01:07:19)
+Dat is dat. Er kwam 230 40 cijfers. Er zijn nieuwe dingen echt taal. 
+
+Speaker 2  (01:07:23)
+En. 
+
+Speaker 1  (01:07:24)
+Volgens mij kun je er ook meteen onder zetten. 
+
+Speaker 3  (01:07:26)
+Wat wil jij d'r van kent? 
+
+Speaker 1  (01:07:27)
+Oh nee nog niet. Gerekend. Uh wat wat is je pretentie? 
+
+Speaker 1  (01:07:32)
+Ja, klopt. De advertentie vacatures. Ja, op potentie opdrachten. 
+
+Speaker 1  (01:07:35)
+Ja, was gemiddeld 20%, dus van die 30 keukent zes. Heb je meteen in de kiezers? Hey, o. 
+
+Speaker 4  (01:07:42)
+Het gaat mij dronken, je weet hoeveel opdrachten je daar eventueel van. 
+
+Speaker 1  (01:07:46)
+Ja. Elke keer dat je je het ziet dat je eventueel niet ziet dat nou zes kansen dat dat ook niet kan werken. De kinderen d'roverheen. 
+
+Speaker 1  (01:07:50)
+Ik heb d'rover. Nou dat hij en eigenlijk ja en daar heb je erover kroshot en eigenlijk. 
+
+Speaker 3  (01:07:54)
+Uit moeten zeggen na elk half jaar dat je een opdracht hebt gekregen of ingehuld hebt dat je verweerd hebt. Dat is punt klein voor jongens, volgens mij is hij weer een moment om te bellen, want is alweer een. 
+
+Speaker 1  (01:08:02)
+Oh ja nee. Da's nou zo bellen. Ja. 
+
+Speaker 2  (01:08:04)
+Een taxi. Waar ik nog wel te eten. 
+
+Speaker 1  (01:08:07)
+De nazorger. 
+
+Speaker 4  (01:08:08)
+Maar dat is inderdaad ook op. 
+
+Speaker 2  (01:08:09)
+Of maar wij, ik zeg altijd een maand een half jaar en een jaar, dus ik moet namelijk sterker nog een hoekzak 1e week. 
+
+Speaker 3  (01:08:15)
+Nee je doet. Je doet, je doet er voordat ze beginnen. Dag of een week voor een dag voordat ze beginnen een week nadat ze gewonnen zijn, naarmate ze begonnen zijn. 
+
+Speaker 3  (01:08:24)
+Maar dat gaat ook nog over de opdrachtgever binnen. 
+
+Speaker 2  (01:08:27)
+Dus niet echt. Ja nou ja. Nee nee nee op twee tante ook ja. 
+
+Speaker 3  (01:08:30)
+Hey dus. 
+
+Speaker 4  (01:08:32)
+Ja, dus hier bij de activiteiten wordt de naam die je dat heeft gedaan. 
+
+Speaker 1  (01:08:38)
+Dat is mijn van de kleuren. 
+
+Speaker 4  (01:08:39)
+Een dikke zin. Ja, en op deze punten. In de oceaan dus ook. 
+
+Speaker 4  (01:08:43)
+De kandidaat te luisteren. 
+
+Speaker 3  (01:08:45)
+Ja, ik, wat ik denk, dat we je ook allemaal gewoon een keer even mee aan de slag moeten gaan, en dan heb je volgens mij heel veel punten en je moet er gewoon een keer opschrijven, maar we zijn nu al aan het schieten, maar ik mis in mijn hoofd mis ik nu alsnog heel veel. 
+
+Speaker 4  (01:09:00)
+Ja, ja, maar dat is inderdaad, dat is ook waar. Snap je ook break? Ik komende half jaar. 
+
+Speaker 1  (01:09:04)
+Uh release afspreken met de de punten die je nu hebt gemaakt. Ja meneer zijn reclame is er over een week. Prima. 
+
+Speaker 1  (01:09:09)
+Dan gaan we dan uh over een week gaan we de zo'n uurtje testen. Ja da's een test een keer even met hun mozart droog of zo. Ja, dat is leuk. 
+
+Speaker 1  (01:09:16)
+Ja. 
+
+Speaker 2  (01:09:17)
+Ja, wij steenen in de, er is, ik heb het gevoel dat jij het gevoel hebt dat ik in het schip met de uien op je afkom loop. 
+
+Speaker 4  (01:09:27)
+Valt wel mee. Dit zijn niet hele grote dingetjes los van die cv par. 
+
+Speaker 2  (01:09:30)
+De handelsformulier formule bewust en tijd heb je daarvoor nodig. Wacht, nee. Ik denk nou dat zul je helemaal dag voor nodig hebben, want daar heb ik dag voor nodig. 
+
+Speaker 2  (01:09:39)
+Daar heb ik net. Als je nou, vond je dat wel even rustiger? Hoeveel dagen heb je dat nodig om dit af te maken? 
+
+Speaker 3  (01:09:44)
+Is eigenlijk een vergadering? Kan je dat nu zeggen of je dat straks af. 
+
+Speaker 1  (01:09:48)
+Oh dat ook. De datumbasis. Ja, zeker wel aan de slag gaan met een test. 
+
+Speaker 3  (01:09:51)
+En hoe moet ik dat straks effen na de presentatie. 
+
+Speaker 4  (01:09:54)
+Bepaalde gasten inderdaad. 
+
+Speaker 2  (01:09:55)
+Aan de chinese. 
+
+Speaker 3  (01:09:56)
+Dat dat dan over 01 uurtje heeft terugkomt. 
+
+Speaker 2  (01:09:59)
+Ja, dat weet ik. 
+
+Speaker 1  (01:10:00)
+Ja klopt wel een afspraak in. 
+
+Speaker 2  (01:10:01)
+Dan ga ik n weer gek met theorie zeggen dat ons geen uh gekke steden waren bespreken. Volgens mij is dit het belangrijkste voor je studie en is dat de belangrijke klopt. Ja, dan heb ik dat gedefinieerd. 
+
+Speaker 2  (01:10:15)
+In die importantie leer ik eens waarover schrijft hoeveel dag je nodig hebt en ik ga je in genderblok. En dan kan je wel eens gaan schrikken. Dat zou wel eens kunnen. 
+
+Speaker 2  (01:10:26)
+Dat. Verhuizen en dit en zus en zo en ik huil dit weekend doen. Uh dat allang dingetje hebt. 
+
+Speaker 2  (01:10:34)
+Dat dat lastig kan. Dat denk ik dan ook serieus. En ik denk aan die vorige, die vragen me de vorige keer gesteld. 
+
+Speaker 2  (01:10:42)
+Stijn, meerdagen nodig kom je ermee. Ik geef jou de vrijheid om. Ik geef je even geen opdrachten, want we opleveren. 
+
+Speaker 2  (01:10:51)
+Die historie gaan we niet herhalen of dat we wat er gozer moeten uitgebreid overgehaald, maar nu gaan we vooruit kijken, omdat ik wel dat je dat effen blokt. Ja, ja en daar wil ik gewoon letterlijk geen gezeik kopen. Dat als jou studie Man hier komt en dik aan of niet mag eten. 
+
+Speaker 3  (01:11:10)
+Terwijl het zo waarschijnlijk online wordt, denk ik, geen idee. Maar goed, dat maakt niet uit als we hem spreken, als we hem spraken. 
+
+Speaker 2  (01:11:16)
+Ja, ja, ja, of zie je je komt online? Maak je, maar dat wel klaar is of zo. 
+
+Speaker 3  (01:11:20)
+Ja, dus dat is 19, dat is de 19e en dat is de 19e. 
+
+Speaker 2  (01:11:24)
+Een, een gaat. Jij maar zeven jaar? Ja, hoeveel dagen jij nog hebt? 
+
+Speaker 2  (01:11:28)
+En hoeveel dagen wil je hier zijn? Hoeveel dagen wil je waar zijn en kan je waar je mensen neerzet je nog tussen, kan je je concentreren? Hè? 
+
+Speaker 2  (01:11:35)
+Het zou wel eens heel vies tegen kunnen vallen. 
+
+Speaker 3  (01:11:38)
+Je wilt volgende week gaan verhuizen, zij? 
+
+Speaker 4  (01:11:40)
+Ja, maar. 
+
+Speaker 3  (01:11:41)
+Dat is ook niet doen. Oh, je hoeft alleen maar je spullen te verhuizen. 
+
+Speaker 4  (01:11:47)
+Ja, ja, kan ook. 
+
+Speaker 1  (01:11:49)
+Als je hier in 01 uurtje heel kratje bier en een vriend. 
+
+Speaker 4  (01:11:52)
+Ja, ja, top. Ik denk met een dag daar ben je. 
+
+Speaker 3  (01:11:54)
+Ja, ja. Ja, ja, ja. Ja, maar je hoeft niet te kranten te verbouwen en dingen en. 
+
+Speaker 4  (01:11:58)
+Het is verf uh drinkvloeden en Nederland. 
+
+Speaker 2  (01:12:00)
+Heb jij. 
+
+Speaker 3  (01:12:02)
+Hij dacht ja ik heb de. 
+
+Speaker 2  (01:12:03)
+Heb jij je internet al klaar dan? 
+
+Speaker 4  (01:12:08)
+Nick, dat is ook wel leuk. Het was vezel. 
+
+Speaker 2  (01:12:13)
+Ze steekt in de en je weet. 
+
+Speaker 3  (01:12:15)
+Dat is voor jou natuurlijk, eigenlijk het belangrijkste vraag als ik thee, ja die. 
+
+Speaker 1  (01:12:18)
+Bang pakken en. 
+
+Speaker 5  (01:12:21)
+Ja, ja, ja, ja. 
+
+Speaker 3  (01:12:21)
+Ja, wij wachten wel uitnodigen. Nee. Hij verwachtte nog uitnodiging. 
+
+Speaker 3  (01:12:25)
+Nee nou ja. Nee. Nee, maar de bank. 
+
+Speaker 5  (01:12:28)
+Als je wie om. 
+
+Speaker 1  (01:12:29)
+Wat dan? Ja, ja. Playstation op de kop zitten, ja, zijn de kroegen. 
+
+Speaker 3  (01:12:32)
+Dan gaan we eens een keer naar Leiden. 
+
+Speaker 1  (01:12:33)
+Nee. Leiden is ontzettend hoog. 
+
+Speaker 2  (01:12:35)
+2700. 
+
+Speaker 1  (01:12:39)
+Ja toch heel, dat is heel weinig ja. Ja ik heb sowieso. Nee, je moet waarschijnlijk. 
+
+Speaker 1  (01:12:44)
+Ja. 
+
+Speaker 2  (01:12:45)
+Het is voorbereid. Hè? Ik zeg ja. 
+
+Speaker 3  (01:12:50)
+Een. Nee, dus eigenlijk heb je al een school van 19 januari hebben we al afgestemd, in principe. Ja. 
+
+Speaker 2  (01:12:55)
+Eten we. Maar wij zouden dat dat was een idee dat de 24e oplevering was vandaag een presentatie van een oplevering eens, we hebben de oplevering gezien. Uh de presentatie is wel, maar d'r zitten alleen. 
+
+Speaker 2  (01:13:10)
+Dingetjes bij, en we hebben net gedefinieerd in het belangrijkste is. 
+
+Speaker 4  (01:13:15)
+Ja, maar wel kanttekening met wat er nu staat, zou je zou ik gewoon kunnen slagen. Dit is al, ik heb al wel meer gedaan dan een gemiddelde student voor een stage toe. 
+
+Speaker 2  (01:13:28)
+Wist dat zo ja. 
+
+Speaker 4  (01:13:32)
+Ja, dat is dat is het 2e en behouden dat ze niet doorgaans stage op de afgelopen jaren. Dus. 
+
+Speaker 3  (01:13:39)
+Daar word je 10 maanden lang. Ja, wat je ook 10 maanden. 
+
+Speaker 4  (01:13:44)
+Ja, maar, hé maar dat dat is. 
+
+Speaker 2  (01:13:45)
+Da's toch mooi? 
+
+Speaker 1  (01:13:46)
+Wie gaan we hiervoor zeggen? 
+
+Speaker 3  (01:13:47)
+Nee precies, maar nu wil je me ook goed. 
+
+Speaker 4  (01:13:49)
+Nee, daarom, daar, nee. Klopt. 
+
+Speaker 3  (01:13:51)
+Het is dat is waar. 
+
+Speaker 2  (01:13:52)
+Ja, ja. Ja, ik had gehaald. Esther keek, alles. 
+
+Speaker 2  (01:13:53)
+We gaan straks straks niet een halfbakken alles. 
+
+Speaker 4  (01:13:55)
+Ja, het vuur. Gaan we. Nee, zeker niet, nee maar. 
+
+Speaker 3  (01:13:58)
+Losse, dat is een presentatie belossen om de. 
+
+Speaker 2  (01:14:00)
+Nee. Ja maar ook van de van de software. Wil dat gewoon dat dat is gewoon het prestatiecontract daarbij met elkaar en dat slaat een plak. 
+
+Speaker 4  (01:14:08)
+De wegde met shakespear. 
+
+Speaker 3  (01:14:10)
+Nou, een langval kort volgens mij. 
+
+Speaker 4  (01:14:11)
+Maar om maar aan te geven dat dat die stage niet in het geding komt zeg maar. Nee je was slagen niet in het geding, nou precies. Maar het los daarvan tuurlijk, wil ik zelf ook een goed plan. 
+
+Speaker 2  (01:14:23)
+Een gekomen zou terug met het aantal dagen en ga ons publiceren welke dagen in de andere komende twee weken daarvoor in gaan plekken. Ja maar je hebt al die niet de 19e tot en met de 18e plannen. Nee dit zorg jij dat er gepland is op de 11. 
+
+Speaker 3  (01:14:37)
+En. 
+
+Speaker 1  (01:14:38)
+Wat ik je 1e maandag 12, dan kunnen we dan testen. 
+
+Speaker 3  (01:14:40)
+Thuis juist. En wat ik wel belangrijk vind in deze is dat. Dit is wel, dit is bij uitstek, een momentum dat je ons heel erg nodig hebt. 
+
+Speaker 3  (01:14:52)
+Wat wij moeten aangeven wat jij in moet zetten. Klopt, dus denk even goed na wanneer je hier wil zijn. Ja, want dit gaan we niet met z'n vieren telefonisch allemaal doen. 
+
+Speaker 1  (01:15:03)
+Nee, gaan we vier. 
+
+Speaker 3  (01:15:04)
+Ja, dat doe ik. 
+
+Speaker 1  (01:15:06)
+Nee maar in therapie wel. Nee maar. 
+
+Speaker 3  (01:15:08)
+Snap je, jij moet hier ook even fysiek zijn om met onze zoon te spannen, hè, en soms ja nou goed, dat vind ik wel belangrijk om me gemeen te geven, dus dat moet je ook uw planning meenemen. 
+
+Speaker 2  (01:15:19)
+Ik geef niet dat advies om. Of morgen of woensdagochtend hier te zijn. En aan je project werken, en aan uw vragen of die het ook kan zijn, en dan met hem lijf wat dingen door. 
+
+Speaker 3  (01:15:32)
+Dat advies Haarlem ik geef eerst even jou de bal om die voorzet te geven, dan. Kijk een goede voorzet. 
+
+Speaker 1  (01:15:40)
+Na maandag de 14. 
+
+Speaker 5  (01:15:41)
+Oké, ja. 
+
+Speaker 3  (01:15:42)
+Aandacht de 14 60. 
+
+Speaker 2  (01:15:44)
+Ja ja. 
+
+Speaker 1  (01:15:45)
+Ik zit erna. 
+
+Speaker 5  (01:15:47)
+Ja. 
+
+Speaker 2  (01:15:49)
+Maar dan wel klaar. Oh ja. 
+
+Speaker 3  (01:15:54)
+Maar nee, maandag tot twaal. 
+
+Speaker 1  (01:15:55)
+Inderdaad. Goudzwart. Nou. 
+
+Speaker 4  (01:15:59)
+Maar dat moet ook prima. 
+
+Speaker 3  (01:16:02)
+Ik kom daar zomaar moeten we hier nu nog dingen voor me spreken om te 51 of zijn zes minuten over tijd. 
+
+Speaker 4  (01:16:07)
+Ja. Dat is wel leuk. Nog de agenda dus nou ja. 
+
+Speaker 3  (01:16:10)
+Nou, dan moet je nog afmaken, netwerk. We hebben net nagekeken of niet? 
+
+Speaker 4  (01:16:14)
+Ja nettos. Oké, dan gaan je die staan, netwerk. Tot ja. 
+
+Speaker 3  (01:16:21)
+Presentatie. 
+
+Speaker 4  (01:16:28)
+Planning. Dat is hier een kijken. 
+
+Speaker 3  (01:16:35)
+In mekaar, was het. 
+
+Speaker 4  (01:16:36)
+Ja, dit is de meest recente versie. Ja, we hebben dus in principe 3 januari tot 16 januari voor testing book fixen. 
+
+Speaker 3  (01:16:46)
+Deadline heb je niet gehaald. 
+
+Speaker 2  (01:16:48)
+Maar dus ik deadline. 
+
+Speaker 3  (01:16:49)
+Een nieuwe deadline komen. In de andere kleur. Dat ga je verschijnen. 
+
+Speaker 3  (01:16:54)
+De hele andere klus, omdat het ouwe details gezien. Dat is voor de feedback. Tenminste dat. 
+
+Speaker 3  (01:17:03)
+Ze ging af en toe dat ze opleverde, omdat we dat met al die dingen hebben gegaan. Zeker. We kunnen al een half januari aan het overtocht of niet. 
+
+Speaker 4  (01:17:23)
+Ja. 
+
+Speaker 1  (01:17:30)
+Ja, ja, oké, dus dat is wel. 
+
+Speaker 2  (01:17:33)
+Ik zeg dat we weer dan af zijn dan de testing, maar anders gaan we dan beter gaan schrijven terwijl we weer dan testen. Oh. Ja. 
+
+Speaker 2  (01:17:40)
+Hele mooie. 
+
+Speaker 4  (01:17:42)
+Playstation vier is een films. 
+
+Speaker 3  (01:17:45)
+Ja, doe ik fixing. 
+
+Speaker 4  (01:17:46)
+Dat is ook de computer ja. Ja, dus daar uiteindelijk. Echte oplevering dat ik een Live staat wordt dan 11 januari. 
+
+Speaker 4  (01:17:58)
+En dan de 12e zal dan de training zijn op maandag en hier. 
+
+Speaker 3  (01:18:03)
+Ja, dus ik kon niet bij zetten. 
+
+Speaker 4  (01:18:05)
+Ja, oké. Ja, ja. 
+
+Speaker 3  (01:18:06)
+Ja, hij zat op training, of dat testen, want volgens mij hadden we het over testen. 
+
+Speaker 2  (01:18:10)
+Volgens mij ga je eens testen en dan ga je daarna pas rijden, dan snap je dus het wel verschil. 
+
+Speaker 4  (01:18:15)
+Ja, ja oké, ja. 
+
+Speaker 3  (01:18:20)
+Ik snap wel dat hij je overzicht gaat. Dus bij accountancy. Dat is superwezen natuurlijk, want ik vind het wel mooi. 
+
+Speaker 3  (01:18:27)
+Ja, maar anders doen dit zo meteen effen hè. 
+
+Speaker 2  (01:18:30)
+Ja, maar gaat dit maar even aan. 
+
+Speaker 4  (01:18:32)
+Passen ze zo dat lachen. Blijf maar achter inderdaad als ik. 
+
+Speaker 2  (01:18:34)
+Ja, ja, ja. Ja, sowieso. Ja, ja. 
+
+Speaker 4  (01:18:36)
+Corrigeren ja. 
+
+Speaker 3  (01:18:38)
+Volgende nee, maar. Vergeet niet. Op een foto's, gezamenlijke agenda, zodat je dat heeft veranderd ook. 
+
+Speaker 3  (01:18:47)
+En je deadline en de. 
+
+Speaker 2  (01:18:49)
+Ja, hij moest gewoon erg punt. 
+
+Speaker 3  (01:18:51)
+Hij heeft alles doorlast ja, exact. Ja, Jack, ja ongeduldig, ja. Hè? 
+
+Speaker 3  (01:18:57)
+Eens. 
+
+Speaker 4  (01:18:59)
+Trainer boek fixen over gehad, ja ik ben voor training natuurlijk book fiction dagen en dan weer. Dan de stage voortgang, ik heb nu voor alle vier de prijs onafhankelijkheden. Uh twee valuta's. 
+
+Speaker 3  (01:19:15)
+Dus dat is voldoende. 
+
+Speaker 2  (01:19:17)
+Zeg maar wat, wat. 
+
+Speaker 4  (01:19:18)
+Nodig is. Ja die moet toch terugkomen. Nee, maar niet. 
+
+Speaker 4  (01:19:20)
+Maar dat is inderdaad wat nodig is, ja dat is een aantal nodig. Iedereen biedt overstaken. Oké dan die zes softwarevaardigheden heb ik nu een evaluatie ervaring ingediend, waarvan er een van drie heb gekregen. 
+
+Speaker 4  (01:19:35)
+Die andere en een op niveau, twee, volgens mij en die andere streamen terugkomen. En daarom moet ik er nog een per vaardigheid. 
+
+Speaker 3  (01:19:44)
+Toen, maar hoezo moeten we nu nog een perfecte zijn? Want we zijn nu aan het einde. 
+
+Speaker 4  (01:19:49)
+Ja, natuurlijk twee, die twee hebben. 
+
+Speaker 3  (01:19:52)
+Maar ik dezelfde dingen die ik moet aangeven meer hoor. Heb je alles al naar me toe? 
+
+Speaker 4  (01:19:56)
+Ja. Ja. Dat is inderdaad anderen. 
+
+Speaker 4  (01:19:57)
+Ja. Maar ik heb ook wel bij de fiets weggilde vroeger. 
+
+Speaker 3  (01:20:00)
+Oké, is goed. Maar wat moet ik nu nog doen? Want ik word hier een beetje kriebelig van als ik voor de deadline allemaal dingen moet gaan fixen. 
+
+Speaker 4  (01:20:09)
+De bank vliegt in de achtergrond. Waarschijnlijk nog een, een feedback. 
+
+Speaker 2  (01:20:14)
+Ja, welke. 
+
+Speaker 3  (01:20:15)
+Dat je dat vandaag uitzoekt. En dan maar toesturen wat je nodig hebt. Want dan krijg jij weet van mij dat ik het altijd binnen de dag weer gekregen. 
+
+Speaker 4  (01:20:22)
+Hallo. 
+
+Speaker 3  (01:20:24)
+En dat, laat het me dat zo snel mogelijk doen, want het is al bijna, want hij moet het ook nog evalueren. En als het niet voldoende is, dan willen we het nog wel de ruimte hebben om het goed te doen. 
+
+Speaker 4  (01:20:32)
+Ja, maar ik ga ook. Ik ga wel vanuit. 
+
+Speaker 3  (01:20:35)
+Jawel, maar dat weet ik niet. Dat weet ik ja ik weet ook niet. Ik ik snap, ik zie random. 
+
+Speaker 3  (01:20:42)
+Dan kijken. En moeten we nu nog naar de vaardigheden kijken waar je dan bijvoorbeeld bij nodig hebt, zoals we dat de vorige keer ook hebben gedaan is het niet nodig. Dan ga je het zelf zinnen. 
+
+Speaker 4  (01:20:52)
+Misschien kunnen wij het daar later over gefocust worden, is goed, lijkt me dat ongedekt. Dan heb ik er een, een stuk langer termijnplanning. 2026. 
+
+Speaker 4  (01:21:07)
+En dit is dan eigenlijk echt software gericht. Ik ga natuurlijk in februari een lijkstage lopen. En eigenlijk heb ik nu. 
+
+Speaker 4  (01:21:20)
+In gedachten om vanaf februari tot april ongeveer de software gebruik te nemen en die tijd ook te gebruiken voor. Ja, ja, ja, ja. Verdere testing en buck fixing. 
+
+Speaker 4  (01:21:32)
+Zijn feature updates zijn van dingen waarvan je die denken vanwege, snap ik handelt hebben. Ja dan april tot juni het onderzoeken van AI en het implementeren daarvan ook. 
+
+Speaker 3  (01:21:45)
+In de screbes dus, die komen daarbij dan. 
+
+Speaker 4  (01:21:49)
+Ja. En dan juni, juli gelijk maken verkoopt en de diplomats, zodat het wat is de plooien. De diploma is ervoor zorgen dat het Live staat en dat het. 
+
+Speaker 4  (01:22:03)
+Te gaan worden. Maar voor ons staat het al Live the felix zou het interne online inderdaad. Maar nog niet voor andere partijen die kunnen gaan. 
+
+Speaker 2  (01:22:12)
+Dan moeten wij dromen hebben en moeten een einde om. Ze werkt bij een raar van tevoren al aangereden. 
+
+Speaker 3  (01:22:19)
+Ja, ja en ik denk dat het kijk weet je, dat zij ook tegen mij dat vind ik ook terecht van joh, dit is even de overview, maar je ga je ook nog plannen informatica. 
+
+Speaker 4  (01:22:28)
+Kasteel, ja, en dit is natuurlijk ook. Een levend, een levende planning, dus het kan best zijn dat je die al eerder zeggen van we zien niks meer wat echt verbeterd moet worden of zo, dan kan dat ai-onderzoek en interpretatie kan ook eerder zijn. Kan ook later zijn. 
+
+Speaker 4  (01:22:47)
+Maar dit is ook globaal. Globaal. Langte mijn pen voor 2 zuchten. 
+
+Speaker 4  (01:22:56)
+Dan nog een stukje los van de stage. Mijn rol in de ave. En dat zou dan zijn om gewoon een dag werken in de week aan te houden waarvan een dag gewoon fysieke kantoor. 
+
+Speaker 4  (01:23:12)
+En ik heb blijven communiceren en nog een specifiek bijgezet, omdat dat. Dan des te belangrijker wordt. 
+
+Speaker 3  (01:23:23)
+Ja, je gaat natuurlijk op een gegeven moment. Wist je dat jij. 
+
+Speaker 4  (01:23:28)
+To. 
+
+Speaker 3  (01:23:30)
+Dus dan begrijp je ook wel dat we niet altijd meer dansen boven je hoofd kunnen houden. Ik ga het hier met adriaan over hebben met jacques eventueel, maar hiervoor vergelijken van wat jouw holders gaat zien. Jo, naast, dus post stage zeg maar. 
+
+Speaker 2  (01:23:47)
+En ik hoop dat ik terug. En dat doen we. Ik ken gewoon heel simpele uitmobiliteit. 
+
+Speaker 3  (01:23:54)
+Maar de uitdrukking bleef uiting volgende week komen naar buiten. Ja. Boven twee weken, volgende week vind ik wel, maar nu raar werk ik nu. 
+
+Speaker 3  (01:24:04)
+Ik denk dat we dat wel op school kunnen krijgen. 
+
+Speaker 2  (01:24:11)
+Maar goed, één hele aarde bezig, dat hebben we het eigenlijk niet goed. Dat vind ik ook gehad. Wat. 
+
+Speaker 3  (01:24:19)
+Nou, misschien moeten een aantal. 
+
+Speaker 2  (01:24:20)
+Hoe oud is hij gekoppeld? Da's wel jammer precies. Ja, dat zou kunnen. 
+
+Speaker 3  (01:24:25)
+Oh, dat is, dat is veranderd, niet voor. Maar ik ben wel blij te zien dat je zelf in ieder geval door wil. 
+
+Speaker 4  (01:24:33)
+Ja. 
+
+Speaker 2  (01:24:34)
+Dit is het verhaal voor mijn beeldvorming. Geld je moet een andere stage doen. 
+
+Speaker 4  (01:24:41)
+Volgend jaar. Dat. 
+
+Speaker 2  (01:24:43)
+Het is een 2e stage en die ga je in lijf doen. Dat heb je ooit. 
+
+Speaker 3  (01:24:46)
+Ja, ja, hij is eigenlijk gewoon voor jezelf toch wat je. 
+
+Speaker 4  (01:24:49)
+Ja, ik wilde eigenlijk een minder doen inderdaad. Maar dat en dan eigenlijk project gewoon doen. Maar dat stonden we nu terecht ingeschreven, dat kon dan niet en kon niet de lijden gaan wonen, dus ik heb dat soort van ondergebracht bij bedrijf van denys een rafael, want die zit ook een beetje in die gamingsector. 
+
+Speaker 4  (01:25:08)
+Dus zij hebben eigenlijk, zij hebben mijn pis aan het school voorgesteld, eh, en ik heb daar dan ik ga dat dan voor hun bedrijf doen, maar eigenlijk blijft al het eigen opgenomen bij mij en ga ik gewoon daarmee begrijpen. En dingen zijn gewoon de dingen over die hypothes thuis. 
+
+Speaker 3  (01:25:27)
+Erin en jij. Je zei dus net tegen mij en dat is ook echt zo dat je hem nog steeds wel minimaal een avond in de week in rolde wil zijn. Nou. 
+
+Speaker 3  (01:25:40)
+Wij voelen praktisch gezien, is dat niet handig. Als je dat niet voor u ziet, dan wordt het al heel lastig om in dat medicijn. 
+
+Speaker 1  (01:25:47)
+Ja, nee, ik had iets over. 
+
+Speaker 4  (01:25:49)
+Dus ik, ja. 
+
+Speaker 3  (01:25:50)
+Nee, maar ook daar hoor, precies, maar goed, jij wil je ouders natuurlijk gewoon uitzien en douche en weet ik. 
+
+Speaker 2  (01:25:58)
+Ik ga mij, ik ga mij voorstellen dat jij nog steeds op zondag een beetje bij jou rijdt. Ja, dat zou zien. 
+
+Speaker 4  (01:26:05)
+Moet je dan maandag uh waarschijnlijk vaak dan inderdaad op zondag gewoon ergens in mijn ouders gewoon een beetje vroeg. Daar slapen dan. Je hebt. 
+
+Speaker 4  (01:26:17)
+Ik ben al een maand geavond weer. Ja, precies. Soms op zaterdag al hier. 
+
+Speaker 4  (01:26:26)
+Een beetje vanaf. 
+
+Speaker 3  (01:26:27)
+Maar hey, dus heb je nog andere grote dingen die je ineens op Japan kunnen komen en aankomende. Half tot een jaar, zeg maar aan projecten, een andere gekkigheid die me nu nog niet hebben besproken. 
+
+Speaker 4  (01:26:41)
+Nou ja, dan hang ik dus nog een redelijk grote opdracht. Ja, dat duurt ook gewoon lang, want dat is ook voor. Educatieve instelling en je weet hoe dat gaat daar duurt altijd eeuwen voordat ze voordat ze daar door die bureaucratische boom zijn. 
+
+Speaker 3  (01:27:04)
+Ja ja hoeveel tijd zou je daarvoor kwijt zijn als ie wel valt? Want ik hoi zeggen je hebt je hebt volgens mij heb jij, je hebt je eigen project. Hallo, ben je minimaal twee dagen voor kwijt? 
+
+Speaker 2  (01:27:17)
+Toch in de. 
+
+Speaker 4  (01:27:18)
+Ja. 
+
+Speaker 3  (01:27:19)
+Dan heb jij mogelijk dat van dennis en rafael voor. Voor het ziekenhuis, hoelang we vaak moeten bevonden, ben je daar verkleind? 
+
+Speaker 4  (01:27:28)
+Waarschijnlijk twee dagen. 
+
+Speaker 3  (01:27:30)
+Zit je al vieren? Dat. 
+
+Speaker 4  (01:27:31)
+Waarschijnlijk wel pas in 1 maart of zoiets wie ik dat pas. 
+
+Speaker 2  (01:27:36)
+Ja, maakt niet uit. 
+
+Speaker 3  (01:27:37)
+Twee dagen. Maar dat zijn dat zijn vier. Dan heb je al vier dagen. 
+
+Speaker 3  (01:27:40)
+En die ene dag en die ene dag. 
+
+Speaker 2  (01:27:43)
+Zou je hier zijn, zou je gaan hier zijn, hoe. 
+
+Speaker 3  (01:27:45)
+Oh ja dat niet andere dat andere project nog gaan draaien. Dit weekend. Ja, maar efer realistisch gesproken, is dat haalt maar of niet? 
+
+Speaker 4  (01:27:53)
+Het lijkt wel ja. 
+
+Speaker 1  (01:27:56)
+Ja, bas vind discipline, is het dan haalbaar. 
+
+Speaker 4  (01:28:03)
+Ik denk het wel. 
+
+Speaker 1  (01:28:04)
+Eerlijk ben je hard rijdt. 
+
+Speaker 2  (01:28:07)
+Ik denk dat je zelf gaat over eten. 
+
+Speaker 3  (01:28:09)
+Hey, morgen is het beleid van eerlijk, want anders kijk ik wil niet dat jij straks weer in die meest spelen vind ik als jij straks weer in, in zo'n k**** hol terecht komt. En waar je in de afgelopen weken heb gegeten. 
+
+Speaker 2  (01:28:23)
+Ja, wat er dan gebeurd zijn, is dat jij je ook nog moet afstuder. 
+
+Speaker 3  (01:28:27)
+Ja, dat is, maar dat is wel daarna passie, dus daarna dat project. 
+
+Speaker 2  (01:28:30)
+Dat doet ie niet met jou. Het is wel dat hij eindelijk wil met elkaar Samen die stage ook die stage moet die goed afronden. Ja, dan heeft ie nog een jaar voor zijn stud. 
+
+Speaker 4  (01:28:41)
+Ik vond komende half jaar bedoel je, ja ik besloot. 
+
+Speaker 2  (01:28:44)
+Ja. 
+
+Speaker 3  (01:28:44)
+N. Is dat nog een jaar als ze is? N half jaar toch? 
+
+Speaker 4  (01:28:48)
+Ik moet nu nog een half jaar stage en dan nog een jaar. Dat bedoel ik voor een jaar invoeren. Ja, maar daar is een halfjaar van inderdaad afgestudeerd, een halfjaar nog of een passage of een marnix. 
+
+Speaker 2  (01:28:59)
+Ja, ja. En bovenste lijf geloof ik. Ja, nee, dat zeg ik. 
+
+Speaker 2  (01:29:02)
+Dus ik zou het maar gaan helpen. Het over nadenken. Aangezien de kennis die ik gisteren vandaag opgedaan. 
+
+Speaker 2  (01:29:12)
+Over waar je mee gezeten hebt en niet kunnen overzien van dingen, zie ik dat jij zoals dat heet je potje, dusdanig opstapelen bent en dat volgt. Ja, dat het wel is ook al zijn dat je de volgende dag weer moet scherpen op het toilet. Snap je wat ik bedoel? 
+
+Speaker 3  (01:29:33)
+Ja, kan beter voorkomen dan genezen. 
+
+Speaker 2  (01:29:35)
+Beker het metaverse voor je aan het uitdrukken, maar die speelt eigenlijk. Ik zou dat maar heel goed over nadenken. 
+
+Speaker 3  (01:29:42)
+Ja, we spelen nu een beetje advocaat op de duivel, maar ik denk dat het wel een realistische vraag is die bestelde zeker. 
+
+Speaker 2  (01:29:50)
+Wat volgens mij zit je er op vijf dagen vol, zoals we betekenen? En dan ga je er nog een groot project voor 2 dagen bij doen. Na afloop mij maar. 
+
+Speaker 3  (01:29:59)
+Van de consument dat zeven dagen. 
+
+Speaker 2  (01:30:02)
+Bols troost. Ja, dan ga je. 
+
+Speaker 3  (01:30:04)
+Zeven dagen. 
+
+Speaker 2  (01:30:06)
+Je moet er gewoon eerlijk naar jezelf toe zijn, moet je zelf een bescherming nemen. Mij maakt het niet uit. Dat betekent wel als. 
+
+Speaker 2  (01:30:14)
+Voor onze afspraken maken, je lukt het niet, dan heeft, dan neem ik je ook. Maar deze keuze, het is keuze. 
+
+Speaker 3  (01:30:19)
+Dat kan voor mij toch, het is keuzes maken meneer. 
+
+Speaker 2  (01:30:25)
+Ga je voor lange termijn plezier of ga je voor korte termijn jezelf in de shit halen? Ik zou het maar eens goed houden. 
+
+Speaker 3  (01:30:31)
+Dus wat is het geld wat er overal meegemoeid is dan? Als ik, ja, als we effen open kaart spelen, want dan krijg je niets beters beter beeld van. 
+
+Speaker 4  (01:30:39)
+Dat zou ongeveer 10000 euro zijn. Bij. Dat gaat ook niet opdrachten die al niet goed. 
+
+Speaker 3  (01:30:49)
+En maar dat voor het ziekenhuis staat sowieso al. 
+
+Speaker 4  (01:30:52)
+Dat staat al in het begin. 
+
+Speaker 3  (01:30:55)
+Weet je ook niet. 
+
+Speaker 4  (01:30:56)
+Ik ga vandaag. Echt van mark zei de. 
+
+Speaker 2  (01:30:59)
+Ja dat en wat heeft dat voor knako? Ja. 
+
+Speaker 4  (01:31:03)
+2000 euro een maand per maand. Voor 2 dagen werk ik. 
+
+Speaker 3  (01:31:12)
+En dan heb je een goede meneer, je hebt, ja, heb je je eigen project nog? En wanneer start dat officieel dat project van je leven. 
+
+Speaker 4  (01:31:20)
+Dat stak in februari. 
+
+Speaker 3  (01:31:22)
+Naar haar stukje daar niet gewoon in januari. Ik hoop u misschien op een dag in de week. 
+
+Speaker 4  (01:31:29)
+Nou, we zeggen iets van wat ja. Ik kan daar ook wel in een waarlijke slinger aan geven, alvorens. Dan zit ik toch een beetje in een soort Limburg. 
+
+Speaker 2  (01:31:40)
+Ik weet niet, zonne is dat dit goed afkomt vriend. 
+
+Speaker 4  (01:31:42)
+Ja, dat sowieso. 
+
+Speaker 3  (01:31:43)
+De de daar, dit, dit, hier ga je sowieso je tijd een stopcontact aankomen. Ja, maar. 
+
+Speaker 1  (01:31:48)
+Ik denk dat je dit gesprek ervan met z'n allen elkaar. 
+
+Speaker 2  (01:31:50)
+Ja. Ja. Ik uh dat robbie hierbij neemt. 
+
+Speaker 2  (01:31:52)
+Nee, nee. Mag ik net zeggen. 
+
+Speaker 1  (01:31:54)
+Tegen afgeleiden worden en Hugo en uh aan wino. Ja, ja, dus we maken weer af. Ja, ja, ja. 
+
+Speaker 1  (01:31:58)
+Ik ben van de 4 euro per jaar. Er zitten hier alleen voor de belangen van av, ik word je adres doet, succes ermee. Ik wil gewoon stip eraf is. 
+
+Speaker 2  (01:32:08)
+Zo is het. En dat zullen we echt dat we zeggen. Ja. 
+
+Speaker 3  (01:32:13)
+Oké, tot hm. Er was hem dan. 
+
+Speaker 1  (01:32:19)
+Ja geen duidelijk. 
+
+Speaker 3  (01:32:20)
+Uh jaco. Komt van uh zometeen terug. Ja. 
+
+Speaker 3  (01:32:22)
+Met de planning et cetera et thee et cetera. Heb je mijn hulp nodig of niet? Want anders ga ik andere dingen doen. 
+
+Speaker 3  (01:32:27)
+Vind ik ook belangrijk. 
+
+Speaker 2  (01:32:30)
+Bureau, ik weet dat jij gewoon lekker aan je werk bent en. 
+
+Speaker 4  (01:32:34)
+Stijn uh hè? Nee, ik ga het effen. 
+
+Speaker 3  (01:32:37)
+Half 6 kom je hier. 
+
+Speaker 4  (01:32:41)
+Nou kom eerder denk ik. Ja. 
+
+Speaker 2  (01:32:50)
+Zo. Ik zou straks even altijd pakken. 
+
+Speaker 3  (01:32:55)
+En zullen wij effen die opdrachten doorspreken? Zullen we effen wat opdrachten doorspreken? In het ziekenhuis. 
+
+Speaker 3  (01:33:13)
+Hoeveel jaar? 
+
+Speaker 3  (01:34:21)
+Ja, komt goed, goed. Ja, zitten ze, hè? 
+
+Speaker 4  (01:34:27)
+Ja. 
+
+Speaker 3  (01:34:28)
+Ze zegt palian uh uiterlijk 05.00 uur.

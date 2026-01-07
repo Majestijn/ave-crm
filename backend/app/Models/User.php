@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'calendar_token',
     ];
 
     /**
@@ -36,6 +37,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'calendar_token',
     ];
 
     /**
@@ -81,5 +83,26 @@ class User extends Authenticatable
     public function isViewer(): bool
     {
         return $this->role === 'viewer';
+    }
+
+    /**
+     * Generate or regenerate the calendar token for iCal feed access.
+     */
+    public function generateCalendarToken(): string
+    {
+        $this->calendar_token = Str::random(64);
+        $this->save();
+        return $this->calendar_token;
+    }
+
+    /**
+     * Get or create the calendar token.
+     */
+    public function getOrCreateCalendarToken(): string
+    {
+        if (empty($this->calendar_token)) {
+            return $this->generateCalendarToken();
+        }
+        return $this->calendar_token;
     }
 }

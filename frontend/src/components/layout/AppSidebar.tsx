@@ -15,6 +15,7 @@ import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import API from "../../../axios-client";
@@ -29,6 +30,7 @@ const navItems = [
     icon: <AssignmentTurnedInOutlinedIcon />,
   },
   { label: "Klanten", to: "/accounts", icon: <BusinessOutlinedIcon /> },
+  { label: "Netwerk", to: "/network", icon: <HubOutlinedIcon /> },
   { label: "Agenda", to: "/agenda", icon: <CalendarMonthOutlinedIcon /> },
 ];
 

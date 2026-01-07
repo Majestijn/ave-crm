@@ -31,8 +31,12 @@ import {
   Cancel as CancelIcon,
 } from "@mui/icons-material";
 import API from "../../../axios-client";
-import type { Account, Assignment } from "../../types/accounts";
+import type { Account } from "../../types/accounts";
 import { useContacts } from "../../hooks/useContacts";
+import {
+  useAccountAssignments,
+  type AssignmentFromAPI,
+} from "../../hooks/useAssignments";
 import type { Contact } from "../../types/contacts";
 
 // Helper function to format revenue
@@ -51,17 +55,6 @@ const formatRevenue = (revenueCents?: number): string => {
   }
 };
 
-// Dummy assignments data
-const dummyAssignments: Assignment[] = [
-  {
-    id: 1,
-    account_id: 1,
-    title: "Category Manager (Pet Food)",
-    description: "Zoeken naar een ervaren Category Manager",
-    status: "active",
-  },
-];
-
 // Dummy timeline activities
 type TimelineActivity = {
   id: number;
@@ -70,6 +63,7 @@ type TimelineActivity = {
   subtext?: string;
   date: string;
   candidate?: { uid: string; name: string };
+  created_by?: string;
 };
 
 const dummyTimeline: TimelineActivity[] = [
@@ -133,9 +127,12 @@ export default function AccountDetailPage() {
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedAssignment, setSelectedAssignment] = useState<number | "">(
-    dummyAssignments[0]?.id || ""
-  );
+  const {
+    assignments,
+    loading: assignmentsLoading,
+    refresh: refreshAssignments,
+  } = useAccountAssignments(uid);
+  const [selectedAssignment, setSelectedAssignment] = useState<string>("");
 
   // Activity State
   const [timeline, setTimeline] = useState<TimelineActivity[]>([]);
@@ -151,30 +148,80 @@ export default function AccountDetailPage() {
   >(null);
   const { contacts, refresh: refreshContacts } = useContacts();
 
-  const fetchActivities = async () => {
-    if (!uid) {
+  // Contact person dialog state
+  const [openContactDialog, setOpenContactDialog] = useState(false);
+  const [selectedContactToAdd, setSelectedContactToAdd] =
+    useState<Contact | null>(null);
+  const [isAddingContact, setIsAddingContact] = useState(false);
+  const [addContactError, setAddContactError] = useState<string | null>(null);
+
+  // Helper to format network roles
+  const formatNetworkRoles = (roles?: string[]): string => {
+    if (!roles || roles.length === 0) return "";
+    const roleLabels: Record<string, string> = {
+      invoice_contact: "Factuurcontact",
+      candidate: "Kandidaat",
+      interim: "Interimmer",
+      ambassador: "Ambassadeur",
+      potential_management: "Pot. Management",
+      co_decision_maker: "Medebeslisser",
+      potential_directie: "Pot. Directie",
+      candidate_reference: "Referentie",
+      hr_employment: "HR arbeidsv.",
+      hr_recruiters: "HR recruiters",
+      directie: "Directie",
+      owner: "Eigenaar",
+      expert: "Expert",
+      coach: "Coach",
+      former_owner: "Oud eigenaar",
+      former_director: "Oud directeur",
+      commissioner: "Commissaris",
+      investor: "Investeerder",
+      network_group: "Netwerkgroep",
+    };
+    return roles.map((r) => roleLabels[r] || r).join(", ");
+  };
+
+  const fetchActivities = async (assignmentUid: string) => {
+    if (!assignmentUid) {
+      setTimeline([]);
       return;
     }
 
     try {
-      const response = (await API.get(`/accounts/${uid}/activities`)) as any[];
+      const response = (await API.get(
+        `/assignments/${assignmentUid}/activities`
+      )) as any[];
       const mappedActivities: TimelineActivity[] = response.map(
         (activity: any) => ({
           id: activity.id,
           type: activity.type,
           description: activity.description,
-          date: activity.date.split("T")[0], // Handle ISO string if needed
-          candidate: activity.candidate
+          date:
+            typeof activity.date === "string" && activity.date.includes("T")
+              ? activity.date.split("T")[0]
+              : activity.date,
+          candidate: activity.contact
             ? {
-                uid: activity.candidate.uid,
-                name: `${activity.candidate.first_name} ${activity.candidate.last_name}`,
+                uid: activity.contact.uid,
+                name:
+                  activity.contact.name ||
+                  [
+                    activity.contact.first_name,
+                    activity.contact.prefix,
+                    activity.contact.last_name,
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
               }
             : undefined,
+          created_by: activity.created_by,
         })
       );
       setTimeline(mappedActivities);
     } catch (err) {
       console.error("Error fetching activities:", err);
+      setTimeline([]);
     }
   };
 
@@ -182,17 +229,35 @@ export default function AccountDetailPage() {
     refreshContacts();
   }, [refreshContacts]);
 
+  // Set first assignment as selected when assignments are loaded
   useEffect(() => {
-    if (uid) {
-      fetchActivities();
+    if (assignments.length > 0 && !selectedAssignment) {
+      setSelectedAssignment(assignments[0].uid);
     }
-  }, [uid]);
+  }, [assignments, selectedAssignment]);
+
+  // Fetch activities when selected assignment changes
+  useEffect(() => {
+    if (selectedAssignment) {
+      fetchActivities(selectedAssignment);
+    } else {
+      setTimeline([]);
+    }
+  }, [selectedAssignment]);
 
   // Auto-fill description based on type and candidate
   useEffect(() => {
     if (!selectedCandidate) return;
 
-    const candidateName = `${selectedCandidate.first_name} ${selectedCandidate.last_name}`;
+    const candidateName =
+      selectedCandidate.name ||
+      [
+        selectedCandidate.first_name,
+        selectedCandidate.prefix,
+        selectedCandidate.last_name,
+      ]
+        .filter(Boolean)
+        .join(" ");
     let template = "";
 
     switch (newActivityType) {
@@ -219,18 +284,21 @@ export default function AccountDetailPage() {
   }, [newActivityType, selectedCandidate]);
 
   const handleAddActivity = async () => {
-    if (!uid) return;
+    if (!selectedAssignment) {
+      console.error("No assignment selected");
+      return;
+    }
 
     try {
       const payload = {
         type: newActivityType,
         description: newActivityDesc,
         date: newActivityDate,
-        candidate_uid: selectedCandidate?.uid,
+        contact_uid: selectedCandidate?.uid,
       };
 
       const response = (await API.post(
-        `/accounts/${uid}/activities`,
+        `/assignments/${selectedAssignment}/activities`,
         payload
       )) as any;
 
@@ -238,13 +306,25 @@ export default function AccountDetailPage() {
         id: response.id,
         type: response.type,
         description: response.description,
-        date: response.date.split("T")[0],
-        candidate: response.candidate
+        date:
+          typeof response.date === "string" && response.date.includes("T")
+            ? response.date.split("T")[0]
+            : response.date,
+        candidate: response.contact
           ? {
-              uid: response.candidate.uid,
-              name: `${response.candidate.first_name} ${response.candidate.last_name}`,
+              uid: response.contact.uid,
+              name:
+                response.contact.name ||
+                [
+                  response.contact.first_name,
+                  response.contact.prefix,
+                  response.contact.last_name,
+                ]
+                  .filter(Boolean)
+                  .join(" "),
             }
           : undefined,
+        created_by: response.created_by,
       };
 
       setTimeline([newActivity, ...timeline]);
@@ -258,28 +338,60 @@ export default function AccountDetailPage() {
     }
   };
 
+  const fetchAccount = async () => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const response = (await API.get<Account>(
+        `/accounts/${uid}`
+      )) as unknown as Account;
+      setAccount(response);
+    } catch (err: any) {
+      console.error("Error fetching account:", err);
+      setError(err?.response?.data?.message || "Fout bij laden van account");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddContact = async () => {
+    if (!uid) return;
+    if (!selectedContactToAdd) {
+      setAddContactError("Selecteer een contact");
+      return;
+    }
+
+    setIsAddingContact(true);
+    setAddContactError(null);
+
+    try {
+      await API.post(`/accounts/${uid}/contacts`, {
+        contact_uid: selectedContactToAdd.uid,
+      });
+
+      // Reset form and close dialog
+      setSelectedContactToAdd(null);
+      setOpenContactDialog(false);
+
+      // Refresh account to get updated contacts
+      await fetchAccount();
+    } catch (err: any) {
+      console.error("Error adding contact:", err);
+      setAddContactError(
+        err?.response?.data?.message || "Er is iets misgegaan"
+      );
+    } finally {
+      setIsAddingContact(false);
+    }
+  };
+
   useEffect(() => {
     if (!uid) {
       setError("Geen account ID opgegeven");
       setLoading(false);
       return;
     }
-
-    const fetchAccount = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = (await API.get<Account>(
-          `/accounts/${uid}`
-        )) as unknown as Account;
-        setAccount(response);
-      } catch (err: any) {
-        console.error("Error fetching account:", err);
-        setError(err?.response?.data?.message || "Fout bij laden van account");
-      } finally {
-        setLoading(false);
-      }
-    };
 
     fetchAccount();
   }, [uid]);
@@ -288,10 +400,8 @@ export default function AccountDetailPage() {
   if (error || !account)
     return <Box sx={{ p: 3 }}>{error || "Account niet gevonden"}</Box>;
 
-  const activeAssignments = dummyAssignments.filter(
-    (a) => a.status === "active"
-  );
-  const totalAssignments = dummyAssignments.length;
+  const activeAssignments = assignments.filter((a) => a.status === "active");
+  const totalAssignments = assignments.length;
 
   return (
     <Box
@@ -425,6 +535,7 @@ export default function AccountDetailPage() {
                 </Typography>
                 <IconButton
                   size="small"
+                  onClick={() => setOpenContactDialog(true)}
                   sx={{
                     width: 28,
                     height: 28,
@@ -440,18 +551,30 @@ export default function AccountDetailPage() {
 
               <Stack spacing={3}>
                 {account.contacts && account.contacts.length > 0 ? (
-                  account.contacts.map((contact) => (
+                  account.contacts.map((ac) => (
                     <Box
-                      key={contact.id}
+                      key={ac.id}
                       sx={{
                         borderLeft: "3px solid",
                         borderColor: "error.main",
                         pl: 2,
                       }}
                     >
-                      <Typography fontWeight="bold">{contact.name}</Typography>
+                      <Typography fontWeight="bold">
+                        {ac.contact?.name || "Onbekend"}
+                      </Typography>
+                      {ac.contact?.network_roles &&
+                        ac.contact.network_roles.length > 0 && (
+                          <Typography
+                            variant="body2"
+                            color="primary.main"
+                            sx={{ fontSize: "0.75rem" }}
+                          >
+                            {formatNetworkRoles(ac.contact.network_roles)}
+                          </Typography>
+                        )}
                       <Typography variant="body2" color="text.secondary">
-                        {contact.phone || "-"}
+                        {ac.contact?.phone || "-"}
                       </Typography>
                     </Box>
                   ))
@@ -489,17 +612,23 @@ export default function AccountDetailPage() {
                 <Select
                   value={selectedAssignment}
                   onChange={(e) =>
-                    setSelectedAssignment(e.target.value as number)
+                    setSelectedAssignment(e.target.value as string)
                   }
                   disableUnderline
                   displayEmpty
                   sx={{ fontWeight: 600 }}
                 >
-                  {dummyAssignments.map((assignment) => (
-                    <MenuItem key={assignment.id} value={assignment.id}>
-                      {assignment.title}
+                  {assignments.length === 0 ? (
+                    <MenuItem value="" disabled>
+                      Geen opdrachten
                     </MenuItem>
-                  ))}
+                  ) : (
+                    assignments.map((assignment) => (
+                      <MenuItem key={assignment.uid} value={assignment.uid}>
+                        {assignment.title}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             </Paper>
@@ -508,9 +637,11 @@ export default function AccountDetailPage() {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setOpenActivityDialog(true)}
+              disabled={!selectedAssignment}
               sx={{
                 bgcolor: "#590d0d",
                 "&:hover": { bgcolor: "#3d0909" },
+                "&:disabled": { bgcolor: "#ccc" },
                 textTransform: "none",
                 fontWeight: "bold",
                 px: 3,
@@ -521,113 +652,157 @@ export default function AccountDetailPage() {
           </Box>
 
           {/* Timeline */}
-          <Box sx={{ position: "relative", pl: 2, width: "100%" }}>
-            {/* Vertical Dotted Line */}
-            <Box
-              sx={{
-                position: "absolute",
-                left: 35, // Center of the avatar (16px padding + 20px half-width - 1px half-border)
-                top: 20,
-                bottom: 20,
-                width: 0,
-                borderLeft: "2px dotted #e0e0e0",
-                zIndex: 0,
-              }}
-            />
+          {assignments.length === 0 ? (
+            <Paper
+              elevation={0}
+              sx={{ p: 4, borderRadius: 2, textAlign: "center" }}
+            >
+              <Typography color="text.secondary">
+                Nog geen opdrachten voor deze klant. Maak eerst een opdracht aan
+                via de Opdrachten pagina.
+              </Typography>
+            </Paper>
+          ) : timeline.length === 0 ? (
+            <Paper
+              elevation={0}
+              sx={{ p: 4, borderRadius: 2, textAlign: "center" }}
+            >
+              <Typography color="text.secondary">
+                Nog geen activiteiten voor deze opdracht. Voeg een activiteit
+                toe om te beginnen.
+              </Typography>
+            </Paper>
+          ) : (
+            <Box sx={{ position: "relative", pl: 2, width: "100%" }}>
+              {/* Vertical Dotted Line */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 35, // Center of the avatar (16px padding + 20px half-width - 1px half-border)
+                  top: 20,
+                  bottom: 20,
+                  width: 0,
+                  borderLeft: "2px dotted #e0e0e0",
+                  zIndex: 0,
+                }}
+              />
 
-            <Stack spacing={4}>
-              {[...timeline]
-                .sort(
-                  (a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
-                )
-                .map((activity) => (
-                  <Box
-                    key={activity.id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      position: "relative",
-                      zIndex: 1,
-                      width: "100%",
-                    }}
-                  >
-                    {/* Icon */}
-                    <Avatar
+              <Stack spacing={4}>
+                {[...timeline]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime()
+                  )
+                  .map((activity) => (
+                    <Box
+                      key={activity.id}
                       sx={{
-                        bgcolor: getActivityColor(activity.type),
-                        width: 40,
-                        height: 40,
-                        mr: 3,
-                      }}
-                    >
-                      {getActivityIcon(activity.type)}
-                    </Avatar>
-
-                    {/* Card */}
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        flexGrow: 1,
-                        p: 2,
-                        px: 3,
-                        width: "100%",
-                        borderRadius: 2,
                         display: "flex",
-                        justifyContent: "space-between",
                         alignItems: "center",
+                        position: "relative",
+                        zIndex: 1,
+                        width: "100%",
                       }}
                     >
-                      <Typography
+                      {/* Icon */}
+                      <Avatar
                         sx={{
-                          "& span": {
-                            textDecoration: "underline",
-                            cursor: "pointer",
-                          },
+                          bgcolor: getActivityColor(activity.type),
+                          width: 40,
+                          height: 40,
+                          mr: 3,
                         }}
                       >
-                        {/* Simple parsing for "John Doe" or "Peter" to underline? 
+                        {getActivityIcon(activity.type)}
+                      </Avatar>
+
+                      {/* Card */}
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          flexGrow: 1,
+                          p: 2,
+                          px: 3,
+                          width: "100%",
+                          borderRadius: 2,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            "& span": {
+                              textDecoration: "underline",
+                              cursor: "pointer",
+                            },
+                          }}
+                        >
+                          {/* Simple parsing for "John Doe" or "Peter" to underline? 
                           For now just rendering description. 
                           In a real app, we'd parse links. */}
-                        {activity.description}
-                        {activity.candidate && (
-                          <Typography
-                            component="span"
-                            sx={{
-                              display: "block",
-                              fontSize: "0.875rem",
-                              color: "text.secondary",
-                              mt: 0.5,
-                            }}
-                          >
-                            met{" "}
-                            <span
-                              style={{
-                                textDecoration: "underline",
-                                cursor: "pointer",
+                          {activity.description}
+                          {activity.candidate && (
+                            <Typography
+                              component="span"
+                              sx={{
+                                display: "block",
+                                fontSize: "0.875rem",
+                                color: "text.secondary",
+                                mt: 0.5,
                               }}
                             >
-                              {activity.candidate.name}
-                            </span>
+                              met{" "}
+                              <span
+                                style={{
+                                  textDecoration: "underline",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {activity.candidate.name}
+                              </span>
+                            </Typography>
+                          )}
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {activity.created_by && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ fontStyle: "italic" }}
+                            >
+                              {activity.created_by}
+                            </Typography>
+                          )}
+                          {activity.created_by && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              •
+                            </Typography>
+                          )}
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="bold"
+                          >
+                            {new Date(activity.date).toLocaleDateString(
+                              "nl-NL",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              }
+                            )}
                           </Typography>
-                        )}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        fontWeight="bold"
-                      >
-                        {new Date(activity.date).toLocaleDateString("nl-NL", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </Typography>
-                    </Paper>
-                  </Box>
-                ))}
-            </Stack>
-          </Box>
+                        </Stack>
+                      </Paper>
+                    </Box>
+                  ))}
+              </Stack>
+            </Box>
+          )}
         </Grid>
       </Grid>
 
@@ -661,7 +836,10 @@ export default function AccountDetailPage() {
             <Autocomplete
               options={contacts}
               getOptionLabel={(option) =>
-                `${option.first_name} ${option.last_name}`
+                option.name ||
+                [option.first_name, option.prefix, option.last_name]
+                  .filter(Boolean)
+                  .join(" ")
               }
               value={selectedCandidate}
               onChange={(_, newValue) => setSelectedCandidate(newValue)}
@@ -699,6 +877,81 @@ export default function AccountDetailPage() {
             sx={{ bgcolor: "#590d0d", "&:hover": { bgcolor: "#3d0909" } }}
           >
             Toevoegen
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Contact Person Dialog */}
+      <Dialog
+        open={openContactDialog}
+        onClose={() => {
+          setOpenContactDialog(false);
+          setAddContactError(null);
+          setSelectedContactToAdd(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Contactpersoon koppelen</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Autocomplete
+              options={contacts.filter(
+                (c) =>
+                  !account?.contacts?.some((ac) => ac.contact?.uid === c.uid)
+              )}
+              getOptionLabel={(option) => {
+                const name =
+                  option.name ||
+                  [option.first_name, option.prefix, option.last_name]
+                    .filter(Boolean)
+                    .join(" ");
+                const company = option.current_company
+                  ? ` - ${option.current_company}`
+                  : "";
+                const roles =
+                  option.network_roles && option.network_roles.length > 0
+                    ? ` (${formatNetworkRoles(option.network_roles)})`
+                    : "";
+                return `${name}${company}${roles}`;
+              }}
+              value={selectedContactToAdd}
+              onChange={(_, newValue) => setSelectedContactToAdd(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Selecteer contact"
+                  required
+                  error={!selectedContactToAdd && !!addContactError}
+                />
+              )}
+              isOptionEqualToValue={(option, value) => option.uid === value.uid}
+            />
+            {addContactError && (
+              <Typography color="error" variant="body2">
+                {addContactError}
+              </Typography>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => {
+              setOpenContactDialog(false);
+              setAddContactError(null);
+              setSelectedContactToAdd(null);
+            }}
+            disabled={isAddingContact}
+          >
+            Annuleren
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddContact}
+            disabled={isAddingContact || !selectedContactToAdd}
+            sx={{ bgcolor: "#590d0d", "&:hover": { bgcolor: "#3d0909" } }}
+          >
+            {isAddingContact ? "Bezig..." : "Koppelen"}
           </Button>
         </DialogActions>
       </Dialog>

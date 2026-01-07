@@ -19,6 +19,14 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->string('status')->default('active'); // active, completed, cancelled
 
+            $table->integer('salary_min')->nullable(); // Minimum salary in EUR
+            $table->integer('salary_max')->nullable(); // Maximum salary in EUR
+            $table->boolean('has_bonus')->default(false);
+            $table->boolean('has_car')->default(false);
+            $table->integer('vacation_days')->nullable(); // Number of vacation days
+            $table->string('location')->nullable();
+            $table->string('employment_type')->nullable(); // Fulltime, Parttime, etc.
+
             $table->timestamps();
             $table->softDeletes();
         });

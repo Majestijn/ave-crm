@@ -13,6 +13,8 @@ import {
   Alert,
   IconButton,
   MenuItem,
+  Autocomplete,
+  Chip,
 } from "@mui/material";
 import {
   DataGrid,
@@ -28,27 +30,63 @@ import { useCandidates } from "../../hooks/useCandidates";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import API from "../../../axios-client";
 import type { Contact } from "../../types/contacts";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+
+const networkRoleOptions = [
+  { value: "invoice_contact", label: "Factuurcontact" },
+  { value: "candidate", label: "Kandidaat" },
+  { value: "interim", label: "Interimmer" },
+  { value: "ambassador", label: "Ambassadeur" },
+  { value: "potential_management", label: "Potentieel Management" },
+  { value: "co_decision_maker", label: "Medebeslisser" },
+  { value: "potential_directie", label: "Potentieel Directie" },
+  { value: "candidate_reference", label: "Referentie van kandidaat" },
+  { value: "hr_employment", label: "HR arbeidsvoorwaarden" },
+  { value: "hr_recruiters", label: "HR recruiters" },
+  { value: "directie", label: "Directie" },
+  { value: "owner", label: "Eigenaar" },
+  { value: "expert", label: "Expert" },
+  { value: "coach", label: "Coach" },
+  { value: "former_owner", label: "Oud eigenaar" },
+  { value: "former_director", label: "Oud directeur" },
+  { value: "commissioner", label: "Commissaris" },
+  { value: "investor", label: "Investeerder" },
+  { value: "network_group", label: "Netwerkgroep" },
+];
 import BulkImportDialog from "../../components/features/BulkImportDialog";
 
 const ContactSchema = z.object({
   first_name: z.string().min(1, "Voornaam is verplicht"),
+  prefix: z.string().optional(),
   last_name: z.string().min(1, "Achternaam is verplicht"),
   gender: z.string().optional(),
   location: z.string().optional(),
   company_role: z.string().optional(),
-  network_role: z
-    .enum([
+  network_roles: z.array(
+    z.enum([
+      "invoice_contact",
       "candidate",
-      "candidate_placed",
-      "candidate_rejected",
+      "interim",
       "ambassador",
-      "client_decision",
-      "client_no_decision",
+      "potential_management",
+      "co_decision_maker",
+      "potential_directie",
+      "candidate_reference",
+      "hr_employment",
+      "hr_recruiters",
+      "directie",
+      "owner",
+      "expert",
+      "coach",
+      "former_owner",
+      "former_director",
+      "commissioner",
+      "investor",
+      "network_group",
     ])
-    .optional(),
+  ).optional(),
   current_company: z.string().optional(),
   current_salary_cents: z.number().optional(),
   education: z.enum(["MBO", "HBO", "UNI"]).optional(),
@@ -84,16 +122,18 @@ export default function CandidatesPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    control,
   } = useForm<ContactForm>({
     resolver: zodResolver(ContactSchema),
     mode: "onBlur",
     defaultValues: {
       first_name: "",
+      prefix: "",
       last_name: "",
       gender: "",
       location: "",
       company_role: "",
-      network_role: undefined,
+      network_roles: ["candidate"],
       current_company: "",
       current_salary_cents: undefined,
       education: undefined,
@@ -324,18 +364,20 @@ export default function CandidatesPage() {
                   "Sophie",
                   "Lisa",
                 ];
+                // Random prefixes (tussenvoegsels)
+                const prefixes = ["", "", "", "de", "van", "van de", "van der", "van den"];
                 // Random last names
                 const lastNames = [
-                  "de Vries",
+                  "Vries",
                   "Jansen",
-                  "de Boer",
+                  "Boer",
                   "Bakker",
                   "Visser",
                   "Smit",
                   "Meijer",
-                  "de Boer",
                   "Mulder",
-                  "de Groot",
+                  "Groot",
+                  "Berg",
                 ];
                 // Random emails
                 const emailDomains = [
@@ -378,11 +420,16 @@ export default function CandidatesPage() {
 
                 const randomFirstName =
                   firstNames[Math.floor(Math.random() * firstNames.length)];
+                const randomPrefix =
+                  prefixes[Math.floor(Math.random() * prefixes.length)];
                 const randomLastName =
                   lastNames[Math.floor(Math.random() * lastNames.length)];
-                const randomEmail = `${randomFirstName.toLowerCase()}.${randomLastName
+                const emailName = [randomFirstName, randomPrefix, randomLastName]
+                  .filter(Boolean)
+                  .join(".")
                   .toLowerCase()
-                  .replace(" ", ".")}@${
+                  .replace(/ /g, "");
+                const randomEmail = `${emailName}@${
                   emailDomains[Math.floor(Math.random() * emailDomains.length)]
                 }`;
                 const randomCompany =
@@ -393,7 +440,7 @@ export default function CandidatesPage() {
                   locations[Math.floor(Math.random() * locations.length)];
                 const randomPhone =
                   phones[Math.floor(Math.random() * phones.length)];
-                const networkRoles: Array<
+                const networkRolesOptions: Array<
                   | "candidate"
                   | "candidate_placed"
                   | "candidate_rejected"
@@ -409,24 +456,29 @@ export default function CandidatesPage() {
                   "HBO",
                   "UNI",
                 ];
-                const randomNetworkRole =
-                  networkRoles[Math.floor(Math.random() * networkRoles.length)];
+                const randomNetworkRoles = [
+                  networkRolesOptions[Math.floor(Math.random() * networkRolesOptions.length)],
+                ];
                 const randomEducation =
                   educations[Math.floor(Math.random() * educations.length)];
 
+                const linkedinName = [randomFirstName, randomPrefix, randomLastName]
+                  .filter(Boolean)
+                  .join("-")
+                  .toLowerCase()
+                  .replace(/ /g, "-");
                 reset({
                   first_name: randomFirstName,
+                  prefix: randomPrefix,
                   last_name: randomLastName,
                   email: randomEmail,
                   phone: randomPhone,
                   company_role: randomRole,
                   current_company: randomCompany,
                   location: randomLocation,
-                  network_role: randomNetworkRole,
+                  network_roles: randomNetworkRoles,
                   education: randomEducation,
-                  linkedin_url: `https://linkedin.com/in/${randomFirstName.toLowerCase()}-${randomLastName
-                    .toLowerCase()
-                    .replace(" ", "-")}`,
+                  linkedin_url: `https://linkedin.com/in/${linkedinName}`,
                   notes: `Test kandidaat - ${new Date().toLocaleString()}`,
                 });
               }}
@@ -450,7 +502,15 @@ export default function CandidatesPage() {
                 error={!!errors.first_name}
                 helperText={errors.first_name?.message ?? " "}
                 {...register("first_name")}
-                fullWidth
+                sx={{ flex: 2 }}
+              />
+              <TextField
+                label="Tussenvoegsel"
+                error={!!errors.prefix}
+                helperText={errors.prefix?.message ?? " "}
+                placeholder="van, de, van der..."
+                {...register("prefix")}
+                sx={{ flex: 1 }}
               />
               <TextField
                 label="Achternaam"
@@ -458,7 +518,7 @@ export default function CandidatesPage() {
                 error={!!errors.last_name}
                 helperText={errors.last_name?.message ?? " "}
                 {...register("last_name")}
-                fullWidth
+                sx={{ flex: 2 }}
               />
             </Stack>
 
@@ -488,29 +548,43 @@ export default function CandidatesPage() {
                 {...register("company_role")}
                 fullWidth
               />
-              <TextField
-                select
-                label="Netwerk functie"
-                error={!!errors.network_role}
-                helperText={errors.network_role?.message ?? " "}
-                {...register("network_role")}
-                fullWidth
-              >
-                <MenuItem value="candidate">Kandidaat</MenuItem>
-                <MenuItem value="candidate_placed">
-                  Kandidaat geplaatst
-                </MenuItem>
-                <MenuItem value="candidate_rejected">
-                  Kandidaat afgewezen
-                </MenuItem>
-                <MenuItem value="ambassador">Ambassadeur</MenuItem>
-                <MenuItem value="client_decision">
-                  Opdrachtgever met bevoegdheid
-                </MenuItem>
-                <MenuItem value="client_no_decision">
-                  Opdrachtgever zonder bevoegdheid
-                </MenuItem>
-              </TextField>
+              <Controller
+                name="network_roles"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={networkRoleOptions}
+                    getOptionLabel={(option) => option.label}
+                    value={networkRoleOptions.filter((opt) =>
+                      (field.value || []).includes(opt.value as any)
+                    )}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue.map((v) => v.value));
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Netwerk rollen"
+                        error={!!errors.network_roles}
+                        helperText={errors.network_roles?.message ?? " "}
+                      />
+                    )}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => (
+                        <Chip
+                          label={option.label}
+                          size="small"
+                          {...getTagProps({ index })}
+                          key={option.value}
+                        />
+                      ))
+                    }
+                    fullWidth
+                    sx={{ minWidth: 250 }}
+                  />
+                )}
+              />
               <TextField
                 label="Huidig bedrijf"
                 error={!!errors.current_company}
@@ -609,7 +683,7 @@ export default function CandidatesPage() {
         }}
       >
         <DialogTitle>
-          CV van {viewingContact?.first_name} {viewingContact?.last_name}
+          CV van {viewingContact?.name || [viewingContact?.first_name, viewingContact?.prefix, viewingContact?.last_name].filter(Boolean).join(" ")}
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0, overflow: "hidden" }}>
           {cvLoading && (
@@ -682,7 +756,7 @@ export default function CandidatesPage() {
             <Typography>
               Weet je zeker dat je{" "}
               <strong>
-                {deletingContact?.first_name} {deletingContact?.last_name}
+                {deletingContact?.name || [deletingContact?.first_name, deletingContact?.prefix, deletingContact?.last_name].filter(Boolean).join(" ")}
               </strong>{" "}
               wilt verwijderen?
             </Typography>
@@ -735,7 +809,7 @@ export default function CandidatesPage() {
                 flex: 1,
                 minWidth: 200,
                 valueGetter: (value, row) =>
-                  `${row.first_name || ""} ${row.last_name || ""}`.trim(),
+                  row.name || [row.first_name, row.prefix, row.last_name].filter(Boolean).join(" "),
               },
               {
                 field: "email",
@@ -771,20 +845,33 @@ export default function CandidatesPage() {
                 valueGetter: (value) => value || "-",
               },
               {
-                field: "network_role",
-                headerName: "Netwerk functie",
-                width: 180,
-                valueGetter: (value) => {
-                  if (!value) return "-";
+                field: "network_roles",
+                headerName: "Netwerk rollen",
+                width: 220,
+                valueGetter: (value: string[] | null | undefined) => {
+                  if (!value || value.length === 0) return "-";
                   const roleMap: Record<string, string> = {
+                    invoice_contact: "Factuurcontact",
                     candidate: "Kandidaat",
-                    candidate_placed: "Kandidaat geplaatst",
-                    candidate_rejected: "Kandidaat afgewezen",
+                    interim: "Interimmer",
                     ambassador: "Ambassadeur",
-                    client_decision: "Klant beslissing",
-                    client_no_decision: "Klant geen beslissing",
+                    potential_management: "Pot. Management",
+                    co_decision_maker: "Medebeslisser",
+                    potential_directie: "Pot. Directie",
+                    candidate_reference: "Referentie",
+                    hr_employment: "HR arbeidsv.",
+                    hr_recruiters: "HR recruiters",
+                    directie: "Directie",
+                    owner: "Eigenaar",
+                    expert: "Expert",
+                    coach: "Coach",
+                    former_owner: "Oud eigenaar",
+                    former_director: "Oud directeur",
+                    commissioner: "Commissaris",
+                    investor: "Investeerder",
+                    network_group: "Netwerkgroep",
                   };
-                  return roleMap[value] || value;
+                  return value.map((role) => roleMap[role] || role).join(", ");
                 },
               },
               {

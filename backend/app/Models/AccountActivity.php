@@ -14,6 +14,7 @@ class AccountActivity extends Model
         'account_id',
         'contact_id',
         'assignment_id',
+        'user_id',
         'type',
         'description',
         'date',
@@ -36,5 +37,10 @@ class AccountActivity extends Model
     public function assignment(): BelongsTo
     {
         return $this->belongsTo(Assignment::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

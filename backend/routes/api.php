@@ -9,6 +9,12 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountActivityController;
+use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\AssignmentActivityController;
+use App\Http\Controllers\AssignmentCandidateController;
+use App\Http\Controllers\AccountContactController;
+use App\Http\Controllers\CalendarEventController;
+use App\Http\Controllers\CalendarFeedController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -59,7 +65,40 @@ Route::prefix('/v1')->group(function () {
         Route::get('/accounts/{account}/activities', [AccountActivityController::class, 'index']);
         Route::post('/accounts/{account}/activities', [AccountActivityController::class, 'store']);
         Route::delete('/activities/{accountActivity}', [AccountActivityController::class, 'destroy']);
+
+        // Account contacts (contactpersonen per klant)
+        Route::get('/accounts/{account}/contacts', [AccountContactController::class, 'index']);
+        Route::post('/accounts/{account}/contacts', [AccountContactController::class, 'store']);
+        Route::delete('/account-contacts/{contact}', [AccountContactController::class, 'destroy']);
+
+        Route::get('/accounts/{account}/assignments', [AssignmentController::class, 'byAccount']);
+        Route::apiResource('assignments', AssignmentController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+
+        // Assignment activities (per opdracht)
+        Route::get('/assignments/{assignment}/activities', [AssignmentActivityController::class, 'index']);
+        Route::post('/assignments/{assignment}/activities', [AssignmentActivityController::class, 'store']);
+        Route::delete('/assignment-activities/{activity}', [AssignmentActivityController::class, 'destroy']);
+
+        // Assignment candidates (kandidaten per opdracht)
+        Route::get('/assignments/{assignment}/candidates', [AssignmentCandidateController::class, 'index']);
+        Route::post('/assignments/{assignment}/candidates', [AssignmentCandidateController::class, 'store']);
+        Route::put('/assignments/{assignment}/candidates/{contact}', [AssignmentCandidateController::class, 'update']);
+        Route::delete('/assignments/{assignment}/candidates/{contact}', [AssignmentCandidateController::class, 'destroy']);
+
+        // Calendar events (agenda)
+        Route::get('/calendar-events', [CalendarEventController::class, 'index']);
+        Route::post('/calendar-events', [CalendarEventController::class, 'store']);
+        Route::get('/calendar-events/{event}', [CalendarEventController::class, 'show']);
+        Route::put('/calendar-events/{event}', [CalendarEventController::class, 'update']);
+        Route::delete('/calendar-events/{event}', [CalendarEventController::class, 'destroy']);
+
+        // Calendar feed URL management (authenticated)
+        Route::get('/calendar-feed/url', [CalendarFeedController::class, 'getUrl']);
+        Route::post('/calendar-feed/regenerate', [CalendarFeedController::class, 'regenerateToken']);
     });
+
+    // Public iCal feed (authenticated via token in URL, tenant via path)
+    Route::get('/calendar-feed/{tenantDomain}/{token}', [CalendarFeedController::class, 'feed']);
 });
 
 Route::get('/health', function () {

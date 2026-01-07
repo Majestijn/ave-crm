@@ -24,6 +24,7 @@ class StoreContactRequest extends FormRequest
     {
         return [
             'first_name' => ['required', 'string', 'max:255'],
+            'prefix' => ['nullable', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:255'],
             'gender' => ['nullable', 'string', 'max:16'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -31,7 +32,8 @@ class StoreContactRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'current_company' => ['nullable', 'string', 'max:255'],
             'company_role' => ['nullable', 'string', 'max:255'],
-            'network_role' => ['nullable', 'string', 'max:255', 'in:candidate,candidate_placed,candidate_rejected,ambassador,client_decision,client_no_decision'],
+            'network_roles' => ['nullable', 'array'],
+            'network_roles.*' => ['string', 'in:invoice_contact,candidate,interim,ambassador,potential_management,co_decision_maker,potential_directie,candidate_reference,hr_employment,hr_recruiters,directie,owner,expert,coach,former_owner,former_director,commissioner,investor,network_group'],
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
             'education' => ['nullable', 'in:MBO,HBO,UNI'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],

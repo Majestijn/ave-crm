@@ -15,6 +15,7 @@ class Contact extends Model
     protected $fillable = [
         'uid',
         'first_name',
+        'prefix',
         'last_name',
         'gender',
         'email',
@@ -22,7 +23,7 @@ class Contact extends Model
         'location',
         'current_company',
         'company_role',
-        'network_role',
+        'network_roles',
         'current_salary_cents',
         'education',
         'linkedin_url',
@@ -33,7 +34,20 @@ class Contact extends Model
     protected $casts = [
         'uid' => 'string',
         'current_salary_cents' => 'integer',
+        'network_roles' => 'array',
     ];
+
+    protected $appends = ['name'];
+
+    public function getNameAttribute(): string
+    {
+        $parts = [$this->first_name];
+        if ($this->prefix) {
+            $parts[] = $this->prefix;
+        }
+        $parts[] = $this->last_name;
+        return trim(implode(' ', $parts));
+    }
 
     public function getRouteKeyName(): string
     {
