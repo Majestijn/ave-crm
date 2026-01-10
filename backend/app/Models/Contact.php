@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
@@ -61,5 +62,21 @@ class Contact extends Model
                 $contact->uid = (string) Str::ulid();
             }
         });
+    }
+
+    /**
+     * Get all documents for this contact
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ContactDocument::class);
+    }
+
+    /**
+     * Get only CV documents for this contact
+     */
+    public function cvDocuments(): HasMany
+    {
+        return $this->hasMany(ContactDocument::class)->where('type', 'cv');
     }
 }

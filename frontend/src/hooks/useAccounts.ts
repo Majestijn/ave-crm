@@ -12,15 +12,12 @@ export const useAccounts = () => {
     setLoading(true);
     setError(null);
     try {
-      // The axios interceptor already extracts response.data, so response IS the data
       const responseData = await API.get<Account[]>("/accounts");
 
-      // Handle paginated response or direct array
       let accountArray: Account[];
       if (Array.isArray(responseData)) {
         accountArray = responseData;
       } else if (responseData && typeof responseData === 'object' && 'data' in responseData && Array.isArray(responseData.data)) {
-        // Handle Laravel paginated response
         accountArray = responseData.data;
       } else {
         console.error("Unexpected response structure:", {

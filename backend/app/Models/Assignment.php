@@ -25,6 +25,7 @@ class Assignment extends Model
         'vacation_days',
         'location',
         'employment_type',
+        'notes_image_path',
     ];
 
     protected $casts = [

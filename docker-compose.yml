@@ -20,6 +20,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./backend:/var/www/html
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
     command: sh -c "./scripts/init-perms.sh && php-fpm"
     depends_on: [db, redis]
 

@@ -15,6 +15,7 @@ use App\Http\Controllers\AssignmentCandidateController;
 use App\Http\Controllers\AccountContactController;
 use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\CalendarFeedController;
+use App\Http\Controllers\ContactDocumentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -49,6 +50,7 @@ Route::prefix('/v1')->group(function () {
         Route::post('/contacts/bulk-import', [ContactController::class, 'bulkImport']);
         Route::apiResource('contacts', ContactController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
+        // Legacy CV route (for backward compatibility)
         Route::get('/contacts/cv/{path}', function (Request $request, string $path) {
             // User is already authenticated in the tenant context
             $filePath = storage_path('app/public/' . urldecode($path));
@@ -59,6 +61,14 @@ Route::prefix('/v1')->group(function () {
 
             return response()->file($filePath);
         })->where('path', '.*');
+
+        // Contact documents (R2 storage)
+        Route::get('/contacts/{contact}/documents', [ContactDocumentController::class, 'index']);
+        Route::post('/contacts/{contact}/documents', [ContactDocumentController::class, 'store']);
+        Route::get('/contact-documents/{document}/download', [ContactDocumentController::class, 'download'])
+            ->name('contact-documents.download');
+        Route::get('/contact-documents/{document}/url', [ContactDocumentController::class, 'getSignedUrl']);
+        Route::delete('/contact-documents/{document}', [ContactDocumentController::class, 'destroy']);
 
         Route::apiResource('accounts', AccountController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
@@ -73,6 +83,7 @@ Route::prefix('/v1')->group(function () {
 
         Route::get('/accounts/{account}/assignments', [AssignmentController::class, 'byAccount']);
         Route::apiResource('assignments', AssignmentController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+        Route::delete('/assignments/{assignment}/notes-image', [AssignmentController::class, 'deleteNotesImage']);
 
         // Assignment activities (per opdracht)
         Route::get('/assignments/{assignment}/activities', [AssignmentActivityController::class, 'index']);

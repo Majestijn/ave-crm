@@ -9,6 +9,7 @@ import {
   InputAdornment,
   Select,
   MenuItem,
+  Chip,
   FormControl,
   InputLabel,
   Table,
@@ -34,10 +35,24 @@ import {
 import { useNavigate } from "react-router-dom";
 import type { Assignment } from "../../types/accounts";
 import type { Contact } from "../../types/contacts";
-import { useCandidates } from "../../hooks/useCandidates";
-import { useAssignments, type AssignmentFromAPI } from "../../hooks/useAssignments";
-import { useAccounts } from "../../hooks/useAccounts";
-import API from "../../../axios-client";
+import { useCandidates } from "../../api/queries/contacts";
+import {
+  useAssignments,
+  type AssignmentFromAPI,
+  useAssignmentCandidates,
+  type CandidateAssignment,
+} from "../../api/queries/assignments";
+import { useAccounts } from "../../api/queries/accounts";
+import {
+  useCreateAssignment,
+  useUpdateAssignment,
+} from "../../api/mutations/assignments";
+import {
+  useAddAssignmentCandidates,
+  useUpdateAssignmentCandidateStatus,
+  useRemoveAssignmentCandidate,
+} from "../../api/mutations/assignmentCandidates";
+import API from "../../api/client";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import { Alert } from "@mui/material";
 import {
@@ -70,14 +85,8 @@ type AssignmentWithDetails = Assignment & {
   has_car?: boolean;
   has_bonus?: boolean;
   vacation_days?: number;
+  notes_image_url?: string | null;
   candidates?: CandidateAssignment[];
-};
-
-type CandidateAssignment = {
-  id: number;
-  contact: Contact;
-  status: "called" | "proposed" | "first_interview" | "second_interview" | "rejected" | "hired";
-  status_label: string;
 };
 
 // Mock data - will be replaced with API calls
@@ -328,7 +337,10 @@ const statusOptions = [
   { value: "cancelled", label: "Geannuleerd" },
 ];
 
-const candidateStatusOptions: { value: CandidateAssignment["status"]; label: string }[] = [
+const candidateStatusOptions: {
+  value: CandidateAssignment["status"];
+  label: string;
+}[] = [
   { value: "called", label: "Gebeld" },
   { value: "proposed", label: "Voorgesteld" },
   { value: "first_interview", label: "1e gesprek" },
@@ -337,7 +349,9 @@ const candidateStatusOptions: { value: CandidateAssignment["status"]; label: str
   { value: "rejected", label: "Afgewezen" },
 ];
 
-const getStatusColor = (status: string): "default" | "primary" | "success" | "error" | "warning" => {
+const getStatusColor = (
+  status: string
+): "inherit" | "primary" | "success" | "error" | "warning" => {
   switch (status) {
     case "hired":
     case "completed":
@@ -348,11 +362,13 @@ const getStatusColor = (status: string): "default" | "primary" | "success" | "er
     case "proposed":
       return "primary";
     default:
-      return "default";
+      return "inherit";
   }
 };
 
-const getCandidateStatusColor = (status: CandidateAssignment["status"]): string => {
+const getCandidateStatusColor = (
+  status: CandidateAssignment["status"]
+): string => {
   switch (status) {
     case "hired":
       return "#2e7d32"; // Green
@@ -369,19 +385,73 @@ const getCandidateStatusColor = (status: CandidateAssignment["status"]): string 
   }
 };
 
+// Component to load candidates - MUST be outside main component to prevent infinite loops
+const AssignmentCandidatesLoader = React.memo(
+  ({
+    assignmentId,
+    assignmentUid,
+    onCandidatesLoaded,
+  }: {
+    assignmentId: number;
+    assignmentUid: string | undefined;
+    onCandidatesLoaded: (id: number, candidates: CandidateAssignment[]) => void;
+  }) => {
+    const { data: candidates = [] } = useAssignmentCandidates(assignmentUid);
+    const prevCandidatesRef = React.useRef<string>("");
+
+    React.useEffect(() => {
+      if (!assignmentUid) return;
+
+      // Only update if candidates actually changed (compare by JSON to prevent loops)
+      const candidatesJson = JSON.stringify(candidates);
+      if (candidatesJson !== prevCandidatesRef.current) {
+        prevCandidatesRef.current = candidatesJson;
+        onCandidatesLoaded(assignmentId, candidates as CandidateAssignment[]);
+      }
+    }, [assignmentId, candidates, assignmentUid, onCandidatesLoaded]);
+
+    return null;
+  }
+);
+
 export default function AssignmentsPage() {
   const navigate = useNavigate();
-  const { candidates, loading: candidatesLoading } = useCandidates();
-  const { assignments: apiAssignments, loading: assignmentsLoading, error: assignmentsError, refresh: refreshAssignments } = useAssignments();
-  const { accounts, loading: accountsLoading, refresh: refreshAccounts } = useAccounts();
+  const { data: candidates = [], isLoading: candidatesLoading } =
+    useCandidates();
+  const {
+    data: apiAssignments = [],
+    isLoading: assignmentsLoading,
+    error: assignmentsError,
+  } = useAssignments();
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+
+  // Mutations
+  const createAssignmentMutation = useCreateAssignment();
+  const updateAssignmentMutation = useUpdateAssignment();
+  const addCandidatesMutation = useAddAssignmentCandidates();
+  const updateCandidateStatusMutation = useUpdateAssignmentCandidateStatus();
+  const removeCandidateMutation = useRemoveAssignmentCandidate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [expandedAssignments, setExpandedAssignments] = useState<Set<number>>(new Set());
-  const [statusMenuAnchor, setStatusMenuAnchor] = useState<{ [key: number]: HTMLElement | null }>({});
-  const [assignmentStatuses, setAssignmentStatuses] = useState<{ [key: number]: string }>({});
+  const [expandedAssignments, setExpandedAssignments] = useState<Set<number>>(
+    new Set()
+  );
+  const [expandedNotesImages, setExpandedNotesImages] = useState<Set<number>>(
+    new Set()
+  );
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState<{
+    [key: number]: HTMLElement | null;
+  }>({});
+  const [assignmentStatuses, setAssignmentStatuses] = useState<{
+    [key: number]: string;
+  }>({});
   const [addCandidateDialogOpen, setAddCandidateDialogOpen] = useState(false);
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
-  const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(new Set());
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<
+    number | null
+  >(null);
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(
+    new Set()
+  );
   const [companyRoleFilter, setCompanyRoleFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
   const [candidateStatusMenuAnchor, setCandidateStatusMenuAnchor] = useState<{
@@ -393,61 +463,82 @@ export default function AssignmentsPage() {
   const [newAssignmentTitle, setNewAssignmentTitle] = useState("");
   const [newAssignmentDescription, setNewAssignmentDescription] = useState("");
   const [newAssignmentAccountUid, setNewAssignmentAccountUid] = useState("");
-  const [newAssignmentSalaryMin, setNewAssignmentSalaryMin] = useState<number | "">("");
-  const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState<number | "">("");
+  const [newAssignmentSalaryMin, setNewAssignmentSalaryMin] = useState<
+    number | ""
+  >("");
+  const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState<
+    number | ""
+  >("");
   const [newAssignmentHasBonus, setNewAssignmentHasBonus] = useState(false);
   const [newAssignmentHasCar, setNewAssignmentHasCar] = useState(false);
-  const [newAssignmentVacationDays, setNewAssignmentVacationDays] = useState<number | "">("");
+  const [newAssignmentVacationDays, setNewAssignmentVacationDays] = useState<
+    number | ""
+  >("");
   const [newAssignmentLocation, setNewAssignmentLocation] = useState("");
-  const [newAssignmentEmploymentType, setNewAssignmentEmploymentType] = useState("");
-  const [createAssignmentError, setCreateAssignmentError] = useState<string | null>(null);
-  const [isCreatingAssignment, setIsCreatingAssignment] = useState(false);
+  const [newAssignmentEmploymentType, setNewAssignmentEmploymentType] =
+    useState("");
+  const [newAssignmentNotesImage, setNewAssignmentNotesImage] =
+    useState<File | null>(null);
+  const [newAssignmentNotesImagePreview, setNewAssignmentNotesImagePreview] =
+    useState<string | null>(null);
+  const [createAssignmentError, setCreateAssignmentError] = useState<
+    string | null
+  >(null);
 
-  // State for candidate assignments per assignment
+  // State for candidate assignments per assignment (populated by AssignmentCandidatesLoader)
   const [localCandidateAssignments, setLocalCandidateAssignments] = useState<{
     [assignmentId: number]: CandidateAssignment[];
   }>({});
-  const [loadingCandidates, setLoadingCandidates] = useState<{ [assignmentId: number]: boolean }>({});
 
-  // Load accounts on mount
-  React.useEffect(() => {
-    refreshAccounts();
-  }, [refreshAccounts]);
+  // Stable callback for updating candidates - useCallback prevents infinite loops
+  const handleCandidatesLoaded = React.useCallback(
+    (assignmentId: number, candidates: CandidateAssignment[]) => {
+      setLocalCandidateAssignments((prev) => ({
+        ...prev,
+        [assignmentId]: candidates,
+      }));
+    },
+    []
+  );
 
-  // Load candidates for all assignments when assignments are loaded
-  React.useEffect(() => {
-    const loadCandidatesForAssignments = async () => {
-      for (const assignment of apiAssignments) {
-        if (!assignment.uid) continue;
-        
-        setLoadingCandidates(prev => ({ ...prev, [assignment.id]: true }));
-        try {
-          const response = await API.get<CandidateAssignment[]>(
-            `/assignments/${assignment.uid}/candidates`
-          );
-          setLocalCandidateAssignments(prev => ({
-            ...prev,
-            [assignment.id]: response || [],
-          }));
-        } catch (e: any) {
-          console.error(`Error loading candidates for assignment ${assignment.id}:`, e);
-          // Set empty array on error
-          setLocalCandidateAssignments(prev => ({
-            ...prev,
-            [assignment.id]: [],
-          }));
-        } finally {
-          setLoadingCandidates(prev => ({ ...prev, [assignment.id]: false }));
-        }
-      }
-    };
+  // Handle notes image upload
+  const handleNotesImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    if (apiAssignments.length > 0) {
-      loadCandidatesForAssignments();
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setCreateAssignmentError("Selecteer een afbeelding (JPG, PNG, etc.)");
+      return;
     }
-  }, [apiAssignments]);
 
-  // Transform API assignments to the extended type with local candidate data
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setCreateAssignmentError("Afbeelding mag maximaal 5MB zijn");
+      return;
+    }
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setNewAssignmentNotesImagePreview(previewUrl);
+
+    // Store File object directly (will be sent as FormData)
+    setNewAssignmentNotesImage(file);
+  };
+
+  // Clear notes image
+  const handleClearNotesImage = () => {
+    setNewAssignmentNotesImage(null);
+    if (newAssignmentNotesImagePreview) {
+      URL.revokeObjectURL(newAssignmentNotesImagePreview);
+    }
+    setNewAssignmentNotesImagePreview(null);
+  };
+
+  // Transform API assignments to the extended type
+  // Note: Candidates will be loaded per assignment using useAssignmentCandidates hook in the component
   const assignments: AssignmentWithDetails[] = React.useMemo(() => {
     return apiAssignments.map((a) => ({
       id: a.id,
@@ -464,9 +555,10 @@ export default function AssignmentsPage() {
       vacation_days: a.vacation_days,
       location: a.location,
       employment_type: a.employment_type,
-      candidates: localCandidateAssignments[a.id] || [],
+      notes_image_url: a.notes_image_url,
+      candidates: [], // Will be populated by AssignmentCandidatesLoader component
     }));
-  }, [apiAssignments, localCandidateAssignments]);
+  }, [apiAssignments]);
 
   const handleCreateAssignment = async () => {
     if (!newAssignmentAccountUid) {
@@ -478,11 +570,10 @@ export default function AssignmentsPage() {
       return;
     }
 
-    setIsCreatingAssignment(true);
     setCreateAssignmentError(null);
 
     try {
-      await API.post("/assignments", {
+      await createAssignmentMutation.mutateAsync({
         account_uid: newAssignmentAccountUid,
         title: newAssignmentTitle.trim(),
         description: newAssignmentDescription.trim() || null,
@@ -493,6 +584,7 @@ export default function AssignmentsPage() {
         vacation_days: newAssignmentVacationDays || null,
         location: newAssignmentLocation.trim() || null,
         employment_type: newAssignmentEmploymentType || null,
+        notes_image: newAssignmentNotesImage,
       });
 
       // Reset form and close dialog
@@ -506,17 +598,14 @@ export default function AssignmentsPage() {
       setNewAssignmentVacationDays("");
       setNewAssignmentLocation("");
       setNewAssignmentEmploymentType("");
+      handleClearNotesImage();
       createAssignmentDialog.close();
-
-      // Refresh assignments list
-      await refreshAssignments();
+      // Cache is automatically invalidated by the mutation
     } catch (err: any) {
       console.error("Error creating assignment:", err);
       setCreateAssignmentError(
         err?.response?.data?.message || "Er is iets misgegaan bij het aanmaken"
       );
-    } finally {
-      setIsCreatingAssignment(false);
     }
   };
 
@@ -532,17 +621,64 @@ export default function AssignmentsPage() {
     });
   };
 
-  const handleStatusMenuOpen = (assignmentId: number, event: React.MouseEvent<HTMLElement>) => {
-    setStatusMenuAnchor((prev) => ({ ...prev, [assignmentId]: event.currentTarget }));
+  const toggleNotesImageExpanded = (assignmentId: number) => {
+    setExpandedNotesImages((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(assignmentId)) {
+        newSet.delete(assignmentId);
+      } else {
+        newSet.add(assignmentId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleStatusMenuOpen = (
+    assignmentId: number,
+    event: React.MouseEvent<HTMLElement>
+  ) => {
+    setStatusMenuAnchor((prev) => ({
+      ...prev,
+      [assignmentId]: event.currentTarget,
+    }));
   };
 
   const handleStatusMenuClose = (assignmentId: number) => {
     setStatusMenuAnchor((prev) => ({ ...prev, [assignmentId]: null }));
   };
 
-  const handleStatusChange = (assignmentId: number, newStatus: string) => {
+  const handleStatusChange = async (
+    assignmentId: number,
+    newStatus: string
+  ) => {
+    const assignment = assignments.find((a) => a.id === assignmentId);
+    if (!assignment || !assignment.uid) {
+      console.error("Assignment not found or missing uid");
+      return;
+    }
+
+    // Optimistically update local state
     setAssignmentStatuses((prev) => ({ ...prev, [assignmentId]: newStatus }));
     handleStatusMenuClose(assignmentId);
+
+    try {
+      await updateAssignmentMutation.mutateAsync({
+        uid: assignment.uid,
+        data: { status: newStatus },
+      });
+      // Cache is automatically invalidated by the mutation, so the UI will update
+    } catch (e: any) {
+      console.error("Error updating assignment status:", e);
+      // Revert optimistic update on error
+      setAssignmentStatuses((prev) => {
+        const updated = { ...prev };
+        delete updated[assignmentId];
+        return updated;
+      });
+      alert(
+        e?.response?.data?.message || "Fout bij bijwerken van status"
+      );
+    }
   };
 
   const handleCandidateStatusMenuOpen = (
@@ -552,10 +688,16 @@ export default function AssignmentsPage() {
   ) => {
     event.stopPropagation();
     const key = `${assignmentId}-${candidateId}`;
-    setCandidateStatusMenuAnchor((prev) => ({ ...prev, [key]: event.currentTarget }));
+    setCandidateStatusMenuAnchor((prev) => ({
+      ...prev,
+      [key]: event.currentTarget,
+    }));
   };
 
-  const handleCandidateStatusMenuClose = (assignmentId: number, candidateId: number) => {
+  const handleCandidateStatusMenuClose = (
+    assignmentId: number,
+    candidateId: number
+  ) => {
     const key = `${assignmentId}-${candidateId}`;
     setCandidateStatusMenuAnchor((prev) => ({ ...prev, [key]: null }));
   };
@@ -568,46 +710,36 @@ export default function AssignmentsPage() {
     const assignment = assignments.find((a) => a.id === assignmentId);
     if (!assignment || !assignment.uid) return;
 
-    const candidateToUpdate = localCandidateAssignments[assignmentId]?.find((c) => c.id === candidateId);
+    const candidateToUpdate = localCandidateAssignments[assignmentId]?.find(
+      (c) => c.id === candidateId
+    );
     if (!candidateToUpdate) return;
-
-    const statusLabel = candidateStatusOptions.find((opt) => opt.value === newStatus)?.label || newStatus;
-
-    // Optimistic update
-    setLocalCandidateAssignments((prev) => ({
-      ...prev,
-      [assignmentId]: (prev[assignmentId] || []).map((c) =>
-        c.id === candidateId
-          ? { ...c, status: newStatus, status_label: statusLabel }
-          : c
-      ),
-    }));
 
     handleCandidateStatusMenuClose(assignmentId, candidateId);
 
     try {
-      // Make API call to update status
-      await API.put(`/assignments/${assignment.uid}/candidates/${candidateToUpdate.contact.uid}`, {
+      await updateCandidateStatusMutation.mutateAsync({
+        assignmentUid: assignment.uid,
+        contactUid: candidateToUpdate.contact.uid,
         status: newStatus,
       });
+      // Cache is automatically invalidated by the mutation
     } catch (e: any) {
       console.error("Error updating candidate status:", e);
-      // Revert optimistic update on error
-      setLocalCandidateAssignments((prev) => ({
-        ...prev,
-        [assignmentId]: (prev[assignmentId] || []).map((c) =>
-          c.id === candidateId
-            ? { ...c, status: candidateToUpdate.status, status_label: candidateToUpdate.status_label }
-            : c
-        ),
-      }));
       alert(e?.response?.data?.message || "Fout bij bijwerken van status");
     }
   };
 
   const handleOpenAddCandidateDialog = (assignmentId: number) => {
     setSelectedAssignmentId(assignmentId);
-    setSelectedCandidateIds(new Set());
+
+    // Pre-select already linked candidates
+    const existingCandidates = localCandidateAssignments[assignmentId] || [];
+    const existingCandidateUids = new Set(
+      existingCandidates.map((c) => c.contact.uid)
+    );
+    setSelectedCandidateIds(existingCandidateUids);
+
     setCompanyRoleFilter("");
     setLocationFilter("");
     setAddCandidateDialogOpen(true);
@@ -640,14 +772,21 @@ export default function AssignmentsPage() {
     if (!assignment || !assignment.uid) return;
 
     // Get selected candidates
-    const selectedCandidates = candidates.filter((c) => selectedCandidateIds.has(c.uid));
+    const selectedCandidates = candidates.filter((c) =>
+      selectedCandidateIds.has(c.uid)
+    );
 
     // Check which candidates are already in the assignment
-    const existingCandidates = localCandidateAssignments[selectedAssignmentId] || [];
-    const existingCandidateUids = new Set(existingCandidates.map((c) => c.contact.uid));
+    const existingCandidates =
+      localCandidateAssignments[selectedAssignmentId] || [];
+    const existingCandidateUids = new Set(
+      existingCandidates.map((c) => c.contact.uid)
+    );
 
     // Filter out already added candidates
-    const newCandidates = selectedCandidates.filter((c) => !existingCandidateUids.has(c.uid));
+    const newCandidates = selectedCandidates.filter(
+      (c) => !existingCandidateUids.has(c.uid)
+    );
 
     if (newCandidates.length === 0) {
       handleCloseAddCandidateDialog();
@@ -658,74 +797,54 @@ export default function AssignmentsPage() {
     const contactUids = newCandidates.map((c) => c.uid);
 
     try {
-      setLoadingCandidates(prev => ({ ...prev, [selectedAssignmentId]: true }));
-      
-      // Make API call to add candidates
-      const response = await API.post<CandidateAssignment[]>(
-        `/assignments/${assignment.uid}/candidates`,
-        { contact_uids: contactUids }
-      );
-
-      // Update local state with response from API
-      setLocalCandidateAssignments((prev) => ({
-        ...prev,
-        [selectedAssignmentId]: response || [],
-      }));
-
+      await addCandidatesMutation.mutateAsync({
+        assignmentUid: assignment.uid,
+        contactUids,
+      });
       handleCloseAddCandidateDialog();
+      // Cache is automatically invalidated by the mutation
     } catch (e: any) {
       console.error("Error adding candidates to assignment:", e);
-      // Show error to user (you might want to add a toast/alert here)
       alert(e?.response?.data?.message || "Fout bij toevoegen van kandidaten");
-    } finally {
-      setLoadingCandidates(prev => ({ ...prev, [selectedAssignmentId]: false }));
     }
   };
 
-  const handleRemoveCandidateFromAssignment = async (assignmentId: number, candidateId: number) => {
+  const handleRemoveCandidateFromAssignment = async (
+    assignmentId: number,
+    candidateId: number
+  ) => {
     const assignment = assignments.find((a) => a.id === assignmentId);
     if (!assignment || !assignment.uid) return;
 
-    const candidateToRemove = localCandidateAssignments[assignmentId]?.find((c) => c.id === candidateId);
+    const candidateToRemove = localCandidateAssignments[assignmentId]?.find(
+      (c) => c.id === candidateId
+    );
     if (!candidateToRemove) return;
 
     try {
-      setLoadingCandidates(prev => ({ ...prev, [assignmentId]: true }));
-      
-      // Make API call to remove candidate
-      await API.delete(`/assignments/${assignment.uid}/candidates/${candidateToRemove.contact.uid}`);
-
-      // Update local state
-      setLocalCandidateAssignments((prev) => ({
-        ...prev,
-        [assignmentId]: (prev[assignmentId] || []).filter((c) => c.id !== candidateId),
-      }));
+      await removeCandidateMutation.mutateAsync({
+        assignmentUid: assignment.uid,
+        contactUid: candidateToRemove.contact.uid,
+      });
+      // Cache is automatically invalidated by the mutation
     } catch (e: any) {
       console.error("Error removing candidate from assignment:", e);
       alert(e?.response?.data?.message || "Fout bij verwijderen van kandidaat");
-    } finally {
-      setLoadingCandidates(prev => ({ ...prev, [assignmentId]: false }));
     }
   };
 
-  // Get available candidates for the selected assignment (candidates not already added)
+  // Get available candidates for the selected assignment (includes already linked candidates)
   const getAvailableCandidates = () => {
     if (!selectedAssignmentId) return [];
 
-    const assignment = assignments.find((a) => a.id === selectedAssignmentId);
-    if (!assignment) return candidates;
-
-    const existingCandidateUids = new Set(
-      (assignment.candidates || []).map((c) => c.contact.uid)
-    );
-
     return candidates.filter((c) => {
-      // Filter out already added candidates
-      if (existingCandidateUids.has(c.uid)) return false;
-
       // Filter by company_role (case-insensitive partial match)
       if (companyRoleFilter && c.company_role) {
-        if (!c.company_role.toLowerCase().includes(companyRoleFilter.toLowerCase())) {
+        if (
+          !c.company_role
+            .toLowerCase()
+            .includes(companyRoleFilter.toLowerCase())
+        ) {
           return false;
         }
       } else if (companyRoleFilter && !c.company_role) {
@@ -745,11 +864,23 @@ export default function AssignmentsPage() {
     });
   };
 
+  // Get UIDs of candidates already linked to the selected assignment
+  const getLinkedCandidateUids = (): Set<string> => {
+    if (!selectedAssignmentId) return new Set();
+    const existingCandidates =
+      localCandidateAssignments[selectedAssignmentId] || [];
+    return new Set(existingCandidates.map((c) => c.contact.uid));
+  };
+
   const filteredAssignments = assignments.filter((assignment) => {
     const matchesSearch =
       assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      assignment.account?.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || assignmentStatuses[assignment.id] === statusFilter;
+      assignment.account?.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" ||
+      assignmentStatuses[assignment.id] === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -799,7 +930,8 @@ export default function AssignmentsPage() {
         {/* Warning if no accounts */}
         {!accountsLoading && accounts.length === 0 && (
           <Alert severity="warning">
-            Je hebt nog geen klanten. Voeg eerst een klant toe voordat je een opdracht kunt aanmaken.
+            Je hebt nog geen klanten. Voeg eerst een klant toe voordat je een
+            opdracht kunt aanmaken.
           </Alert>
         )}
 
@@ -812,330 +944,519 @@ export default function AssignmentsPage() {
 
         {/* Error state */}
         {assignmentsError && (
-          <Alert severity="error">{assignmentsError}</Alert>
+          <Alert severity="error">
+            {assignmentsError.message || String(assignmentsError)}
+          </Alert>
         )}
 
         {/* Assignments List */}
         {filteredAssignments.map((assignment) => {
-          const currentStatus = assignmentStatuses[assignment.id] || assignment.status || "active";
-          const statusLabel = statusOptions.find((opt) => opt.value === currentStatus)?.label || currentStatus;
+          const currentStatus =
+            assignmentStatuses[assignment.id] || assignment.status || "active";
+          const statusLabel =
+            statusOptions.find((opt) => opt.value === currentStatus)?.label ||
+            currentStatus;
           const isExpanded = expandedAssignments.has(assignment.id);
+          const assignmentCandidates =
+            localCandidateAssignments[assignment.id] || [];
 
           return (
-            <Paper
-              key={assignment.id}
-              sx={{
-                p: 2,
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  boxShadow: 3,
-                },
-              }}
-            >
-              {/* Collapsed View - Always Visible */}
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {assignment.title}
-                  </Typography>
-                  <Link
-                    component="button"
-                    variant="body2"
-                    onClick={() => assignment.account?.uid && navigate(`/accounts/${assignment.account.uid}`)}
-                    sx={{
-                      textDecoration: "underline",
-                      color: "primary.main",
-                      cursor: "pointer",
-                      "&:hover": { color: "primary.dark" },
-                    }}
-                  >
-                    {assignment.account?.name}
-                  </Link>
-                </Box>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Button
-                    variant="contained"
-                    color={getStatusColor(currentStatus)}
-                    endIcon={<SwapVertIcon />}
-                    onClick={(e) => handleStatusMenuOpen(assignment.id, e)}
-                    sx={{
-                      bgcolor:
-                        currentStatus === "proposed"
-                          ? "#d32f2f"
-                          : currentStatus === "hired"
-                          ? "#2e7d32"
-                          : undefined,
-                      "&:hover": {
+            <React.Fragment key={assignment.id}>
+              <AssignmentCandidatesLoader
+                assignmentId={assignment.id}
+                assignmentUid={assignment.uid}
+                onCandidatesLoaded={handleCandidatesLoaded}
+              />
+              <Paper
+                sx={{
+                  p: 2,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    boxShadow: 3,
+                  },
+                }}
+              >
+                {/* Collapsed View - Always Visible */}
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      {assignment.title}
+                    </Typography>
+                    <Link
+                      component="button"
+                      variant="body2"
+                      onClick={() =>
+                        assignment.account?.uid &&
+                        navigate(`/accounts/${assignment.account.uid}`)
+                      }
+                      sx={{
+                        textDecoration: "underline",
+                        color: "primary.main",
+                        cursor: "pointer",
+                        "&:hover": { color: "primary.dark" },
+                      }}
+                    >
+                      {assignment.account?.name}
+                    </Link>
+                  </Box>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Button
+                      variant="contained"
+                      color={getStatusColor(currentStatus)}
+                      endIcon={<SwapVertIcon />}
+                      onClick={(e) => handleStatusMenuOpen(assignment.id, e)}
+                      sx={{
                         bgcolor:
                           currentStatus === "proposed"
-                            ? "#b71c1c"
+                            ? "#d32f2f"
                             : currentStatus === "hired"
-                            ? "#1b5e20"
+                            ? "#2e7d32"
                             : undefined,
-                      },
-                    }}
-                  >
-                    {statusLabel}
-                  </Button>
-                  <Menu
-                    anchorEl={statusMenuAnchor[assignment.id]}
-                    open={Boolean(statusMenuAnchor[assignment.id])}
-                    onClose={() => handleStatusMenuClose(assignment.id)}
-                  >
-                    {statusOptions.map((option) => (
-                      <MenuItem
-                        key={option.value}
-                        onClick={() => handleStatusChange(assignment.id, option.value)}
-                        selected={currentStatus === option.value}
-                      >
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Menu>
-                  <Box
-                    onClick={() => toggleExpanded(assignment.id)}
-                    sx={{
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      p: 0.5,
-                      borderRadius: 1,
-                      "&:hover": {
-                        bgcolor: "action.hover",
-                      },
-                    }}
-                  >
-                    {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  </Box>
-                </Stack>
-              </Stack>
-
-              {/* Expanded View - Animated Collapse */}
-              <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                <Box sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: "divider" }}>
-                  <Stack spacing={3}>
-                    {assignment.location && (
-                      <Typography variant="body2" color="text.secondary">
-                        Locatie: {assignment.location}
-                      </Typography>
-                    )}
-
-                    {/* Voorwaarden (Conditions) Section */}
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-                        Voorwaarden
-                      </Typography>
-                      <Stack direction="row" spacing={4} flexWrap="wrap">
-                        {assignment.employment_type && (
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Dienstverband
-                            </Typography>
-                            <Typography variant="body2">{assignment.employment_type}</Typography>
-                          </Box>
-                        )}
-                        {(assignment.salary_min || assignment.salary_max) && (
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Salarisindicatie
-                            </Typography>
-                            <Typography variant="body2">
-                              {assignment.salary_min && assignment.salary_max
-                                ? `€${assignment.salary_min.toLocaleString()} - €${assignment.salary_max.toLocaleString()}`
-                                : assignment.salary_min
-                                ? `vanaf €${assignment.salary_min.toLocaleString()}`
-                                : `tot €${assignment.salary_max?.toLocaleString()}`}
-                            </Typography>
-                          </Box>
-                        )}
-                        {assignment.has_car && (
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Auto
-                            </Typography>
-                            <Typography variant="body2">Ja</Typography>
-                          </Box>
-                        )}
-                        {assignment.has_bonus && (
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Bonusregeling
-                            </Typography>
-                            <Typography variant="body2">Ja</Typography>
-                          </Box>
-                        )}
-                        {assignment.vacation_days && (
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Vakantiedagen
-                            </Typography>
-                            <Typography variant="body2">{assignment.vacation_days} dagen</Typography>
-                          </Box>
-                        )}
-                      </Stack>
-                    </Box>
-
-                    {/* Candidates Table */}
-                    <Box>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          Kandidaten
-                        </Typography>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<AddIcon />}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenAddCandidateDialog(assignment.id);
-                          }}
+                        "&:hover": {
+                          bgcolor:
+                            currentStatus === "proposed"
+                              ? "#b71c1c"
+                              : currentStatus === "hired"
+                              ? "#1b5e20"
+                              : undefined,
+                        },
+                      }}
+                    >
+                      {statusLabel}
+                    </Button>
+                    <Menu
+                      anchorEl={statusMenuAnchor[assignment.id]}
+                      open={Boolean(statusMenuAnchor[assignment.id])}
+                      onClose={() => handleStatusMenuClose(assignment.id)}
+                    >
+                      {statusOptions.map((option) => (
+                        <MenuItem
+                          key={option.value}
+                          onClick={() =>
+                            handleStatusChange(assignment.id, option.value)
+                          }
+                          selected={currentStatus === option.value}
                         >
-                          Kandidaat toevoegen
-                        </Button>
-                      </Stack>
-                      {assignment.candidates && assignment.candidates.length > 0 ? (
-                        <>
-                          <TableContainer>
-                            <Table size="small">
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Naam</TableCell>
-                                  <TableCell>Functie</TableCell>
-                                  <TableCell>Bedrijf</TableCell>
-                                  <TableCell>Status</TableCell>
-                                  <TableCell align="right">Acties</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {assignment.candidates.map((candidate) => (
-                                  <TableRow key={candidate.id} hover>
-                                    <TableCell>
-                                      <Link
-                                        component="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          navigate(`/candidates`, { state: { contactUid: candidate.contact.uid } });
-                                        }}
-                                        sx={{
-                                          textDecoration: "underline",
-                                          color: "inherit",
-                                          cursor: "pointer",
-                                          "&:hover": { color: "primary.main" },
-                                        }}
-                                      >
-                                        {`${candidate.contact.first_name} ${candidate.contact.last_name}`}
-                                      </Link>
-                                    </TableCell>
-                                    <TableCell>{candidate.contact.company_role || "-"}</TableCell>
-                                    <TableCell>{candidate.contact.current_company || "-"}</TableCell>
-                                    <TableCell>
-                                      <Box
-                                        onClick={(e) =>
-                                          handleCandidateStatusMenuOpen(assignment.id, candidate.id, e)
-                                        }
-                                        sx={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          gap: 1,
-                                          cursor: "pointer",
-                                          px: 1,
-                                          py: 0.5,
-                                          borderRadius: 1,
-                                          "&:hover": {
-                                            bgcolor: "action.hover",
-                                          },
-                                        }}
-                                      >
-                                        <Box
-                                          sx={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: "50%",
-                                            bgcolor: getCandidateStatusColor(candidate.status),
-                                          }}
-                                        />
-                                        <Typography variant="body2">{candidate.status_label}</Typography>
-                                        <SwapVertIcon fontSize="small" sx={{ opacity: 0.5 }} />
-                                      </Box>
-                                      <Menu
-                                        anchorEl={
-                                          candidateStatusMenuAnchor[`${assignment.id}-${candidate.id}`]
-                                        }
-                                        open={Boolean(
-                                          candidateStatusMenuAnchor[`${assignment.id}-${candidate.id}`]
-                                        )}
-                                        onClose={() =>
-                                          handleCandidateStatusMenuClose(assignment.id, candidate.id)
-                                        }
-                                      >
-                                        {candidateStatusOptions.map((option) => (
-                                          <MenuItem
-                                            key={option.value}
-                                            onClick={() =>
-                                              handleCandidateStatusChange(
-                                                assignment.id,
-                                                candidate.id,
-                                                option.value
-                                              )
-                                            }
-                                            selected={candidate.status === option.value}
-                                          >
-                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                              <Box
-                                                sx={{
-                                                  width: 8,
-                                                  height: 8,
-                                                  borderRadius: "50%",
-                                                  bgcolor: getCandidateStatusColor(option.value),
-                                                }}
-                                              />
-                                              <Typography variant="body2">{option.label}</Typography>
-                                            </Stack>
-                                          </MenuItem>
-                                        ))}
-                                      </Menu>
-                                    </TableCell>
-                                    <TableCell align="right">
-                                      <Tooltip title="Verwijderen uit opdracht">
-                                        <IconButton
-                                          size="small"
-                                          color="error"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRemoveCandidateFromAssignment(assignment.id, candidate.id);
-                                          }}
-                                        >
-                                          <DeleteOutlineIcon fontSize="small" />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
-                            <Pagination count={3} page={1} color="primary" size="small" />
-                            <FormControl size="small" sx={{ minWidth: 120 }}>
-                              <InputLabel>Results per page</InputLabel>
-                              <Select value={12} label="Results per page">
-                                <MenuItem value={12}>12</MenuItem>
-                                <MenuItem value={24}>24</MenuItem>
-                                <MenuItem value={50}>50</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </Stack>
-                        </>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
-                          Geen kandidaten toegevoegd. Klik op "Kandidaat toevoegen" om te beginnen.
-                        </Typography>
-                      )}
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                    <Box
+                      onClick={() => toggleExpanded(assignment.id)}
+                      sx={{
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        p: 0.5,
+                        borderRadius: 1,
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                        },
+                      }}
+                    >
+                      {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                     </Box>
                   </Stack>
-                </Box>
-              </Collapse>
-            </Paper>
+                </Stack>
+
+                {/* Expanded View - Animated Collapse */}
+                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                  <Box
+                    sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: "divider" }}
+                  >
+                    <Stack spacing={3}>
+                      {assignment.location && (
+                        <Typography variant="body2" color="text.secondary">
+                          Locatie: {assignment.location}
+                        </Typography>
+                      )}
+
+                      {/* Voorwaarden (Conditions) Section */}
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 600, mb: 1.5 }}
+                        >
+                          Voorwaarden
+                        </Typography>
+                        <Stack direction="row" spacing={4} flexWrap="wrap">
+                          {assignment.employment_type && (
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Dienstverband
+                              </Typography>
+                              <Typography variant="body2">
+                                {assignment.employment_type}
+                              </Typography>
+                            </Box>
+                          )}
+                          {(assignment.salary_min || assignment.salary_max) && (
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Salarisindicatie
+                              </Typography>
+                              <Typography variant="body2">
+                                {assignment.salary_min && assignment.salary_max
+                                  ? `€${assignment.salary_min.toLocaleString()} - €${assignment.salary_max.toLocaleString()}`
+                                  : assignment.salary_min
+                                  ? `vanaf €${assignment.salary_min.toLocaleString()}`
+                                  : `tot €${assignment.salary_max?.toLocaleString()}`}
+                              </Typography>
+                            </Box>
+                          )}
+                          {assignment.has_car && (
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Auto
+                              </Typography>
+                              <Typography variant="body2">Ja</Typography>
+                            </Box>
+                          )}
+                          {assignment.has_bonus && (
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Bonusregeling
+                              </Typography>
+                              <Typography variant="body2">Ja</Typography>
+                            </Box>
+                          )}
+                          {assignment.vacation_days && (
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Vakantiedagen
+                              </Typography>
+                              <Typography variant="body2">
+                                {assignment.vacation_days} dagen
+                              </Typography>
+                            </Box>
+                          )}
+                        </Stack>
+                      </Box>
+
+                      {/* Notes Image Section */}
+                      {assignment.notes_image_url && (
+                        <Box>
+                          <Box
+                            onClick={() => toggleNotesImageExpanded(assignment.id)}
+                            sx={{
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              mb: 1.5,
+                              "&:hover": {
+                                bgcolor: "action.hover",
+                              },
+                              p: 0.5,
+                              borderRadius: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ fontWeight: 600 }}
+                            >
+                              Notities
+                            </Typography>
+                            {expandedNotesImages.has(assignment.id) ? (
+                              <ExpandLessIcon />
+                            ) : (
+                              <ExpandMoreIcon />
+                            )}
+                          </Box>
+                          <Collapse
+                            in={expandedNotesImages.has(assignment.id)}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <Box
+                              sx={{
+                                maxWidth: 600,
+                                borderRadius: 1,
+                                overflow: "hidden",
+                                border: 1,
+                                borderColor: "divider",
+                              }}
+                            >
+                              <img
+                                src={assignment.notes_image_url}
+                                alt="Notities"
+                                style={{
+                                  width: "100%",
+                                  height: "auto",
+                                  display: "block",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() =>
+                                  window.open(
+                                    assignment.notes_image_url!,
+                                    "_blank"
+                                  )
+                                }
+                              />
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ mt: 0.5, display: "block" }}
+                            >
+                              Klik op de afbeelding om te vergroten
+                            </Typography>
+                          </Collapse>
+                        </Box>
+                      )}
+
+                      {/* Candidates Table */}
+                      <Box>
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          sx={{ mb: 1.5 }}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            Kandidaten
+                          </Typography>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<AddIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenAddCandidateDialog(assignment.id);
+                            }}
+                          >
+                            Kandidaat toevoegen
+                          </Button>
+                        </Stack>
+                        {assignmentCandidates &&
+                        assignmentCandidates.length > 0 ? (
+                          <>
+                            <TableContainer>
+                              <Table size="small">
+                                <TableHead>
+                                  <TableRow>
+                                    <TableCell>Naam</TableCell>
+                                    <TableCell>Functie</TableCell>
+                                    <TableCell>Bedrijf</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell align="right">Acties</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {assignmentCandidates.map((candidate) => (
+                                    <TableRow key={candidate.id} hover>
+                                      <TableCell>
+                                        <Link
+                                          component="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/candidates`, {
+                                              state: {
+                                                contactUid:
+                                                  candidate.contact.uid,
+                                              },
+                                            });
+                                          }}
+                                          sx={{
+                                            textDecoration: "underline",
+                                            color: "inherit",
+                                            cursor: "pointer",
+                                            "&:hover": {
+                                              color: "primary.main",
+                                            },
+                                          }}
+                                        >
+                                          {`${candidate.contact.first_name} ${candidate.contact.last_name}`}
+                                        </Link>
+                                      </TableCell>
+                                      <TableCell>
+                                        {candidate.contact.company_role || "-"}
+                                      </TableCell>
+                                      <TableCell>
+                                        {candidate.contact.current_company ||
+                                          "-"}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Box
+                                          onClick={(e) =>
+                                            handleCandidateStatusMenuOpen(
+                                              assignment.id,
+                                              candidate.id,
+                                              e
+                                            )
+                                          }
+                                          sx={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 1,
+                                            cursor: "pointer",
+                                            px: 1,
+                                            py: 0.5,
+                                            borderRadius: 1,
+                                            "&:hover": {
+                                              bgcolor: "action.hover",
+                                            },
+                                          }}
+                                        >
+                                          <Box
+                                            sx={{
+                                              width: 8,
+                                              height: 8,
+                                              borderRadius: "50%",
+                                              bgcolor: getCandidateStatusColor(
+                                                candidate.status
+                                              ),
+                                            }}
+                                          />
+                                          <Typography variant="body2">
+                                            {candidate.status_label}
+                                          </Typography>
+                                          <SwapVertIcon
+                                            fontSize="small"
+                                            sx={{ opacity: 0.5 }}
+                                          />
+                                        </Box>
+                                        <Menu
+                                          anchorEl={
+                                            candidateStatusMenuAnchor[
+                                              `${assignment.id}-${candidate.id}`
+                                            ]
+                                          }
+                                          open={Boolean(
+                                            candidateStatusMenuAnchor[
+                                              `${assignment.id}-${candidate.id}`
+                                            ]
+                                          )}
+                                          onClose={() =>
+                                            handleCandidateStatusMenuClose(
+                                              assignment.id,
+                                              candidate.id
+                                            )
+                                          }
+                                        >
+                                          {candidateStatusOptions.map(
+                                            (option) => (
+                                              <MenuItem
+                                                key={option.value}
+                                                onClick={() =>
+                                                  handleCandidateStatusChange(
+                                                    assignment.id,
+                                                    candidate.id,
+                                                    option.value
+                                                  )
+                                                }
+                                                selected={
+                                                  candidate.status ===
+                                                  option.value
+                                                }
+                                              >
+                                                <Stack
+                                                  direction="row"
+                                                  alignItems="center"
+                                                  spacing={1}
+                                                >
+                                                  <Box
+                                                    sx={{
+                                                      width: 8,
+                                                      height: 8,
+                                                      borderRadius: "50%",
+                                                      bgcolor:
+                                                        getCandidateStatusColor(
+                                                          option.value
+                                                        ),
+                                                    }}
+                                                  />
+                                                  <Typography variant="body2">
+                                                    {option.label}
+                                                  </Typography>
+                                                </Stack>
+                                              </MenuItem>
+                                            )
+                                          )}
+                                        </Menu>
+                                      </TableCell>
+                                      <TableCell align="right">
+                                        <Tooltip title="Verwijderen uit opdracht">
+                                          <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleRemoveCandidateFromAssignment(
+                                                assignment.id,
+                                                candidate.id
+                                              );
+                                            }}
+                                          >
+                                            <DeleteOutlineIcon fontSize="small" />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                            <Stack
+                              direction="row"
+                              justifyContent="space-between"
+                              alignItems="center"
+                              sx={{ mt: 2 }}
+                            >
+                              <Pagination
+                                count={3}
+                                page={1}
+                                color="primary"
+                                size="small"
+                              />
+                              <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <InputLabel>Results per page</InputLabel>
+                                <Select value={12} label="Results per page">
+                                  <MenuItem value={12}>12</MenuItem>
+                                  <MenuItem value={24}>24</MenuItem>
+                                  <MenuItem value={50}>50</MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Stack>
+                          </>
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ py: 2, textAlign: "center" }}
+                          >
+                            Geen kandidaten toegevoegd. Klik op "Kandidaat
+                            toevoegen" om te beginnen.
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
+                  </Box>
+                </Collapse>
+              </Paper>
+            </React.Fragment>
           );
         })}
 
@@ -1223,11 +1544,19 @@ export default function AssignmentsPage() {
                       "Maastricht",
                       "Nijmegen",
                     ];
-                    
+
                     // Randomly select or clear filters
-                    const randomRole = Math.random() > 0.5 ? roles[Math.floor(Math.random() * roles.length)] : "";
-                    const randomLocation = Math.random() > 0.5 ? locations[Math.floor(Math.random() * locations.length)] : "";
-                    
+                    const randomRole =
+                      Math.random() > 0.5
+                        ? roles[Math.floor(Math.random() * roles.length)]
+                        : "";
+                    const randomLocation =
+                      Math.random() > 0.5
+                        ? locations[
+                            Math.floor(Math.random() * locations.length)
+                          ]
+                        : "";
+
                     setCompanyRoleFilter(randomRole);
                     setLocationFilter(randomLocation);
                   }}
@@ -1252,87 +1581,162 @@ export default function AssignmentsPage() {
                     variant="outlined"
                     size="small"
                     onClick={() => {
-                      const allFilteredUids = getAvailableCandidates().map((c) => c.uid);
+                      const allFilteredUids = getAvailableCandidates().map(
+                        (c) => c.uid
+                      );
                       setSelectedCandidateIds(new Set(allFilteredUids));
                     }}
-                    disabled={selectedCandidateIds.size === getAvailableCandidates().length}
+                    disabled={
+                      selectedCandidateIds.size ===
+                      getAvailableCandidates().length
+                    }
                   >
                     Selecteer alle ({getAvailableCandidates().length})
                   </Button>
                   <Button
                     variant="outlined"
                     size="small"
-                    onClick={() => setSelectedCandidateIds(new Set())}
-                    disabled={selectedCandidateIds.size === 0}
+                    onClick={() => {
+                      // Keep only already linked candidates selected
+                      setSelectedCandidateIds(getLinkedCandidateUids());
+                    }}
+                    disabled={
+                      // Disable if only linked candidates are selected
+                      [...selectedCandidateIds].filter(
+                        (uid) => !getLinkedCandidateUids().has(uid)
+                      ).length === 0
+                    }
                   >
-                    Deselecteer alle
+                    Deselecteer nieuwe
                   </Button>
                 </Stack>
               )}
 
               {/* Candidates List */}
               {getAvailableCandidates().length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ py: 2, textAlign: "center" }}
+                >
                   {companyRoleFilter || locationFilter
                     ? "Geen kandidaten gevonden met de geselecteerde filters."
-                    : "Alle beschikbare kandidaten zijn al toegevoegd aan deze opdracht."}
+                    : "Geen kandidaten beschikbaar."}
                 </Typography>
               ) : (
                 <List sx={{ maxHeight: 400, overflow: "auto" }}>
-                  {getAvailableCandidates().map((candidate) => (
-                <ListItem key={candidate.uid} disablePadding>
-                  <ListItemButton
-                    onClick={() => handleToggleCandidateSelection(candidate.uid)}
-                    dense
-                  >
-                    <ListItemIcon>
-                      <Checkbox
-                        edge="start"
-                        checked={selectedCandidateIds.has(candidate.uid)}
-                        tabIndex={-1}
-                        disableRipple
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={`${candidate.first_name} ${candidate.last_name}`}
-                      secondary={
-                        <Stack direction="row" spacing={2} flexWrap="wrap">
-                          {candidate.company_role && (
-                            <Typography variant="caption" component="span">
-                              {candidate.company_role}
-                            </Typography>
-                          )}
-                          {candidate.current_company && (
-                            <Typography variant="caption" component="span" color="text.secondary">
-                              {candidate.current_company}
-                            </Typography>
-                          )}
-                          {candidate.location && (
-                            <Typography variant="caption" component="span" color="text.secondary">
-                              {candidate.location}
-                            </Typography>
-                          )}
-                        </Stack>
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-                  ))}
+                  {getAvailableCandidates().map((candidate) => {
+                    const isAlreadyLinked = getLinkedCandidateUids().has(
+                      candidate.uid
+                    );
+                    return (
+                      <ListItem key={candidate.uid} disablePadding>
+                        <ListItemButton
+                          onClick={() =>
+                            handleToggleCandidateSelection(candidate.uid)
+                          }
+                          dense
+                          sx={
+                            isAlreadyLinked
+                              ? { bgcolor: "action.selected" }
+                              : undefined
+                          }
+                        >
+                          <ListItemIcon>
+                            <Checkbox
+                              edge="start"
+                              checked={selectedCandidateIds.has(candidate.uid)}
+                              tabIndex={-1}
+                              disableRipple
+                            />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                              >
+                                <span>{`${candidate.first_name} ${candidate.last_name}`}</span>
+                                {isAlreadyLinked && (
+                                  <Chip
+                                    label="Gekoppeld"
+                                    size="small"
+                                    color="primary"
+                                    variant="outlined"
+                                    sx={{ height: 20, fontSize: "0.7rem" }}
+                                  />
+                                )}
+                              </Stack>
+                            }
+                            secondary={
+                              <Stack
+                                direction="row"
+                                spacing={2}
+                                flexWrap="wrap"
+                              >
+                                {candidate.company_role && (
+                                  <Typography
+                                    variant="caption"
+                                    component="span"
+                                  >
+                                    {candidate.company_role}
+                                  </Typography>
+                                )}
+                                {candidate.current_company && (
+                                  <Typography
+                                    variant="caption"
+                                    component="span"
+                                    color="text.secondary"
+                                  >
+                                    {candidate.current_company}
+                                  </Typography>
+                                )}
+                                {candidate.location && (
+                                  <Typography
+                                    variant="caption"
+                                    component="span"
+                                    color="text.secondary"
+                                  >
+                                    {candidate.location}
+                                  </Typography>
+                                )}
+                              </Stack>
+                            }
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    );
+                  })}
                 </List>
               )}
             </>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAddCandidateDialog} disabled={loadingCandidates[selectedAssignmentId || 0]}>
+          <Button
+            onClick={handleCloseAddCandidateDialog}
+            disabled={addCandidatesMutation.isPending}
+          >
             Annuleren
           </Button>
           <Button
             onClick={handleAddCandidatesToAssignment}
             variant="contained"
-            disabled={selectedCandidateIds.size === 0 || loadingCandidates[selectedAssignmentId || 0]}
+            disabled={
+              // Disable if no NEW candidates are selected (only already linked ones)
+              [...selectedCandidateIds].filter(
+                (uid) => !getLinkedCandidateUids().has(uid)
+              ).length === 0 || addCandidatesMutation.isPending
+            }
           >
-            {loadingCandidates[selectedAssignmentId || 0] ? "Bezig..." : `Toevoegen (${selectedCandidateIds.size})`}
+            {addCandidatesMutation.isPending
+              ? "Bezig..."
+              : `Toevoegen (${
+                  [...selectedCandidateIds].filter(
+                    (uid) => !getLinkedCandidateUids().has(uid)
+                  ).length
+                } nieuw)`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1353,6 +1757,7 @@ export default function AssignmentsPage() {
           setNewAssignmentVacationDays("");
           setNewAssignmentLocation("");
           setNewAssignmentEmploymentType("");
+          handleClearNotesImage();
         }}
         maxWidth="sm"
         fullWidth
@@ -1360,7 +1765,11 @@ export default function AssignmentsPage() {
         <DialogTitle>Nieuwe opdracht aanmaken</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={3} sx={{ pt: 1 }}>
-            <FormControl fullWidth required error={!newAssignmentAccountUid && !!createAssignmentError}>
+            <FormControl
+              fullWidth
+              required
+              error={!newAssignmentAccountUid && !!createAssignmentError}
+            >
               <InputLabel>Klant</InputLabel>
               <Select
                 value={newAssignmentAccountUid}
@@ -1404,7 +1813,9 @@ export default function AssignmentsPage() {
                 <InputLabel>Dienstverband</InputLabel>
                 <Select
                   value={newAssignmentEmploymentType}
-                  onChange={(e) => setNewAssignmentEmploymentType(e.target.value)}
+                  onChange={(e) =>
+                    setNewAssignmentEmploymentType(e.target.value)
+                  }
                   label="Dienstverband"
                 >
                   <MenuItem value="">Geen</MenuItem>
@@ -1422,7 +1833,11 @@ export default function AssignmentsPage() {
                 type="number"
                 fullWidth
                 value={newAssignmentSalaryMin}
-                onChange={(e) => setNewAssignmentSalaryMin(e.target.value ? parseInt(e.target.value) : "")}
+                onChange={(e) =>
+                  setNewAssignmentSalaryMin(
+                    e.target.value ? parseInt(e.target.value) : ""
+                  )
+                }
                 InputProps={{ inputProps: { min: 0 } }}
               />
               <TextField
@@ -1430,7 +1845,11 @@ export default function AssignmentsPage() {
                 type="number"
                 fullWidth
                 value={newAssignmentSalaryMax}
-                onChange={(e) => setNewAssignmentSalaryMax(e.target.value ? parseInt(e.target.value) : "")}
+                onChange={(e) =>
+                  setNewAssignmentSalaryMax(
+                    e.target.value ? parseInt(e.target.value) : ""
+                  )
+                }
                 InputProps={{ inputProps: { min: 0 } }}
               />
             </Stack>
@@ -1457,14 +1876,80 @@ export default function AssignmentsPage() {
                 label="Vakantiedagen"
                 type="number"
                 value={newAssignmentVacationDays}
-                onChange={(e) => setNewAssignmentVacationDays(e.target.value ? parseInt(e.target.value) : "")}
+                onChange={(e) =>
+                  setNewAssignmentVacationDays(
+                    e.target.value ? parseInt(e.target.value) : ""
+                  )
+                }
                 InputProps={{ inputProps: { min: 0, max: 100 } }}
                 sx={{ width: 140 }}
               />
             </Stack>
 
+            {/* Notes Image Upload */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Notities afbeelding (optioneel)
+              </Typography>
+              {newAssignmentNotesImagePreview ? (
+                <Box sx={{ position: "relative", display: "inline-block" }}>
+                  <Box
+                    component="img"
+                    src={newAssignmentNotesImagePreview}
+                    alt="Notities preview"
+                    sx={{
+                      maxWidth: "100%",
+                      maxHeight: 200,
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleClearNotesImage}
+                    sx={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      bgcolor: "error.main",
+                      color: "white",
+                      "&:hover": { bgcolor: "error.dark" },
+                    }}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<AddIcon />}
+                  sx={{ width: "100%" }}
+                >
+                  Afbeelding uploaden
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleNotesImageUpload}
+                  />
+                </Button>
+              )}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 0.5 }}
+              >
+                Upload een foto van je notities (max 5MB)
+              </Typography>
+            </Box>
+
             {createAssignmentError && (
-              <Alert severity="error" onClose={() => setCreateAssignmentError(null)}>
+              <Alert
+                severity="error"
+                onClose={() => setCreateAssignmentError(null)}
+              >
                 {createAssignmentError}
               </Alert>
             )}
@@ -1485,17 +1970,18 @@ export default function AssignmentsPage() {
               setNewAssignmentVacationDays("");
               setNewAssignmentLocation("");
               setNewAssignmentEmploymentType("");
+              handleClearNotesImage();
             }}
-            disabled={isCreatingAssignment}
+            disabled={createAssignmentMutation.isPending}
           >
             Annuleren
           </Button>
           <Button
             variant="contained"
             onClick={handleCreateAssignment}
-            disabled={isCreatingAssignment}
+            disabled={createAssignmentMutation.isPending}
           >
-            {isCreatingAssignment ? "Bezig..." : "Aanmaken"}
+            {createAssignmentMutation.isPending ? "Bezig..." : "Aanmaken"}
           </Button>
         </DialogActions>
       </Dialog>

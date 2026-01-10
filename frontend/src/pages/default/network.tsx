@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -14,6 +14,7 @@ import {
   MenuItem,
   Autocomplete,
   Chip,
+  IconButton,
 } from "@mui/material";
 import {
   DataGrid,
@@ -23,14 +24,17 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { useContacts } from "../../hooks/useContacts";
+import DescriptionIcon from "@mui/icons-material/Description";
+import mammoth from "mammoth";
+import { useContacts } from "../../api/queries/contacts";
+import { useCreateContact, useDeleteContact, useUploadContactDocument } from "../../api/mutations/contacts";
 import BulkImportDialog from "../../components/features/BulkImportDialog";
 import { useDisclosure } from "../../hooks/useDisclosure";
-import API from "../../../axios-client";
 import type { Contact } from "../../types/contacts";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { networkRoleLabels, formatContactName } from "../../utils/formatters";
 
 const networkRoleOptions = [
   { value: "invoice_contact", label: "Factuurcontact" },
@@ -52,6 +56,12 @@ const networkRoleOptions = [
   { value: "commissioner", label: "Commissaris" },
   { value: "investor", label: "Investeerder" },
   { value: "network_group", label: "Netwerkgroep" },
+];
+
+const educationOptions = [
+  { value: "MBO", label: "MBO" },
+  { value: "HBO", label: "HBO" },
+  { value: "UNI", label: "Universiteit" },
 ];
 
 const ContactSchema = z.object({
@@ -95,41 +105,33 @@ const ContactSchema = z.object({
 
 type ContactForm = z.infer<typeof ContactSchema>;
 
-const networkRoleLabels: Record<string, string> = {
-  invoice_contact: "Factuurcontact",
-  candidate: "Kandidaat",
-  interim: "Interimmer",
-  ambassador: "Ambassadeur",
-  potential_management: "Potentieel Management",
-  co_decision_maker: "Medebeslisser",
-  potential_directie: "Potentieel Directie",
-  candidate_reference: "Referentie van kandidaat",
-  hr_employment: "HR arbeidsvoorwaarden",
-  hr_recruiters: "HR recruiters",
-  directie: "Directie",
-  owner: "Eigenaar",
-  expert: "Expert",
-  coach: "Coach",
-  former_owner: "Oud eigenaar",
-  former_director: "Oud directeur",
-  commissioner: "Commissaris",
-  investor: "Investeerder",
-  network_group: "Netwerkgroep",
-};
-
 export default function NetworkPage() {
-  const { contacts, loading, error, refresh } = useContacts();
+  const { data: contacts = [], isLoading: loading, error: contactsError, refetch } = useContacts();
+  const createContactMutation = useCreateContact();
+  const deleteContactMutation = useDeleteContact();
+  const uploadDocumentMutation = useUploadContactDocument();
+  
   const addContact = useDisclosure();
   const bulkImport = useDisclosure();
   const deleteConfirm = useDisclosure();
+  const cvViewer = useDisclosure();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // CV upload state
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvFileName, setCvFileName] = useState<string | null>(null);
+  
+  // CV viewer state
+  const [viewingContact, setViewingContact] = useState<Contact | null>(null);
+  const [cvContent, setCvContent] = useState<string | null>(null);
+  const [cvLoading, setCvLoading] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const error = contactsError
+    ? (contactsError as any)?.response?.data?.message || "Fout bij laden van contacten"
+    : null;
 
   const {
     register,
@@ -161,10 +163,33 @@ export default function NetworkPage() {
   const onSubmit = async (data: ContactForm) => {
     setSubmitError(null);
     try {
-      await API.post("/contacts", data);
+      // Create the contact first
+      const createdContact = await createContactMutation.mutateAsync(data);
+      
+      // If there's a CV file, upload it separately
+      if (cvFile && createdContact?.uid) {
+        try {
+          await uploadDocumentMutation.mutateAsync({
+            contactUid: createdContact.uid,
+            file: cvFile,
+            type: "cv",
+          });
+        } catch (cvErr) {
+          console.error("Error uploading CV:", cvErr);
+          // Contact was created, but CV upload failed - show warning but don't block
+          setSubmitError("Contact aangemaakt, maar CV upload is mislukt. Je kunt het later opnieuw proberen.");
+          addContact.close();
+          reset();
+          setCvFile(null);
+          setCvFileName(null);
+          return;
+        }
+      }
+      
       addContact.close();
       reset();
-      await refresh();
+      setCvFile(null);
+      setCvFileName(null);
     } catch (err: any) {
       console.error(err);
       if (err?.response?.data?.message) {
@@ -177,6 +202,39 @@ export default function NetworkPage() {
       }
     }
   };
+  
+  // Handle CV file selection
+  const handleCvFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      setSubmitError("CV moet een PDF of Word bestand zijn (.pdf, .doc, .docx)");
+      return;
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setSubmitError("CV bestand mag maximaal 10MB zijn");
+      return;
+    }
+    
+    setCvFile(file);
+    setCvFileName(file.name);
+    setSubmitError(null);
+  };
+  
+  // Clear CV file
+  const handleClearCvFile = () => {
+    setCvFile(null);
+    setCvFileName(null);
+  };
 
   const handleDeleteClick = (contact: Contact) => {
     setDeletingContact(contact);
@@ -187,14 +245,12 @@ export default function NetworkPage() {
   const handleDeleteConfirm = async () => {
     if (!deletingContact) return;
 
-    setIsDeleting(true);
     setDeleteError(null);
 
     try {
-      await API.delete(`/contacts/${deletingContact.uid}`);
+      await deleteContactMutation.mutateAsync(deletingContact.uid);
       deleteConfirm.close();
       setDeletingContact(null);
-      await refresh();
     } catch (err: any) {
       console.error("Error deleting contact:", err);
       const errorMessage =
@@ -202,8 +258,6 @@ export default function NetworkPage() {
         err?.message ||
         "Fout bij verwijderen van contact";
       setDeleteError(errorMessage);
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -213,14 +267,136 @@ export default function NetworkPage() {
     setDeleteError(null);
   };
 
+  const handleViewCv = async (contact: Contact) => {
+    if (!contact.cv_url) {
+      alert("Geen CV beschikbaar voor dit contact");
+      return;
+    }
+
+    setViewingContact(contact);
+    cvViewer.open();
+    setCvLoading(true);
+    setCvError(null);
+    setCvContent(null);
+
+    try {
+      const baseURL = `${window.location.protocol}//${window.location.hostname}:8080/api/v1`;
+      let cvUrl: string;
+
+      // Check if this is a new-style download URL (contact-documents route)
+      if (contact.cv_url.includes("contact-documents")) {
+        if (contact.cv_url.startsWith("http")) {
+          // Full URL - use as is
+          cvUrl = contact.cv_url;
+        } else {
+          // Relative URL - normalize it
+          let relativePath = contact.cv_url;
+          
+          // Remove /api/v1 prefix if present (to avoid duplication)
+          if (relativePath.startsWith("/api/v1/")) {
+            relativePath = relativePath.replace("/api/v1", "");
+          }
+          
+          // Ensure it starts with /
+          if (!relativePath.startsWith("/")) {
+            relativePath = "/" + relativePath;
+          }
+          
+          cvUrl = `${baseURL}${relativePath}`;
+        }
+        console.log("CV URL debug:", { original: contact.cv_url, final: cvUrl });
+      } else {
+        // Legacy format: storage URL like /storage/cvs/filename.docx
+        let cvPath = contact.cv_url;
+
+        if (cvPath.includes("/storage/")) {
+          cvPath = cvPath.split("/storage/")[1];
+        } else if (!cvPath.startsWith("cvs/")) {
+          const urlParts = cvPath.split("/");
+          const storageIndex = urlParts.indexOf("storage");
+          if (storageIndex !== -1 && storageIndex < urlParts.length - 1) {
+            cvPath = urlParts.slice(storageIndex + 1).join("/");
+          }
+        }
+
+        cvUrl = `${baseURL}/contacts/cv/${encodeURIComponent(cvPath)}`;
+      }
+
+      // Fetch with authentication headers
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(cvUrl, {
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {},
+      });
+
+      if (!response.ok) {
+        throw new Error("CV kon niet worden geladen");
+      }
+
+      const blob = await response.blob();
+      const fileType = blob.type;
+
+      // Check if it's a PDF
+      if (
+        fileType === "application/pdf" ||
+        contact.cv_url.toLowerCase().endsWith(".pdf")
+      ) {
+        // For PDF, create object URL
+        const pdfUrl = URL.createObjectURL(blob);
+        setCvContent(pdfUrl);
+      }
+      // Check if it's a Word document
+      else if (
+        fileType === "application/msword" ||
+        fileType ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        contact.cv_url.toLowerCase().endsWith(".doc") ||
+        contact.cv_url.toLowerCase().endsWith(".docx")
+      ) {
+        // Convert Word document to HTML using mammoth
+        const arrayBuffer = await blob.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        setCvContent(result.value);
+
+        // Handle warnings if any
+        if (result.messages.length > 0) {
+          console.warn("Mammoth conversion warnings:", result.messages);
+        }
+      } else {
+        // Fallback: try to determine from Content-Disposition or treat as Word
+        const arrayBuffer = await blob.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        setCvContent(result.value);
+      }
+    } catch (err: any) {
+      console.error("Error loading CV:", err);
+      setCvError(err?.message || "Fout bij laden van CV");
+    } finally {
+      setCvLoading(false);
+    }
+  };
+
+  const handleCloseCvViewer = () => {
+    cvViewer.close();
+    setViewingContact(null);
+    // Clean up object URL if it was a PDF
+    if (cvContent && cvContent.startsWith("blob:")) {
+      URL.revokeObjectURL(cvContent);
+    }
+    setCvContent(null);
+    setCvError(null);
+  };
+
   const columns: GridColDef[] = [
     {
       field: "name",
       headerName: "Naam",
       flex: 1,
       minWidth: 200,
-      valueGetter: (value, row) =>
-        row.name || [row.first_name, row.prefix, row.last_name].filter(Boolean).join(" "),
+      valueGetter: (value, row) => formatContactName(row),
     },
     {
       field: "email",
@@ -262,6 +438,27 @@ export default function NetworkPage() {
       valueGetter: (value: string[] | null | undefined) => {
         if (!value || value.length === 0) return "-";
         return value.map((role) => networkRoleLabels[role] || role).join(", ");
+      },
+    },
+    {
+      field: "cv",
+      headerName: "CV",
+      width: 80,
+      sortable: false,
+      renderCell: (params) => {
+        const contact = params.row as Contact;
+        return contact.cv_url ? (
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => handleViewCv(contact)}
+            title="Bekijk CV"
+          >
+            <DescriptionIcon />
+          </IconButton>
+        ) : (
+          "-"
+        );
       },
     },
     {
@@ -319,7 +516,7 @@ export default function NetworkPage() {
       <BulkImportDialog
         open={bulkImport.isOpen}
         onClose={bulkImport.close}
-        onSuccess={refresh}
+        onSuccess={() => refetch()}
       />
 
       {/* Add Contact Dialog */}
@@ -331,6 +528,8 @@ export default function NetworkPage() {
           addContact.close();
           setSubmitError(null);
           reset();
+          setCvFile(null);
+          setCvFileName(null);
         }}
       >
         <DialogTitle>Nieuw contact</DialogTitle>
@@ -443,19 +642,33 @@ export default function NetworkPage() {
                 {...register("location")}
                 fullWidth
               />
-              <TextField
-                select
-                label="Opleiding"
-                error={!!errors.education}
-                helperText={errors.education?.message ?? " "}
-                {...register("education")}
-                fullWidth
-              >
-                <MenuItem value="">Geen</MenuItem>
-                <MenuItem value="MBO">MBO</MenuItem>
-                <MenuItem value="HBO">HBO</MenuItem>
-                <MenuItem value="UNI">Universiteit</MenuItem>
-              </TextField>
+              <Controller
+                name="education"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={educationOptions}
+                    getOptionLabel={(option) => option.label}
+                    value={
+                      field.value
+                        ? educationOptions.find((opt) => opt.value === field.value) || null
+                        : null
+                    }
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue?.value || undefined);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Opleiding"
+                        error={!!errors.education}
+                        helperText={errors.education?.message ?? " "}
+                      />
+                    )}
+                    fullWidth
+                  />
+                )}
+              />
             </Stack>
 
             <TextField
@@ -465,6 +678,47 @@ export default function NetworkPage() {
               {...register("linkedin_url")}
               fullWidth
             />
+
+            {/* CV Upload Section */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                CV uploaden (optioneel)
+              </Typography>
+              {cvFileName ? (
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Chip
+                    label={cvFileName}
+                    onDelete={handleClearCvFile}
+                    color="primary"
+                    variant="outlined"
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {cvFile ? `${(cvFile.size / 1024 / 1024).toFixed(2)} MB` : ""}
+                  </Typography>
+                </Stack>
+              ) : (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<UploadFileIcon />}
+                >
+                  CV selecteren
+                  <input
+                    type="file"
+                    hidden
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handleCvFileChange}
+                  />
+                </Button>
+              )}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 0.5 }}
+              >
+                PDF of Word bestand, max 10MB
+              </Typography>
+            </Box>
 
             <TextField
               label="Notities"
@@ -489,6 +743,8 @@ export default function NetworkPage() {
               addContact.close();
               setSubmitError(null);
               reset();
+              setCvFile(null);
+              setCvFileName(null);
             }}
           >
             Annuleren
@@ -496,9 +752,9 @@ export default function NetworkPage() {
           <Button
             variant="contained"
             onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploadDocumentMutation.isPending}
           >
-            {isSubmitting ? "Bezig..." : "Opslaan"}
+            {isSubmitting || uploadDocumentMutation.isPending ? "Bezig..." : "Opslaan"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -516,7 +772,7 @@ export default function NetworkPage() {
             <Typography>
               Weet je zeker dat je{" "}
               <strong>
-                {deletingContact?.name || [deletingContact?.first_name, deletingContact?.prefix, deletingContact?.last_name].filter(Boolean).join(" ")}
+                {deletingContact ? formatContactName(deletingContact) : ""}
               </strong>{" "}
               wilt verwijderen?
             </Typography>
@@ -531,18 +787,92 @@ export default function NetworkPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteCancel} disabled={isDeleting}>
+          <Button onClick={handleDeleteCancel} disabled={deleteContactMutation.isPending}>
             Annuleren
           </Button>
           <Button
             variant="contained"
             color="error"
             onClick={handleDeleteConfirm}
-            disabled={isDeleting}
+            disabled={deleteContactMutation.isPending}
             startIcon={<DeleteOutlineIcon />}
           >
-            {isDeleting ? "Bezig..." : "Verwijderen"}
+            {deleteContactMutation.isPending ? "Bezig..." : "Verwijderen"}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* CV Viewer Dialog */}
+      <Dialog
+        open={cvViewer.isOpen}
+        onClose={handleCloseCvViewer}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            height: "90vh",
+            maxHeight: "90vh",
+          },
+        }}
+      >
+        <DialogTitle>
+          CV van {viewingContact ? formatContactName(viewingContact) : ""}
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0, overflow: "hidden" }}>
+          {cvLoading && (
+            <Box sx={{ p: 3, textAlign: "center" }}>
+              <Typography variant="body2">CV laden...</Typography>
+            </Box>
+          )}
+          {cvError && (
+            <Box sx={{ p: 3 }}>
+              <Alert severity="error">{cvError}</Alert>
+            </Box>
+          )}
+          {cvContent && !cvLoading && !cvError && (
+            <Box
+              sx={{
+                height: "100%",
+                overflow: "auto",
+                p: 2,
+              }}
+            >
+              {cvContent.startsWith("blob:") ||
+              viewingContact?.cv_url?.toLowerCase().endsWith(".pdf") ? (
+                // PDF viewer
+                <iframe
+                  src={cvContent}
+                  style={{
+                    width: "100%",
+                    height: "70vh",
+                    border: "none",
+                  }}
+                  title="CV PDF Viewer"
+                />
+              ) : (
+                // Word document converted to HTML
+                <Box
+                  dangerouslySetInnerHTML={{ __html: cvContent }}
+                  sx={{
+                    "& p": {
+                      marginBottom: 1,
+                    },
+                    "& h1, & h2, & h3": {
+                      marginTop: 2,
+                      marginBottom: 1,
+                    },
+                    "& ul, & ol": {
+                      marginLeft: 3,
+                      marginBottom: 1,
+                    },
+                  }}
+                />
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCvViewer}>Sluiten</Button>
         </DialogActions>
       </Dialog>
 

@@ -4,16 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\Account;
+use App\Services\FileStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Spatie\Multitenancy\Models\Tenant;
 
 class AssignmentController extends Controller
 {
+    public function __construct(
+        protected FileStorageService $fileService
+    ) {}
     /**
      * Format assignment for JSON response.
      */
     private function formatAssignment(Assignment $assignment): array
     {
+        // Generate signed URL for notes image if exists
+        $notesImageUrl = null;
+        if ($assignment->notes_image_path) {
+            try {
+                $notesImageUrl = $this->fileService->getSignedUrl($assignment->notes_image_path, 60);
+            } catch (\Exception $e) {
+                // If URL generation fails, return null
+                $notesImageUrl = null;
+            }
+        }
+
         return [
             'id' => $assignment->id,
             'uid' => $assignment->uid,
@@ -32,6 +48,7 @@ class AssignmentController extends Controller
             'vacation_days' => $assignment->vacation_days,
             'location' => $assignment->location,
             'employment_type' => $assignment->employment_type,
+            'notes_image_url' => $notesImageUrl,
             'created_at' => $assignment->created_at,
             'updated_at' => $assignment->updated_at,
         ];
@@ -59,7 +76,7 @@ class AssignmentController extends Controller
             'account_uid' => 'required|string',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'nullable|string|in:active,completed,cancelled',
+            'status' => 'nullable|string|in:active,proposed,hired,completed,cancelled',
             'salary_min' => 'nullable|integer|min:0',
             'salary_max' => 'nullable|integer|min:0',
             'has_bonus' => 'nullable|boolean',
@@ -67,6 +84,7 @@ class AssignmentController extends Controller
             'vacation_days' => 'nullable|integer|min:0|max:100',
             'location' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:255',
+            'notes_image' => 'nullable|file|image|max:5120', // max 5MB
         ]);
 
         // Find account by uid (manual check instead of exists rule for multi-tenant)
@@ -92,6 +110,18 @@ class AssignmentController extends Controller
             'location' => $validated['location'] ?? null,
             'employment_type' => $validated['employment_type'] ?? null,
         ]);
+
+        // Handle notes image upload
+        if ($request->hasFile('notes_image')) {
+            $tenantId = Tenant::current()->id;
+            $imagePath = $this->fileService->uploadAssignmentNotesImage(
+                $tenantId,
+                $assignment->uid,
+                $request->file('notes_image')
+            );
+            $assignment->notes_image_path = $imagePath;
+            $assignment->save();
+        }
 
         // Load relationship for response
         $assignment->load('account:id,uid,name');
@@ -122,7 +152,7 @@ class AssignmentController extends Controller
             'account_uid' => 'sometimes|string',
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'sometimes|string|in:active,completed,cancelled',
+            'status' => 'sometimes|string|in:active,proposed,hired,completed,cancelled',
             'salary_min' => 'nullable|integer|min:0',
             'salary_max' => 'nullable|integer|min:0',
             'has_bonus' => 'nullable|boolean',
@@ -130,6 +160,7 @@ class AssignmentController extends Controller
             'vacation_days' => 'nullable|integer|min:0|max:100',
             'location' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:255',
+            'notes_image' => 'nullable|file|image|max:5120', // max 5MB
         ]);
 
         // If account_uid is provided, find the account (manual check for multi-tenant)
@@ -145,6 +176,23 @@ class AssignmentController extends Controller
             unset($validated['account_uid']);
         }
 
+        // Handle notes image upload
+        if ($request->hasFile('notes_image')) {
+            // Delete old image if exists
+            if ($assignment->notes_image_path) {
+                $this->fileService->delete($assignment->notes_image_path);
+            }
+
+            $tenantId = Tenant::current()->id;
+            $imagePath = $this->fileService->uploadAssignmentNotesImage(
+                $tenantId,
+                $assignment->uid,
+                $request->file('notes_image')
+            );
+            $validated['notes_image_path'] = $imagePath;
+        }
+
+        unset($validated['notes_image']);
         $assignment->fill($validated);
         $assignment->save();
 
@@ -152,6 +200,24 @@ class AssignmentController extends Controller
         $assignment->load('account:id,uid,name');
 
         return response()->json($this->formatAssignment($assignment));
+    }
+
+    /**
+     * Delete the notes image for a specific assignment.
+     */
+    public function deleteNotesImage(string $uid): JsonResponse
+    {
+        $assignment = Assignment::where('uid', $uid)->firstOrFail();
+
+        if (!$assignment->notes_image_path) {
+            return response()->json(['message' => 'Geen notitie afbeelding gevonden'], 404);
+        }
+
+        $this->fileService->delete($assignment->notes_image_path);
+        $assignment->notes_image_path = null;
+        $assignment->save();
+
+        return response()->json(['message' => 'Notitie afbeelding succesvol verwijderd']);
     }
 
     /**

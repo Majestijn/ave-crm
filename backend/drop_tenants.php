@@ -9,6 +9,7 @@ $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 echo "Dropping all tenant databases...\n";
 
@@ -58,5 +59,46 @@ Artisan::call('migrate:fresh', [
 ]);
 echo "Landlord database refreshed.\n";
 
-echo "\n✅ Reset complete! All databases have been dropped and landlord database has been refreshed.\n";
+// Clear R2 bucket
+echo "\nClearing R2 storage bucket...\n";
+try {
+    $disk = Storage::disk('r2');
+    
+    // Get all files recursively
+    $allFiles = $disk->allFiles('');
+    $fileCount = count($allFiles);
+    
+    if ($fileCount === 0) {
+        echo "R2 bucket is already empty.\n";
+    } else {
+        echo "Found $fileCount file(s) to delete...\n";
+        
+        // Delete files in batches to avoid memory issues
+        $batchSize = 100;
+        $deleted = 0;
+        
+        foreach (array_chunk($allFiles, $batchSize) as $batch) {
+            $disk->delete($batch);
+            $deleted += count($batch);
+            echo "Deleted $deleted / $fileCount files...\r";
+        }
+        
+        echo "\nR2 bucket cleared successfully.\n";
+    }
+    
+    // Also delete any empty directories
+    $directories = $disk->allDirectories('');
+    if (count($directories) > 0) {
+        foreach (array_reverse($directories) as $dir) { // Reverse to delete deepest first
+            $disk->deleteDirectory($dir);
+        }
+        echo "Deleted " . count($directories) . " empty directories.\n";
+    }
+    
+} catch (Exception $e) {
+    echo "WARNING: Could not clear R2 bucket: " . $e->getMessage() . "\n";
+    echo "This might happen if R2 is not configured. Continuing...\n";
+}
+
+echo "\n✅ Reset complete! All databases have been dropped, landlord database has been refreshed, and R2 bucket has been cleared.\n";
 echo "To create a new tenant, use the registration endpoint or register through the frontend.\n";
