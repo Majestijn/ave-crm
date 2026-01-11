@@ -82,12 +82,47 @@ type AssignmentWithDetails = Assignment & {
   employment_type?: string; // "Fulltime", "Parttime", etc.
   salary_min?: number; // Minimum salary in EUR
   salary_max?: number; // Maximum salary in EUR
-  has_car?: boolean;
-  has_bonus?: boolean;
   vacation_days?: number;
   notes_image_url?: string | null;
+  benefits?: string[];
   candidates?: CandidateAssignment[];
 };
+
+// Available employment benefits options
+const benefitsOptions = [
+  "Reiskostenvergoeding",
+  "Pensioen",
+  "Dienstreizen vergoeding",
+  "Mogelijkheid tot promotie",
+  "Flexibele werkuren",
+  "Personeelskorting",
+  "Bedrijfsfeesten",
+  "Productkorting werknemers",
+  "Auto van de zaak",
+  "Budget voor professionele ontwikkeling",
+  "Zorgverzekering",
+  "Collectieve zorgverzekering",
+  "Bedrijfsopleiding",
+  "Vrijdagmiddagborrel",
+  "Kerstpakket",
+  "Extra vakantiedagen",
+  "Fietsplan",
+  "Bedrijfsfitness",
+  "Winstdeling",
+  "Werk vanuit huis",
+  "Telefoon van de zaak",
+  "Telefoonplan",
+  "Aanvullend pensioen",
+  "Gezondheidsprogramma",
+  "Lunchkorting",
+  "Kosteloos parkeren",
+  "Levensverzekering",
+  "Aandelenopties",
+  "Taaltraining aangeboden",
+  "Kinderopvang",
+  "Verhuisvergoeding",
+  "Huisvestingsvergoeding",
+];
 
 // Mock data - will be replaced with API calls
 const mockAssignments: AssignmentWithDetails[] = [
@@ -106,8 +141,7 @@ const mockAssignments: AssignmentWithDetails[] = [
     employment_type: "Fulltime",
     salary_min: 4000,
     salary_max: 5000,
-    has_car: true,
-    has_bonus: true,
+    benefits: ["Auto van de zaak", "Bonus", "Pensioen"],
     candidates: [
       {
         id: 1,
@@ -210,8 +244,7 @@ const mockAssignments: AssignmentWithDetails[] = [
     employment_type: "Fulltime",
     salary_min: 5000,
     salary_max: 6000,
-    has_car: false,
-    has_bonus: true,
+    benefits: ["Bonus", "Flexibele werkuren", "Werk vanuit huis"],
     candidates: [
       {
         id: 8,
@@ -254,8 +287,7 @@ const mockAssignments: AssignmentWithDetails[] = [
     employment_type: "Parttime",
     salary_min: 3500,
     salary_max: 4500,
-    has_car: true,
-    has_bonus: false,
+    benefits: ["Auto van de zaak", "Reiskostenvergoeding"],
     candidates: [
       {
         id: 10,
@@ -298,8 +330,7 @@ const mockAssignments: AssignmentWithDetails[] = [
     employment_type: "Fulltime",
     salary_min: 4500,
     salary_max: 5500,
-    has_car: false,
-    has_bonus: true,
+    benefits: ["Bonus", "Pensioen", "Zorgverzekering"],
     candidates: [
       {
         id: 12,
@@ -469,14 +500,15 @@ export default function AssignmentsPage() {
   const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState<
     number | ""
   >("");
-  const [newAssignmentHasBonus, setNewAssignmentHasBonus] = useState(false);
-  const [newAssignmentHasCar, setNewAssignmentHasCar] = useState(false);
   const [newAssignmentVacationDays, setNewAssignmentVacationDays] = useState<
     number | ""
   >("");
   const [newAssignmentLocation, setNewAssignmentLocation] = useState("");
   const [newAssignmentEmploymentType, setNewAssignmentEmploymentType] =
     useState("");
+  const [newAssignmentBenefits, setNewAssignmentBenefits] = useState<string[]>(
+    []
+  );
   const [newAssignmentNotesImage, setNewAssignmentNotesImage] =
     useState<File | null>(null);
   const [newAssignmentNotesImagePreview, setNewAssignmentNotesImagePreview] =
@@ -550,11 +582,10 @@ export default function AssignmentsPage() {
       account: a.account,
       salary_min: a.salary_min,
       salary_max: a.salary_max,
-      has_bonus: a.has_bonus,
-      has_car: a.has_car,
       vacation_days: a.vacation_days,
       location: a.location,
       employment_type: a.employment_type,
+      benefits: a.benefits,
       notes_image_url: a.notes_image_url,
       candidates: [], // Will be populated by AssignmentCandidatesLoader component
     }));
@@ -579,11 +610,11 @@ export default function AssignmentsPage() {
         description: newAssignmentDescription.trim() || null,
         salary_min: newAssignmentSalaryMin || null,
         salary_max: newAssignmentSalaryMax || null,
-        has_bonus: newAssignmentHasBonus,
-        has_car: newAssignmentHasCar,
         vacation_days: newAssignmentVacationDays || null,
         location: newAssignmentLocation.trim() || null,
         employment_type: newAssignmentEmploymentType || null,
+        benefits:
+          newAssignmentBenefits.length > 0 ? newAssignmentBenefits : null,
         notes_image: newAssignmentNotesImage,
       });
 
@@ -593,11 +624,10 @@ export default function AssignmentsPage() {
       setNewAssignmentAccountUid("");
       setNewAssignmentSalaryMin("");
       setNewAssignmentSalaryMax("");
-      setNewAssignmentHasBonus(false);
-      setNewAssignmentHasCar(false);
       setNewAssignmentVacationDays("");
       setNewAssignmentLocation("");
       setNewAssignmentEmploymentType("");
+      setNewAssignmentBenefits([]);
       handleClearNotesImage();
       createAssignmentDialog.close();
       // Cache is automatically invalidated by the mutation
@@ -675,9 +705,7 @@ export default function AssignmentsPage() {
         delete updated[assignmentId];
         return updated;
       });
-      alert(
-        e?.response?.data?.message || "Fout bij bijwerken van status"
-      );
+      alert(e?.response?.data?.message || "Fout bij bijwerken van status");
     }
   };
 
@@ -1114,28 +1142,6 @@ export default function AssignmentsPage() {
                               </Typography>
                             </Box>
                           )}
-                          {assignment.has_car && (
-                            <Box>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                Auto
-                              </Typography>
-                              <Typography variant="body2">Ja</Typography>
-                            </Box>
-                          )}
-                          {assignment.has_bonus && (
-                            <Box>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                Bonusregeling
-                              </Typography>
-                              <Typography variant="body2">Ja</Typography>
-                            </Box>
-                          )}
                           {assignment.vacation_days && (
                             <Box>
                               <Typography
@@ -1152,11 +1158,43 @@ export default function AssignmentsPage() {
                         </Stack>
                       </Box>
 
+                      {/* Benefits/Arbeidsvoorwaarden */}
+                      {assignment.benefits &&
+                        assignment.benefits.length > 0 && (
+                          <Box sx={{ mt: 2 }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ mb: 1, display: "block" }}
+                            >
+                              Arbeidsvoorwaarden
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 0.5,
+                              }}
+                            >
+                              {assignment.benefits.map((benefit) => (
+                                <Chip
+                                  key={benefit}
+                                  label={benefit}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+
                       {/* Notes Image Section */}
                       {assignment.notes_image_url && (
                         <Box>
                           <Box
-                            onClick={() => toggleNotesImageExpanded(assignment.id)}
+                            onClick={() =>
+                              toggleNotesImageExpanded(assignment.id)
+                            }
                             sx={{
                               cursor: "pointer",
                               display: "flex",
@@ -1752,14 +1790,13 @@ export default function AssignmentsPage() {
           setNewAssignmentAccountUid("");
           setNewAssignmentSalaryMin("");
           setNewAssignmentSalaryMax("");
-          setNewAssignmentHasBonus(false);
-          setNewAssignmentHasCar(false);
           setNewAssignmentVacationDays("");
           setNewAssignmentLocation("");
           setNewAssignmentEmploymentType("");
+          setNewAssignmentBenefits([]);
           handleClearNotesImage();
         }}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>Nieuwe opdracht aanmaken</DialogTitle>
@@ -1853,38 +1890,57 @@ export default function AssignmentsPage() {
                 InputProps={{ inputProps: { min: 0 } }}
               />
             </Stack>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={newAssignmentHasBonus}
-                    onChange={(e) => setNewAssignmentHasBonus(e.target.checked)}
-                  />
-                }
-                label="Bonus"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={newAssignmentHasCar}
-                    onChange={(e) => setNewAssignmentHasCar(e.target.checked)}
-                  />
-                }
-                label="Auto"
-              />
-              <TextField
-                label="Vakantiedagen"
-                type="number"
-                value={newAssignmentVacationDays}
-                onChange={(e) =>
-                  setNewAssignmentVacationDays(
-                    e.target.value ? parseInt(e.target.value) : ""
-                  )
-                }
-                InputProps={{ inputProps: { min: 0, max: 100 } }}
-                sx={{ width: 140 }}
-              />
-            </Stack>
+            <TextField
+              label="Vakantiedagen"
+              type="number"
+              value={newAssignmentVacationDays}
+              onChange={(e) =>
+                setNewAssignmentVacationDays(
+                  e.target.value ? parseInt(e.target.value) : ""
+                )
+              }
+              InputProps={{ inputProps: { min: 0, max: 100 } }}
+              sx={{ width: 160 }}
+            />
+
+            {/* Benefits Selection - Toggleable Chips */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                Arbeidsvoorwaarden
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {benefitsOptions.map((benefit) => {
+                  const isSelected = newAssignmentBenefits.includes(benefit);
+                  return (
+                    <Chip
+                      key={benefit}
+                      label={benefit}
+                      size="small"
+                      variant={isSelected ? "filled" : "outlined"}
+                      color={isSelected ? "primary" : "default"}
+                      onClick={() => {
+                        if (isSelected) {
+                          setNewAssignmentBenefits(
+                            newAssignmentBenefits.filter((b) => b !== benefit)
+                          );
+                        } else {
+                          setNewAssignmentBenefits([
+                            ...newAssignmentBenefits,
+                            benefit,
+                          ]);
+                        }
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.dark" : "action.hover",
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
 
             {/* Notes Image Upload */}
             <Box>
@@ -1965,11 +2021,10 @@ export default function AssignmentsPage() {
               setNewAssignmentAccountUid("");
               setNewAssignmentSalaryMin("");
               setNewAssignmentSalaryMax("");
-              setNewAssignmentHasBonus(false);
-              setNewAssignmentHasCar(false);
               setNewAssignmentVacationDays("");
               setNewAssignmentLocation("");
               setNewAssignmentEmploymentType("");
+              setNewAssignmentBenefits([]);
               handleClearNotesImage();
             }}
             disabled={createAssignmentMutation.isPending}

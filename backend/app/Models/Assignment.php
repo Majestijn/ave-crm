@@ -20,11 +20,10 @@ class Assignment extends Model
         'status',
         'salary_min',
         'salary_max',
-        'has_bonus',
-        'has_car',
         'vacation_days',
         'location',
         'employment_type',
+        'benefits',
         'notes_image_path',
     ];
 
@@ -32,9 +31,8 @@ class Assignment extends Model
         'uid' => 'string',
         'salary_min' => 'integer',
         'salary_max' => 'integer',
-        'has_bonus' => 'boolean',
-        'has_car' => 'boolean',
         'vacation_days' => 'integer',
+        'benefits' => 'array',
     ];
 
     public function getRouteKeyName(): string

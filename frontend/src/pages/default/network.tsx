@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -15,6 +15,10 @@ import {
   Autocomplete,
   Chip,
   IconButton,
+  InputAdornment,
+  Menu,
+  Skeleton,
+  Divider,
 } from "@mui/material";
 import {
   DataGrid,
@@ -25,10 +29,15 @@ import AddIcon from "@mui/icons-material/Add";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
+import EditIcon from "@mui/icons-material/Edit";
+import SearchIcon from "@mui/icons-material/Search";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import mammoth from "mammoth";
 import { useContacts } from "../../api/queries/contacts";
 import {
   useCreateContact,
+  useUpdateContact,
   useDeleteContact,
   useUploadContactDocument,
 } from "../../api/mutations/contacts";
@@ -73,6 +82,7 @@ const ContactSchema = z.object({
   first_name: z.string().min(1, "Voornaam is verplicht"),
   prefix: z.string().optional(),
   last_name: z.string().min(1, "Achternaam is verplicht"),
+  date_of_birth: z.string().optional(),
   gender: z.string().optional(),
   location: z.string().optional(),
   company_role: z.string().optional(),
@@ -123,14 +133,27 @@ export default function NetworkPage() {
   const deleteContactMutation = useDeleteContact();
   const uploadDocumentMutation = useUploadContactDocument();
 
+  const updateContactMutation = useUpdateContact();
+
   const addContact = useDisclosure();
+  const editContact = useDisclosure();
   const bulkImport = useDisclosure();
   const smartImport = useDisclosure();
   const deleteConfirm = useDisclosure();
   const cvViewer = useDisclosure();
+
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Import menu anchor
+  const [importMenuAnchor, setImportMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
 
   // CV upload state
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -173,6 +196,67 @@ export default function NetworkPage() {
       notes: "",
     },
   });
+
+  // Edit form - separate form instance
+  const {
+    register: editRegister,
+    handleSubmit: handleEditSubmit,
+    formState: { errors: editErrors, isSubmitting: isEditSubmitting },
+    reset: editReset,
+    control: editControl,
+  } = useForm<ContactForm>({
+    resolver: zodResolver(ContactSchema),
+    mode: "onBlur",
+  });
+
+  // Reset edit form when editing contact changes
+  React.useEffect(() => {
+    if (editingContact) {
+      const formattedDob = editingContact.date_of_birth
+        ? editingContact.date_of_birth.split("T")[0]
+        : "";
+
+      editReset({
+        first_name: editingContact.first_name || "",
+        prefix: editingContact.prefix || "",
+        last_name: editingContact.last_name || "",
+        date_of_birth: formattedDob,
+        gender: editingContact.gender || "",
+        location: editingContact.location || "",
+        company_role: editingContact.company_role || "",
+        network_roles: (editingContact.network_roles as any) || [],
+        current_company: editingContact.current_company || "",
+        current_salary_cents: editingContact.current_salary_cents || undefined,
+        education: (editingContact.education as any) || undefined,
+        email: editingContact.email || "",
+        phone: editingContact.phone || "",
+        linkedin_url: editingContact.linkedin_url || "",
+        notes: editingContact.notes || "",
+      });
+    }
+  }, [editingContact, editReset]);
+
+  // Filter contacts based on search query
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery.trim()) return contacts;
+
+    const query = searchQuery.toLowerCase();
+    return contacts.filter((contact) => {
+      const fullName = formatContactName(contact).toLowerCase();
+      const email = (contact.email || "").toLowerCase();
+      const company = (contact.current_company || "").toLowerCase();
+      const role = (contact.company_role || "").toLowerCase();
+      const location = (contact.location || "").toLowerCase();
+
+      return (
+        fullName.includes(query) ||
+        email.includes(query) ||
+        company.includes(query) ||
+        role.includes(query) ||
+        location.includes(query)
+      );
+    });
+  }, [contacts, searchQuery]);
 
   const onSubmit = async (data: ContactForm) => {
     setSubmitError(null);
@@ -252,6 +336,55 @@ export default function NetworkPage() {
   const handleClearCvFile = () => {
     setCvFile(null);
     setCvFileName(null);
+  };
+
+  // Edit contact handlers
+  const handleEditClick = (contact: Contact) => {
+    setEditingContact(contact);
+    setSubmitError(null);
+    editContact.open();
+  };
+
+  const onEditSubmit = async (data: ContactForm) => {
+    if (!editingContact) return;
+
+    setSubmitError(null);
+    try {
+      await updateContactMutation.mutateAsync({
+        uid: editingContact.uid,
+        data,
+      });
+      editContact.close();
+      setEditingContact(null);
+    } catch (err: any) {
+      console.error(err);
+      if (err?.response?.data?.message) {
+        setSubmitError(err.response.data.message);
+      } else {
+        setSubmitError(
+          "Er is iets misgegaan bij het opslaan. Probeer het opnieuw."
+        );
+      }
+    }
+  };
+
+  // Import menu handlers
+  const handleImportMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setImportMenuAnchor(event.currentTarget);
+  };
+
+  const handleImportMenuClose = () => {
+    setImportMenuAnchor(null);
+  };
+
+  const handleSmartImport = () => {
+    handleImportMenuClose();
+    smartImport.open();
+  };
+
+  const handleBulkImport = () => {
+    handleImportMenuClose();
+    bulkImport.open();
   };
 
   const handleDeleteClick = (contact: Contact) => {
@@ -453,6 +586,15 @@ export default function NetworkPage() {
       valueGetter: (value) => value || "-",
     },
     {
+      field: "date_of_birth",
+      headerName: "Geboortedatum",
+      width: 130,
+      valueGetter: (value) => {
+        if (!value) return "-";
+        return new Date(value).toLocaleDateString("nl-NL");
+      },
+    },
+    {
       field: "network_roles",
       headerName: "Netwerk rollen",
       width: 250,
@@ -485,11 +627,18 @@ export default function NetworkPage() {
     {
       field: "actions",
       type: "actions",
-      headerName: "Acties",
+      headerName: "",
       width: 100,
       getActions: (params) => {
         const contact = params.row as Contact;
         return [
+          <GridActionsCellItem
+            key="edit"
+            icon={<EditIcon />}
+            label="Bewerken"
+            onClick={() => handleEditClick(contact)}
+            showInMenu={false}
+          />,
           <GridActionsCellItem
             key="delete"
             icon={<DeleteOutlineIcon />}
@@ -504,33 +653,69 @@ export default function NetworkPage() {
 
   return (
     <Box sx={{ p: 3 }}>
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           mb: 3,
+          flexWrap: "wrap",
+          gap: 2,
         }}
       >
-        <Typography variant="h5" component="h1">
-          Netwerk
-        </Typography>
-        <Stack direction="row" spacing={2}>
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<UploadFileIcon />}
-            onClick={smartImport.open}
-          >
-            Smart CV Import
-          </Button>
+        <Box>
+          <Typography variant="h5" component="h1" fontWeight={600}>
+            Netwerk
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Beheer je contacten en kandidaten
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1.5}>
           <Button
             variant="outlined"
-            startIcon={<UploadFileIcon />}
-            onClick={bulkImport.open}
+            color="inherit"
+            endIcon={<KeyboardArrowDownIcon />}
+            onClick={handleImportMenuOpen}
+            sx={{ borderColor: "divider" }}
           >
-            Bulk Import (ZIP)
+            Importeren
           </Button>
+          <Menu
+            anchorEl={importMenuAnchor}
+            open={Boolean(importMenuAnchor)}
+            onClose={handleImportMenuClose}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            <MenuItem onClick={handleSmartImport}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <UploadFileIcon fontSize="small" color="action" />
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>
+                    Smart CV Import
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Upload individuele CV's met AI-extractie
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
+            <MenuItem onClick={handleBulkImport}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <UploadFileIcon fontSize="small" color="action" />
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>
+                    Bulk Import (ZIP)
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Importeer meerdere CV's tegelijk
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
+          </Menu>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -540,6 +725,61 @@ export default function NetworkPage() {
           </Button>
         </Stack>
       </Box>
+
+      {/* Statistics & Search Bar */}
+      <Paper
+        sx={{
+          p: 2,
+          mb: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+        elevation={0}
+        variant="outlined"
+      >
+        <Stack direction="row" spacing={3} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <PeopleOutlineIcon color="primary" />
+            <Box>
+              <Typography variant="h6" fontWeight={600}>
+                {loading ? "-" : contacts.length}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Totaal contacten
+              </Typography>
+            </Box>
+          </Stack>
+          <Divider orientation="vertical" flexItem />
+          <Box>
+            <Typography variant="h6" fontWeight={600}>
+              {loading
+                ? "-"
+                : contacts.filter((c) => c.network_roles?.includes("candidate"))
+                    .length}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Kandidaten
+            </Typography>
+          </Box>
+        </Stack>
+        <TextField
+          placeholder="Zoeken op naam, email, bedrijf..."
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ minWidth: 280 }}
+        />
+      </Paper>
 
       {/* Smart CV Import Dialog */}
       <SmartBulkImportDialog
@@ -597,6 +837,16 @@ export default function NetworkPage() {
                 sx={{ flex: 2 }}
               />
             </Stack>
+
+            <TextField
+              label="Geboortedatum"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              error={!!errors.date_of_birth}
+              helperText={errors.date_of_birth?.message ?? " "}
+              {...register("date_of_birth")}
+              sx={{ width: 200 }}
+            />
 
             <Stack direction="row" spacing={2}>
               <TextField
@@ -847,6 +1097,216 @@ export default function NetworkPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Edit Contact Dialog */}
+      <Dialog
+        open={editContact.isOpen}
+        fullWidth
+        maxWidth="md"
+        onClose={() => {
+          editContact.close();
+          setSubmitError(null);
+          setEditingContact(null);
+        }}
+      >
+        <DialogTitle>Contact bewerken</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Voornaam"
+                required
+                error={!!editErrors.first_name}
+                helperText={editErrors.first_name?.message ?? " "}
+                {...editRegister("first_name")}
+                sx={{ flex: 2 }}
+              />
+              <TextField
+                label="Tussenvoegsel"
+                error={!!editErrors.prefix}
+                helperText={editErrors.prefix?.message ?? " "}
+                placeholder="van, de, van der..."
+                {...editRegister("prefix")}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="Achternaam"
+                required
+                error={!!editErrors.last_name}
+                helperText={editErrors.last_name?.message ?? " "}
+                {...editRegister("last_name")}
+                sx={{ flex: 2 }}
+              />
+            </Stack>
+
+            <TextField
+              label="Geboortedatum"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              error={!!editErrors.date_of_birth}
+              helperText={editErrors.date_of_birth?.message ?? " "}
+              {...editRegister("date_of_birth")}
+              sx={{ width: 200 }}
+            />
+
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="E-mail"
+                type="email"
+                error={!!editErrors.email}
+                helperText={editErrors.email?.message ?? " "}
+                {...editRegister("email")}
+                fullWidth
+              />
+              <TextField
+                label="Telefoon"
+                error={!!editErrors.phone}
+                helperText={editErrors.phone?.message ?? " "}
+                {...editRegister("phone")}
+                fullWidth
+              />
+            </Stack>
+
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Functie"
+                error={!!editErrors.company_role}
+                helperText={editErrors.company_role?.message ?? " "}
+                {...editRegister("company_role")}
+                fullWidth
+              />
+              <Controller
+                name="network_roles"
+                control={editControl}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={networkRoleOptions}
+                    getOptionLabel={(option) => option.label}
+                    value={networkRoleOptions.filter((opt) =>
+                      (field.value || []).includes(opt.value as any)
+                    )}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue.map((v) => v.value));
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Netwerk rollen"
+                        error={!!editErrors.network_roles}
+                        helperText={editErrors.network_roles?.message ?? " "}
+                      />
+                    )}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => (
+                        <Chip
+                          {...getTagProps({ index })}
+                          key={option.value}
+                          label={option.label}
+                          size="small"
+                        />
+                      ))
+                    }
+                    fullWidth
+                  />
+                )}
+              />
+            </Stack>
+
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Bedrijf"
+                error={!!editErrors.current_company}
+                helperText={editErrors.current_company?.message ?? " "}
+                {...editRegister("current_company")}
+                fullWidth
+              />
+              <TextField
+                label="Locatie"
+                error={!!editErrors.location}
+                helperText={editErrors.location?.message ?? " "}
+                {...editRegister("location")}
+                fullWidth
+              />
+            </Stack>
+
+            <Stack direction="row" spacing={2}>
+              <Controller
+                name="education"
+                control={editControl}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={educationOptions}
+                    getOptionLabel={(option) => option.label}
+                    value={
+                      field.value
+                        ? educationOptions.find(
+                            (opt) => opt.value === field.value
+                          ) || null
+                        : null
+                    }
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue?.value);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Opleiding"
+                        error={!!editErrors.education}
+                        helperText={editErrors.education?.message ?? " "}
+                      />
+                    )}
+                    fullWidth
+                  />
+                )}
+              />
+              <TextField
+                label="LinkedIn URL"
+                error={!!editErrors.linkedin_url}
+                helperText={editErrors.linkedin_url?.message ?? " "}
+                {...editRegister("linkedin_url")}
+                fullWidth
+              />
+            </Stack>
+
+            <TextField
+              label="Notities"
+              multiline
+              rows={4}
+              error={!!editErrors.notes}
+              helperText={editErrors.notes?.message ?? " "}
+              {...editRegister("notes")}
+              fullWidth
+            />
+
+            {submitError && (
+              <Alert severity="error" onClose={() => setSubmitError(null)}>
+                {submitError}
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              editContact.close();
+              setSubmitError(null);
+              setEditingContact(null);
+            }}
+          >
+            Annuleren
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleEditSubmit(onEditSubmit)}
+            disabled={isEditSubmitting || updateContactMutation.isPending}
+          >
+            {isEditSubmitting || updateContactMutation.isPending
+              ? "Bezig..."
+              : "Opslaan"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* CV Viewer Dialog */}
       <Dialog
         open={cvViewer.isOpen}
@@ -922,21 +1382,110 @@ export default function NetworkPage() {
       </Dialog>
 
       {/* Contacts List */}
-      {loading && <Typography variant="body2">Laden…</Typography>}
-      {error && <Alert severity="error">{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-      {!loading && !error && contacts.length === 0 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="body2" color="text.secondary" align="center">
-            Geen contacten gevonden. Voeg een contact toe om te beginnen.
-          </Typography>
+      {/* Loading State - Skeleton */}
+      {loading && (
+        <Paper sx={{ p: 2 }} elevation={0} variant="outlined">
+          <Stack spacing={1}>
+            {[...Array(8)].map((_, i) => (
+              <Skeleton
+                key={i}
+                variant="rectangular"
+                height={52}
+                sx={{ borderRadius: 1 }}
+              />
+            ))}
+          </Stack>
         </Paper>
       )}
 
-      {!loading && !error && contacts.length > 0 && (
-        <Paper sx={{ height: 600, width: "100%" }}>
+      {/* Empty State */}
+      {!loading && !error && contacts.length === 0 && (
+        <Paper
+          sx={{
+            p: 6,
+            textAlign: "center",
+            bgcolor: "background.default",
+          }}
+          elevation={0}
+          variant="outlined"
+        >
+          <PeopleOutlineIcon
+            sx={{ fontSize: 64, color: "action.disabled", mb: 2 }}
+          />
+          <Typography variant="h6" gutterBottom>
+            Nog geen contacten
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Voeg je eerste contact toe of importeer CV's om te beginnen.
+          </Typography>
+          <Stack
+            direction="row"
+            spacing={2}
+            justifyContent="center"
+            flexWrap="wrap"
+          >
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={addContact.open}
+            >
+              Contact toevoegen
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<UploadFileIcon />}
+              onClick={smartImport.open}
+            >
+              CV's importeren
+            </Button>
+          </Stack>
+        </Paper>
+      )}
+
+      {/* No Search Results */}
+      {!loading &&
+        !error &&
+        contacts.length > 0 &&
+        filteredContacts.length === 0 && (
+          <Paper
+            sx={{
+              p: 4,
+              textAlign: "center",
+              bgcolor: "background.default",
+            }}
+            elevation={0}
+            variant="outlined"
+          >
+            <SearchIcon
+              sx={{ fontSize: 48, color: "action.disabled", mb: 2 }}
+            />
+            <Typography variant="h6" gutterBottom>
+              Geen resultaten
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Geen contacten gevonden voor "{searchQuery}"
+            </Typography>
+            <Button sx={{ mt: 2 }} onClick={() => setSearchQuery("")}>
+              Zoekopdracht wissen
+            </Button>
+          </Paper>
+        )}
+
+      {/* DataGrid */}
+      {!loading && !error && filteredContacts.length > 0 && (
+        <Paper
+          sx={{ height: 600, width: "100%" }}
+          elevation={0}
+          variant="outlined"
+        >
           <DataGrid
-            rows={contacts}
+            rows={filteredContacts}
             columns={columns}
             getRowId={(row) => row.uid}
             initialState={{
@@ -945,7 +1494,22 @@ export default function NetworkPage() {
               },
             }}
             pageSizeOptions={[5, 10, 25, 50]}
-            sx={{ border: 0 }}
+            sx={{
+              border: 0,
+              "& .MuiDataGrid-row:hover": {
+                bgcolor: "action.hover",
+              },
+              "& .MuiDataGrid-row:nth-of-type(even)": {
+                bgcolor: "grey.50",
+              },
+              "& .MuiDataGrid-columnHeaders": {
+                bgcolor: "grey.100",
+                fontWeight: 600,
+              },
+              "& .MuiDataGrid-cell:focus": {
+                outline: "none",
+              },
+            }}
             disableRowSelectionOnClick
           />
         </Paper>

@@ -1,3 +1,4 @@
+import React from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import { Box } from "@mui/material";
 import AppSidebar from "./AppSidebar";
@@ -14,6 +15,7 @@ export default function DefaultLayout() {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0, // Prevent flex item from overflowing
           p: 3,
           bgcolor: "background.default",
         }}

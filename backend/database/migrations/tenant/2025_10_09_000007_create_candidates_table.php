@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->string('first_name');
             $table->string('prefix')->nullable(); // Tussenvoegsels (van, de, van der, etc.)
             $table->string('last_name');
+            $table->date('date_of_birth')->nullable();
             $table->string('gender', 16)->nullable();
 
             // Contact information

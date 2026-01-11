@@ -3,6 +3,7 @@ export type Contact = {
   first_name: string;
   prefix?: string; // Tussenvoegsels (van, de, van der, etc.)
   last_name: string;
+  date_of_birth?: string; // ISO date string (YYYY-MM-DD)
   name?: string; // Computed full name from backend
   gender?: string;
   email?: string;

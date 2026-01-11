@@ -7,6 +7,7 @@ export type CreateContactData = {
   first_name: string;
   prefix?: string;
   last_name: string;
+  date_of_birth?: string;
   gender?: string;
   location?: string;
   company_role?: string;
@@ -20,6 +21,8 @@ export type CreateContactData = {
   notes?: string;
   cv_file?: File | null; // CV file for upload
 };
+
+export type UpdateContactData = Partial<Omit<CreateContactData, "cv_file">>;
 
 /**
  * Create a new contact with optional CV upload
@@ -68,6 +71,29 @@ export const useUploadContactDocument = () => {
 };
 
 /**
+ * Update an existing contact
+ */
+export const useUpdateContact = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      uid,
+      data,
+    }: {
+      uid: string;
+      data: UpdateContactData;
+    }) => {
+      return await API.patch<Contact>(`/contacts/${uid}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.contacts.candidates });
+    },
+  });
+};
+
+/**
  * Delete a contact
  */
 export const useDeleteContact = () => {
@@ -82,4 +108,3 @@ export const useDeleteContact = () => {
     },
   });
 };
-

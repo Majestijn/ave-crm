@@ -43,11 +43,10 @@ class AssignmentController extends Controller
             'status' => $assignment->status,
             'salary_min' => $assignment->salary_min,
             'salary_max' => $assignment->salary_max,
-            'has_bonus' => $assignment->has_bonus,
-            'has_car' => $assignment->has_car,
             'vacation_days' => $assignment->vacation_days,
             'location' => $assignment->location,
             'employment_type' => $assignment->employment_type,
+            'benefits' => $assignment->benefits,
             'notes_image_url' => $notesImageUrl,
             'created_at' => $assignment->created_at,
             'updated_at' => $assignment->updated_at,
@@ -79,11 +78,11 @@ class AssignmentController extends Controller
             'status' => 'nullable|string|in:active,proposed,hired,completed,cancelled',
             'salary_min' => 'nullable|integer|min:0',
             'salary_max' => 'nullable|integer|min:0',
-            'has_bonus' => 'nullable|boolean',
-            'has_car' => 'nullable|boolean',
             'vacation_days' => 'nullable|integer|min:0|max:100',
             'location' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:255',
+            'benefits' => 'nullable|array',
+            'benefits.*' => 'string|max:100',
             'notes_image' => 'nullable|file|image|max:5120', // max 5MB
         ]);
 
@@ -104,11 +103,10 @@ class AssignmentController extends Controller
             'status' => $validated['status'] ?? 'active',
             'salary_min' => $validated['salary_min'] ?? null,
             'salary_max' => $validated['salary_max'] ?? null,
-            'has_bonus' => $validated['has_bonus'] ?? false,
-            'has_car' => $validated['has_car'] ?? false,
             'vacation_days' => $validated['vacation_days'] ?? null,
             'location' => $validated['location'] ?? null,
             'employment_type' => $validated['employment_type'] ?? null,
+            'benefits' => $validated['benefits'] ?? null,
         ]);
 
         // Handle notes image upload

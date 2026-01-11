@@ -165,6 +165,7 @@ Geef het resultaat terug als JSON met ALLEEN deze velden:
 - first_name: voornaam (VERPLICHT)
 - prefix: tussenvoegsel zoals "van", "de", "van der" (optioneel, alleen als aanwezig)
 - last_name: achternaam (VERPLICHT)
+- date_of_birth: geboortedatum in formaat YYYY-MM-DD (optioneel)
 - email: e-mailadres (optioneel)
 - phone: telefoonnummer (optioneel)
 - location: woonplaats of stad (optioneel)

@@ -233,6 +233,7 @@ Geef het resultaat terug als JSON met ALLEEN deze velden:
 - first_name: voornaam (VERPLICHT)
 - prefix: tussenvoegsel zoals "van", "de", "van der" (optioneel, alleen als aanwezig)
 - last_name: achternaam (VERPLICHT)
+- date_of_birth: geboortedatum in formaat YYYY-MM-DD (optioneel)
 - email: e-mailadres (optioneel)
 - phone: telefoonnummer (optioneel)
 - location: woonplaats of stad (optioneel)
@@ -490,6 +491,7 @@ PROMPT;
                         'first_name' => $data['first_name'],
                         'prefix' => $data['prefix'] ?? null,
                         'last_name' => $data['last_name'],
+                        'date_of_birth' => $data['date_of_birth'] ?? null,
                         'email' => $data['email'] ?? null,
                         'phone' => $data['phone'] ?? null,
                         'location' => $data['location'] ?? null,
@@ -603,7 +605,7 @@ PROMPT;
     protected function normalizeName(string $name): string
     {
         $name = trim($name);
-        
+
         // If all uppercase or all lowercase, convert to proper case
         if (mb_strtoupper($name) === $name || mb_strtolower($name) === $name) {
             // Handle hyphenated names (e.g., "JEAN-PIERRE" -> "Jean-Pierre")
@@ -611,7 +613,7 @@ PROMPT;
             $parts = array_map(fn($part) => mb_convert_case($part, MB_CASE_TITLE, 'UTF-8'), $parts);
             return implode('-', $parts);
         }
-        
+
         return $name;
     }
 

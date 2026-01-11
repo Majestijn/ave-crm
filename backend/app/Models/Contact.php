@@ -18,6 +18,7 @@ class Contact extends Model
         'first_name',
         'prefix',
         'last_name',
+        'date_of_birth',
         'gender',
         'email',
         'phone',
@@ -34,6 +35,7 @@ class Contact extends Model
 
     protected $casts = [
         'uid' => 'string',
+        'date_of_birth' => 'date',
         'current_salary_cents' => 'integer',
         'network_roles' => 'array',
     ];

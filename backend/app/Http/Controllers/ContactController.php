@@ -51,13 +51,8 @@ class ContactController extends Controller
     {
         $auth = $request->user();
 
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-
-        $contactModel = Contact::where('uid', $contact)
-            ->where('tenant_id', $auth->tenant_id)
-            ->firstOrFail();
+        // Find contact by uid (tenant context is already set by database connection)
+        $contactModel = Contact::where('uid', $contact)->firstOrFail();
 
         if (!$auth->can('view', $contactModel)) {
             abort(403, 'This action is unauthorized.');
@@ -73,14 +68,8 @@ class ContactController extends Controller
     {
         $auth = $request->user();
 
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-
-        $contactModel = Contact::where('uid', $contact)
-            ->where('tenant_id', $auth->tenant_id)
-            ->firstOrFail();
+        // Find contact by uid (tenant context is already set by database connection)
+        $contactModel = Contact::where('uid', $contact)->firstOrFail();
 
         // Authorization check
         if (!$auth->can('update', $contactModel)) {
@@ -89,10 +78,14 @@ class ContactController extends Controller
 
         $data = $request->validate([
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'prefix' => ['nullable', 'string', 'max:32'],
             'last_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', 'max:16'],
             'location' => ['nullable', 'string', 'max:255'],
-            'current_role' => ['nullable', 'string', 'max:255'],
+            'company_role' => ['nullable', 'string', 'max:255'],
+            'network_roles' => ['nullable', 'array'],
+            'network_roles.*' => ['string', 'max:64'],
             'current_company' => ['nullable', 'string', 'max:255'],
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
             'education' => ['nullable', 'in:MBO,HBO,UNI'],
@@ -103,6 +96,7 @@ class ContactController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        // Prevent modifying protected fields
         unset($data['tenant_id'], $data['uid']);
 
         $contactModel->fill($data)->save();

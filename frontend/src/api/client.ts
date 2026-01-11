@@ -1,8 +1,30 @@
 // Axios client instance - moved from axios-client.ts for better organization
 import axios, { type AxiosRequestConfig } from "axios";
 
+/**
+ * Determine the API base URL based on the current environment
+ * - Development (localhost): uses port 8080
+ * - Production: same domain, no port
+ */
+const getBaseUrl = (): string => {
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+
+  // Development: localhost with port 8080 for backend
+  if (
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname.endsWith(".lvh.me")
+  ) {
+    return `${protocol}//${hostname}:8080/api/v1`;
+  }
+
+  // Production: same domain, no port (Nginx handles routing)
+  return `${protocol}//${hostname}/api/v1`;
+};
+
 const axiosInstance = axios.create({
-  baseURL: `${window.location.protocol}//${window.location.hostname}:8080/api/v1`,
+  baseURL: getBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },

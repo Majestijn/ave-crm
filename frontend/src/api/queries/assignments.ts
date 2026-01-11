@@ -15,11 +15,10 @@ export type AssignmentFromAPI = {
   status: string;
   salary_min?: number;
   salary_max?: number;
-  has_bonus?: boolean;
-  has_car?: boolean;
   vacation_days?: number;
   location?: string;
   employment_type?: string;
+  benefits?: string[];
   notes_image_url?: string | null;
   created_at: string;
   updated_at: string;

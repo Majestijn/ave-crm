@@ -109,6 +109,7 @@ class ProcessCvImport implements ShouldQueue
                 'first_name' => $data['first_name'],
                 'prefix' => $data['prefix'] ?? null,
                 'last_name' => $data['last_name'],
+                'date_of_birth' => $data['date_of_birth'] ?? null,
                 'email' => $data['email'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'location' => $data['location'] ?? null,
@@ -255,7 +256,7 @@ class ProcessCvImport implements ShouldQueue
     protected function normalizeName(string $name): string
     {
         $name = trim($name);
-        
+
         // If all uppercase or all lowercase, convert to proper case
         if (mb_strtoupper($name) === $name || mb_strtolower($name) === $name) {
             // Handle hyphenated names (e.g., "JEAN-PIERRE" -> "Jean-Pierre")
@@ -263,7 +264,7 @@ class ProcessCvImport implements ShouldQueue
             $parts = array_map(fn($part) => mb_convert_case($part, MB_CASE_TITLE, 'UTF-8'), $parts);
             return implode('-', $parts);
         }
-        
+
         return $name;
     }
 

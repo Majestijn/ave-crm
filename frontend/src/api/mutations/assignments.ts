@@ -10,11 +10,10 @@ export type CreateAssignmentData = {
   status?: string | null;
   salary_min?: number | null;
   salary_max?: number | null;
-  has_bonus: boolean;
-  has_car: boolean;
   vacation_days?: number | null;
   location?: string | null;
   employment_type?: string | null;
+  benefits?: string[] | null;
   notes_image?: File | null; // File object for image upload
 };
 
@@ -38,13 +37,16 @@ export const useCreateAssignment = () => {
         if (data.salary_max !== null && data.salary_max !== undefined) {
           formData.append("salary_max", String(data.salary_max));
         }
-        formData.append("has_bonus", data.has_bonus ? "1" : "0");
-        formData.append("has_car", data.has_car ? "1" : "0");
         if (data.vacation_days !== null && data.vacation_days !== undefined) {
           formData.append("vacation_days", String(data.vacation_days));
         }
         if (data.location) formData.append("location", data.location);
         if (data.employment_type) formData.append("employment_type", data.employment_type);
+        if (data.benefits && data.benefits.length > 0) {
+          data.benefits.forEach((benefit, index) => {
+            formData.append(`benefits[${index}]`, benefit);
+          });
+        }
         formData.append("notes_image", data.notes_image);
 
         // Don't set Content-Type header - let Axios handle it automatically

@@ -413,6 +413,15 @@ export default function CandidatesPage() {
                 valueGetter: (value) => value || "-",
               },
               {
+                field: "date_of_birth",
+                headerName: "Geboortedatum",
+                width: 130,
+                valueGetter: (value) => {
+                  if (!value) return "-";
+                  return new Date(value).toLocaleDateString("nl-NL");
+                },
+              },
+              {
                 field: "network_roles",
                 headerName: "Netwerk rollen",
                 width: 220,
