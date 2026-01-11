@@ -95,18 +95,27 @@ export default function Register() {
         payload
       )) as RegisterResponse;
 
-      // Clear any existing tokens from base domain localStorage before redirect
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("current_user");
+      // Check if we're on a Forge domain or single-tenant setup
+      const isForgeOrSingleTenant = window.location.hostname.endsWith('.on-forge.com') || 
+                                     import.meta.env.VITE_SINGLE_TENANT === 'true';
+      
+      if (isForgeOrSingleTenant) {
+        // Single-tenant mode: stay on current domain, save token and redirect to dashboard
+        localStorage.setItem("auth_token", token);
+        localStorage.setItem("current_user", JSON.stringify(user));
+        navigate("/dashboard", { replace: true });
+      } else {
+        // Multi-tenant mode: redirect to tenant subdomain
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("current_user");
 
-      // Redirect to tenant domain with token in URL hash for auto-login
-      // Hash is not sent to server, more secure than query param
-      const protocol = window.location.protocol;
-      const port = window.location.port ? `:${window.location.port}` : "";
-      const tokenHash = encodeURIComponent(token);
-      const userHash = encodeURIComponent(JSON.stringify(user));
+        const protocol = window.location.protocol;
+        const port = window.location.port ? `:${window.location.port}` : "";
+        const tokenHash = encodeURIComponent(token);
+        const userHash = encodeURIComponent(JSON.stringify(user));
 
-      window.location.href = `${protocol}//${tenant.domain}${port}/#token=${tokenHash}&user=${userHash}`;
+        window.location.href = `${protocol}//${tenant.domain}${port}/#token=${tokenHash}&user=${userHash}`;
+      }
     } catch (error) {
       console.log(error);
     }
