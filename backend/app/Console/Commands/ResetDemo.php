@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Tenant;
 
 class ResetDemo extends Command
@@ -104,7 +105,32 @@ class ResetDemo extends Command
             $this->info("  (failed_jobs table doesn't exist or is empty)");
         }
 
-        // 5. Clear caches
+        // 5. Clear R2 storage
+        $this->info("Clearing R2 storage...");
+        try {
+            $disk = Storage::disk('r2');
+            $files = $disk->allFiles();
+            $directories = $disk->allDirectories();
+            
+            if (count($files) > 0) {
+                $disk->delete($files);
+                $this->info("✓ Deleted " . count($files) . " files from R2.");
+            } else {
+                $this->info("  (No files in R2)");
+            }
+            
+            // Delete directories (in reverse order to handle nested dirs)
+            foreach (array_reverse($directories) as $dir) {
+                $disk->deleteDirectory($dir);
+            }
+            if (count($directories) > 0) {
+                $this->info("✓ Deleted " . count($directories) . " directories from R2.");
+            }
+        } catch (\Exception $e) {
+            $this->warn("⚠ Could not clear R2: " . $e->getMessage());
+        }
+
+        // 6. Clear caches
         $this->info("Clearing caches...");
         $this->call('cache:clear');
         $this->call('config:clear');
