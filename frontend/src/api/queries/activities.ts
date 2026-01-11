@@ -31,22 +31,17 @@ export const useAssignmentActivities = (assignmentUid: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.assignments.activities(assignmentUid!),
     queryFn: async () => {
-      const responseData = await API.get<Activity[]>(
+      const responseData = await API.get<Activity[] | { data: Activity[] }>(
         `/assignments/${assignmentUid}/activities`
       );
 
       if (Array.isArray(responseData)) {
         return responseData;
-      } else if (
-        responseData &&
-        typeof responseData === "object" &&
-        "data" in responseData &&
-        Array.isArray(responseData.data)
-      ) {
+      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
         return responseData.data;
       }
 
-      return [];
+      return [] as Activity[];
     },
     enabled: !!assignmentUid,
   });

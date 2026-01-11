@@ -11,31 +11,15 @@ export const useCandidates = () => {
     setLoading(true);
     setError(null);
     try {
-      const responseData = await API.get<Contact[]>("/contacts/candidates");
+      const responseData = await API.get<Contact[] | { data: Contact[] }>("/contacts/candidates");
 
       let candidateArray: Contact[];
       if (Array.isArray(responseData)) {
         candidateArray = responseData;
-      } else if (
-        responseData &&
-        typeof responseData === "object" &&
-        "data" in responseData &&
-        Array.isArray(responseData.data)
-      ) {
+      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
         candidateArray = responseData.data;
       } else {
-        console.error("Unexpected response structure:", {
-          responseData,
-          type: typeof responseData,
-          isArray: Array.isArray(responseData),
-          keys:
-            responseData && typeof responseData === "object"
-              ? Object.keys(responseData)
-              : null,
-        });
-        throw new Error(
-          `Unexpected data format: expected array, got ${typeof responseData}`
-        );
+        candidateArray = [];
       }
 
       setCandidates(candidateArray);

@@ -10,23 +10,15 @@ export const useContacts = () => {
   return useQuery({
     queryKey: queryKeys.contacts.all,
     queryFn: async () => {
-      const responseData = await API.get<Contact[]>("/contacts");
+      const responseData = await API.get<Contact[] | { data: Contact[] }>("/contacts");
 
       if (Array.isArray(responseData)) {
         return responseData;
-      } else if (
-        responseData &&
-        typeof responseData === "object" &&
-        "data" in responseData &&
-        Array.isArray(responseData.data)
-      ) {
+      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
         return responseData.data;
       }
 
-      console.error("Unexpected response structure:", responseData);
-      throw new Error(
-        `Unexpected data format: expected array, got ${typeof responseData}`
-      );
+      return [] as Contact[];
     },
   });
 };
@@ -38,23 +30,15 @@ export const useCandidates = () => {
   return useQuery({
     queryKey: queryKeys.contacts.candidates,
     queryFn: async () => {
-      const responseData = await API.get<Contact[]>("/contacts/candidates");
+      const responseData = await API.get<Contact[] | { data: Contact[] }>("/contacts/candidates");
 
       if (Array.isArray(responseData)) {
         return responseData;
-      } else if (
-        responseData &&
-        typeof responseData === "object" &&
-        "data" in responseData &&
-        Array.isArray(responseData.data)
-      ) {
+      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
         return responseData.data;
       }
 
-      console.error("Unexpected response structure:", responseData);
-      throw new Error(
-        `Unexpected data format: expected array, got ${typeof responseData}`
-      );
+      return [] as Contact[];
     },
   });
 };

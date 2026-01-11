@@ -53,23 +53,15 @@ export const useAssignments = () => {
   return useQuery({
     queryKey: queryKeys.assignments.all,
     queryFn: async () => {
-      const responseData = await API.get<AssignmentFromAPI[]>("/assignments");
+      const responseData = await API.get<AssignmentFromAPI[] | { data: AssignmentFromAPI[] }>("/assignments");
 
       if (Array.isArray(responseData)) {
         return responseData;
-      } else if (
-        responseData &&
-        typeof responseData === "object" &&
-        "data" in responseData &&
-        Array.isArray(responseData.data)
-      ) {
+      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
         return responseData.data;
       }
 
-      console.error("Unexpected response structure:", responseData);
-      throw new Error(
-        `Unexpected data format: expected array, got ${typeof responseData}`
-      );
+      return [] as AssignmentFromAPI[];
     },
   });
 };
@@ -81,25 +73,17 @@ export const useAccountAssignments = (accountUid: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.assignments.byAccount(accountUid!),
     queryFn: async () => {
-      const responseData = await API.get<AssignmentFromAPI[]>(
+      const responseData = await API.get<AssignmentFromAPI[] | { data: AssignmentFromAPI[] }>(
         `/accounts/${accountUid}/assignments`
       );
 
       if (Array.isArray(responseData)) {
         return responseData;
-      } else if (
-        responseData &&
-        typeof responseData === "object" &&
-        "data" in responseData &&
-        Array.isArray(responseData.data)
-      ) {
+      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
         return responseData.data;
       }
 
-      console.error("Unexpected response structure:", responseData);
-      throw new Error(
-        `Unexpected data format: expected array, got ${typeof responseData}`
-      );
+      return [] as AssignmentFromAPI[];
     },
     enabled: !!accountUid,
   });
