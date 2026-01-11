@@ -88,7 +88,23 @@ class ResetDemo extends Command
         Tenant::truncate();
         $this->info("✓ Tenants table cleared.");
 
-        // 4. Clear caches
+        // 4. Clear landlord jobs/failed_jobs tables
+        $this->info("Clearing landlord job tables...");
+        try {
+            DB::connection('landlord')->table('jobs')->truncate();
+            $this->info("✓ Jobs table cleared.");
+        } catch (\Exception $e) {
+            $this->info("  (jobs table doesn't exist or is empty)");
+        }
+        
+        try {
+            DB::connection('landlord')->table('failed_jobs')->truncate();
+            $this->info("✓ Failed jobs table cleared.");
+        } catch (\Exception $e) {
+            $this->info("  (failed_jobs table doesn't exist or is empty)");
+        }
+
+        // 5. Clear caches
         $this->info("Clearing caches...");
         $this->call('cache:clear');
         $this->call('config:clear');
