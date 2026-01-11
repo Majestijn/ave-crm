@@ -36,6 +36,13 @@ export default function LoginPage() {
 
   // Check if we're on a tenant domain (e.g., tenant1.localhost) vs base domain (localhost)
   const isTenantDomain = () => {
+    // Check for explicit base domain from environment - if set, compare against it
+    const envBaseDomain = import.meta.env.VITE_BASE_DOMAIN;
+    if (envBaseDomain) {
+      // If current hostname equals base domain, we're NOT on a tenant domain
+      return window.location.hostname !== envBaseDomain;
+    }
+    
     const hostname = window.location.hostname;
     const parts = hostname.split(".");
     
@@ -47,6 +54,11 @@ export default function LoginPage() {
     // Two parts where second is "localhost" = tenant domain (e.g., "tenant1.localhost")
     if (parts.length === 2 && parts[1] === "localhost") {
       return true;
+    }
+    
+    // Forge domains (xxx.on-forge.com) are NOT tenant domains - treat as base domain
+    if (hostname.endsWith(".on-forge.com")) {
+      return false;
     }
     
     // More than 2 parts = tenant subdomain (e.g., "tenant1.ave-crm.com")
@@ -62,6 +74,12 @@ export default function LoginPage() {
 
   // Get base domain for registration redirect
   const getBaseDomain = () => {
+    // Check for explicit base domain from environment
+    const envBaseDomain = import.meta.env.VITE_BASE_DOMAIN;
+    if (envBaseDomain) {
+      return envBaseDomain;
+    }
+    
     const hostname = window.location.hostname;
     const parts = hostname.split(".");
     
@@ -76,7 +94,8 @@ export default function LoginPage() {
     }
     
     // For tenant subdomains like "tenant1.ave-crm.com", remove first part
-    if (parts.length > 2) {
+    // But NOT for domains like "xxx.on-forge.com" (Forge domains)
+    if (parts.length > 2 && !parts[1].includes("on-forge")) {
       return parts.slice(1).join(".");
     }
     
@@ -85,7 +104,7 @@ export default function LoginPage() {
       return parts[1];
     }
     
-    // Fallback
+    // Fallback: use current hostname (single-tenant deployment)
     return hostname;
   };
 
