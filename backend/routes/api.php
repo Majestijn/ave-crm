@@ -16,6 +16,7 @@ use App\Http\Controllers\AccountContactController;
 use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\CalendarFeedController;
 use App\Http\Controllers\ContactDocumentController;
+use App\Http\Controllers\BatchCvImportController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -47,7 +48,8 @@ Route::prefix('/v1')->group(function () {
 
         // Specific routes must come before apiResource to avoid route conflicts
         Route::get('/contacts/candidates', [ContactController::class, 'candidates']);
-        Route::post('/contacts/bulk-import', [ContactController::class, 'bulkImport']);
+        Route::post('/contacts/smart-import', [ContactController::class, 'smartBulkImport']);
+        Route::get('/contacts/smart-import/{batchId}', [ContactController::class, 'smartBulkImportStatus']);
         Route::apiResource('contacts', ContactController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
         // Legacy CV route (for backward compatibility)
@@ -106,6 +108,11 @@ Route::prefix('/v1')->group(function () {
         // Calendar feed URL management (authenticated)
         Route::get('/calendar-feed/url', [CalendarFeedController::class, 'getUrl']);
         Route::post('/calendar-feed/regenerate', [CalendarFeedController::class, 'regenerateToken']);
+
+        // Batch CV import (Vertex AI)
+        Route::post('/cv-import/batch', [BatchCvImportController::class, 'upload']);
+        Route::get('/cv-import/batch', [BatchCvImportController::class, 'index']);
+        Route::get('/cv-import/batch/{batchUid}', [BatchCvImportController::class, 'status']);
     });
 
     // Public iCal feed (authenticated via token in URL, tenant via path)

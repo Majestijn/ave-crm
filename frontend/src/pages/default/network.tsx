@@ -27,8 +27,13 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
 import mammoth from "mammoth";
 import { useContacts } from "../../api/queries/contacts";
-import { useCreateContact, useDeleteContact, useUploadContactDocument } from "../../api/mutations/contacts";
-import BulkImportDialog from "../../components/features/BulkImportDialog";
+import {
+  useCreateContact,
+  useDeleteContact,
+  useUploadContactDocument,
+} from "../../api/mutations/contacts";
+import SmartBulkImportDialog from "../../components/features/SmartBulkImportDialog";
+import BatchImportDialog from "../../components/features/BatchImportDialog";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import type { Contact } from "../../types/contacts";
 import { useForm, Controller } from "react-hook-form";
@@ -71,29 +76,31 @@ const ContactSchema = z.object({
   gender: z.string().optional(),
   location: z.string().optional(),
   company_role: z.string().optional(),
-  network_roles: z.array(
-    z.enum([
-      "invoice_contact",
-      "candidate",
-      "interim",
-      "ambassador",
-      "potential_management",
-      "co_decision_maker",
-      "potential_directie",
-      "candidate_reference",
-      "hr_employment",
-      "hr_recruiters",
-      "directie",
-      "owner",
-      "expert",
-      "coach",
-      "former_owner",
-      "former_director",
-      "commissioner",
-      "investor",
-      "network_group",
-    ])
-  ).optional(),
+  network_roles: z
+    .array(
+      z.enum([
+        "invoice_contact",
+        "candidate",
+        "interim",
+        "ambassador",
+        "potential_management",
+        "co_decision_maker",
+        "potential_directie",
+        "candidate_reference",
+        "hr_employment",
+        "hr_recruiters",
+        "directie",
+        "owner",
+        "expert",
+        "coach",
+        "former_owner",
+        "former_director",
+        "commissioner",
+        "investor",
+        "network_group",
+      ])
+    )
+    .optional(),
   current_company: z.string().optional(),
   current_salary_cents: z.number().optional(),
   education: z.enum(["MBO", "HBO", "UNI"]).optional(),
@@ -106,23 +113,29 @@ const ContactSchema = z.object({
 type ContactForm = z.infer<typeof ContactSchema>;
 
 export default function NetworkPage() {
-  const { data: contacts = [], isLoading: loading, error: contactsError, refetch } = useContacts();
+  const {
+    data: contacts = [],
+    isLoading: loading,
+    error: contactsError,
+    refetch,
+  } = useContacts();
   const createContactMutation = useCreateContact();
   const deleteContactMutation = useDeleteContact();
   const uploadDocumentMutation = useUploadContactDocument();
-  
+
   const addContact = useDisclosure();
   const bulkImport = useDisclosure();
+  const smartImport = useDisclosure();
   const deleteConfirm = useDisclosure();
   const cvViewer = useDisclosure();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  
+
   // CV upload state
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvFileName, setCvFileName] = useState<string | null>(null);
-  
+
   // CV viewer state
   const [viewingContact, setViewingContact] = useState<Contact | null>(null);
   const [cvContent, setCvContent] = useState<string | null>(null);
@@ -130,7 +143,8 @@ export default function NetworkPage() {
   const [cvError, setCvError] = useState<string | null>(null);
 
   const error = contactsError
-    ? (contactsError as any)?.response?.data?.message || "Fout bij laden van contacten"
+    ? (contactsError as any)?.response?.data?.message ||
+      "Fout bij laden van contacten"
     : null;
 
   const {
@@ -165,7 +179,7 @@ export default function NetworkPage() {
     try {
       // Create the contact first
       const createdContact = await createContactMutation.mutateAsync(data);
-      
+
       // If there's a CV file, upload it separately
       if (cvFile && createdContact?.uid) {
         try {
@@ -177,7 +191,9 @@ export default function NetworkPage() {
         } catch (cvErr) {
           console.error("Error uploading CV:", cvErr);
           // Contact was created, but CV upload failed - show warning but don't block
-          setSubmitError("Contact aangemaakt, maar CV upload is mislukt. Je kunt het later opnieuw proberen.");
+          setSubmitError(
+            "Contact aangemaakt, maar CV upload is mislukt. Je kunt het later opnieuw proberen."
+          );
           addContact.close();
           reset();
           setCvFile(null);
@@ -185,7 +201,7 @@ export default function NetworkPage() {
           return;
         }
       }
-      
+
       addContact.close();
       reset();
       setCvFile(null);
@@ -202,12 +218,12 @@ export default function NetworkPage() {
       }
     }
   };
-  
+
   // Handle CV file selection
   const handleCvFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     // Validate file type
     const allowedTypes = [
       "application/pdf",
@@ -215,21 +231,23 @@ export default function NetworkPage() {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
     if (!allowedTypes.includes(file.type)) {
-      setSubmitError("CV moet een PDF of Word bestand zijn (.pdf, .doc, .docx)");
+      setSubmitError(
+        "CV moet een PDF of Word bestand zijn (.pdf, .doc, .docx)"
+      );
       return;
     }
-    
+
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setSubmitError("CV bestand mag maximaal 10MB zijn");
       return;
     }
-    
+
     setCvFile(file);
     setCvFileName(file.name);
     setSubmitError(null);
   };
-  
+
   // Clear CV file
   const handleClearCvFile = () => {
     setCvFile(null);
@@ -291,20 +309,23 @@ export default function NetworkPage() {
         } else {
           // Relative URL - normalize it
           let relativePath = contact.cv_url;
-          
+
           // Remove /api/v1 prefix if present (to avoid duplication)
           if (relativePath.startsWith("/api/v1/")) {
             relativePath = relativePath.replace("/api/v1", "");
           }
-          
+
           // Ensure it starts with /
           if (!relativePath.startsWith("/")) {
             relativePath = "/" + relativePath;
           }
-          
+
           cvUrl = `${baseURL}${relativePath}`;
         }
-        console.log("CV URL debug:", { original: contact.cv_url, final: cvUrl });
+        console.log("CV URL debug:", {
+          original: contact.cv_url,
+          final: cvUrl,
+        });
       } else {
         // Legacy format: storage URL like /storage/cvs/filename.docx
         let cvPath = contact.cv_url;
@@ -496,11 +517,19 @@ export default function NetworkPage() {
         </Typography>
         <Stack direction="row" spacing={2}>
           <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<UploadFileIcon />}
+            onClick={smartImport.open}
+          >
+            Smart CV Import
+          </Button>
+          <Button
             variant="outlined"
             startIcon={<UploadFileIcon />}
             onClick={bulkImport.open}
           >
-            Bulk Import (50)
+            Bulk Import (ZIP)
           </Button>
           <Button
             variant="contained"
@@ -512,8 +541,15 @@ export default function NetworkPage() {
         </Stack>
       </Box>
 
-      {/* Bulk Import Dialog */}
-      <BulkImportDialog
+      {/* Smart CV Import Dialog */}
+      <SmartBulkImportDialog
+        open={smartImport.isOpen}
+        onClose={smartImport.close}
+        onSuccess={() => refetch()}
+      />
+
+      {/* Batch/Bulk Import Dialog (ZIP) */}
+      <BatchImportDialog
         open={bulkImport.isOpen}
         onClose={bulkImport.close}
         onSuccess={() => refetch()}
@@ -651,7 +687,9 @@ export default function NetworkPage() {
                     getOptionLabel={(option) => option.label}
                     value={
                       field.value
-                        ? educationOptions.find((opt) => opt.value === field.value) || null
+                        ? educationOptions.find(
+                            (opt) => opt.value === field.value
+                          ) || null
                         : null
                     }
                     onChange={(_, newValue) => {
@@ -693,7 +731,9 @@ export default function NetworkPage() {
                     variant="outlined"
                   />
                   <Typography variant="caption" color="text.secondary">
-                    {cvFile ? `${(cvFile.size / 1024 / 1024).toFixed(2)} MB` : ""}
+                    {cvFile
+                      ? `${(cvFile.size / 1024 / 1024).toFixed(2)} MB`
+                      : ""}
                   </Typography>
                 </Stack>
               ) : (
@@ -754,7 +794,9 @@ export default function NetworkPage() {
             onClick={handleSubmit(onSubmit)}
             disabled={isSubmitting || uploadDocumentMutation.isPending}
           >
-            {isSubmitting || uploadDocumentMutation.isPending ? "Bezig..." : "Opslaan"}
+            {isSubmitting || uploadDocumentMutation.isPending
+              ? "Bezig..."
+              : "Opslaan"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -787,7 +829,10 @@ export default function NetworkPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteCancel} disabled={deleteContactMutation.isPending}>
+          <Button
+            onClick={handleDeleteCancel}
+            disabled={deleteContactMutation.isPending}
+          >
             Annuleren
           </Button>
           <Button
@@ -908,4 +953,3 @@ export default function NetworkPage() {
     </Box>
   );
 }
-

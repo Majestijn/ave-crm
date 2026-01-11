@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use App\Jobs\ProcessCvImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Http\Requests\StoreContactRequest;
+use Spatie\Multitenancy\Models\Tenant;
 
 class ContactController extends Controller
 {
@@ -115,13 +118,30 @@ class ContactController extends Controller
         $auth = $request->user();
 
         // Find contact by uid (route parameter name is 'contact' but contains the uid value)
-        $contactModel = Contact::where('uid', $contact)
-            ->where('tenant_id', $auth->tenant_id)
-            ->firstOrFail();
+        // Note: tenant context is already set by database connection, no need for tenant_id filter
+        $contactModel = Contact::where('uid', $contact)->firstOrFail();
 
         // Authorization check
         if (!$auth->can('delete', $contactModel)) {
             abort(403, 'This action is unauthorized.');
+        }
+
+        // Delete all documents from R2 storage
+        $fileService = app(\App\Services\FileStorageService::class);
+        foreach ($contactModel->documents as $document) {
+            if ($document->storage_path) {
+                try {
+                    $fileService->delete($document->storage_path);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to delete document from R2', [
+                        'contact_id' => $contactModel->id,
+                        'document_id' => $document->id,
+                        'path' => $document->storage_path,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+            $document->delete();
         }
 
         // Soft delete - sets deleted_at timestamp but keeps the record in database
@@ -153,12 +173,12 @@ class ContactController extends Controller
     }
 
     /**
-     * Bulk import contacts with random data
+     * Smart bulk import CVs using AI parsing
+     * Accepts multiple CV files and queues them for processing
      */
-    public function bulkImport(Request $request)
+    public function smartBulkImport(Request $request)
     {
         $auth = $request->user();
-
 
         // Authorization: owners, admins, and recruiters can bulk import
         if (!in_array($auth->role, ['owner', 'admin', 'recruiter'])) {
@@ -166,60 +186,122 @@ class ContactController extends Controller
         }
 
         $request->validate([
-            'cv_file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'], // 10MB max
+            'files' => ['required', 'array', 'min:1', 'max:50'],
+            'files.*' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'], // 10MB max per file
+            'batch_id' => ['nullable', 'string', 'max:26'], // Optional: join existing batch
         ]);
 
-        // Store the CV file
-        $cvFile = $request->file('cv_file');
-        $cvPath = $cvFile->store('cvs', 'public');
-        $cvUrl = Storage::url($cvPath);
+        $tenant = Tenant::current();
+        if (!$tenant) {
+            abort(403, 'Geen tenant context gevonden');
+        }
 
-        // Generate 50 random contacts
-        $firstNames = ['Jan', 'Piet', 'Klaas', 'Emma', 'Sophie', 'Lucas', 'Noah', 'Anna', 'Milan', 'Eva', 'Daan', 'Julia', 'Sem', 'Lieke', 'Finn', 'Saar', 'Bram', 'Noor', 'Jesse', 'Roos'];
-        $prefixes = [null, null, null, 'de', 'van', 'van de', 'van der', 'van den', 'ter', 'ten']; // null = no prefix (more common)
-        $lastNames = ['Vries', 'Jansen', 'Boer', 'Bakker', 'Visser', 'Smit', 'Meijer', 'Mulder', 'Groot', 'Dijkstra', 'Janssen', 'Wit', 'Smeets', 'Jong', 'Berg', 'Dijk', 'Leeuwen', 'Bruin', 'Kok', 'Peters'];
-        $cities = ['Amsterdam', 'Rotterdam', 'Den Haag', 'Utrecht', 'Eindhoven', 'Groningen', 'Tilburg', 'Almere', 'Breda', 'Nijmegen'];
-        $roles = ['Software Developer', 'Project Manager', 'Marketing Manager', 'Sales Representative', 'HR Manager', 'Financial Analyst', 'Designer', 'Consultant', 'Engineer', 'Analyst'];
-        $companies = ['TechCorp', 'Innovate BV', 'Digital Solutions', 'Future Systems', 'SmartTech', 'Global Inc', 'Local Business', 'StartupXYZ', 'Enterprise Ltd', 'Company ABC'];
-        $educations = ['MBO', 'HBO', 'UNI'];
-        $networkRoles = ['invoice_contact', 'candidate', 'interim', 'ambassador', 'potential_management', 'co_decision_maker', 'potential_directie', 'candidate_reference', 'hr_employment', 'hr_recruiters', 'directie', 'owner', 'expert', 'coach', 'former_owner', 'former_director', 'commissioner', 'investor', 'network_group'];
+        // Use existing batch_id or generate new one
+        $batchId = $request->input('batch_id');
+        $isExistingBatch = false;
 
-        $contacts = [];
-        for ($i = 0; $i < 50; $i++) {
-            $firstName = $firstNames[array_rand($firstNames)];
-            $prefix = $prefixes[array_rand($prefixes)];
-            $lastName = $lastNames[array_rand($lastNames)];
+        if ($batchId) {
+            // Check if batch exists
+            $existingData = cache()->get("cv_import_batch:{$batchId}");
+            if ($existingData) {
+                $isExistingBatch = true;
+            } else {
+                // Invalid batch_id, generate new one
+                $batchId = (string) Str::ulid();
+            }
+        } else {
+            $batchId = (string) Str::ulid();
+        }
 
-            // Randomly pick 1-2 network roles
-            $numRoles = rand(1, 2);
-            $randomRoles = array_rand(array_flip($networkRoles), $numRoles);
-            $selectedRoles = is_array($randomRoles) ? $randomRoles : [$randomRoles];
+        // Create temp directory for imports
+        $tempDir = storage_path("app/temp/imports/{$batchId}");
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
 
-            // Build email-safe name
-            $emailName = strtolower($firstName . '.' . ($prefix ? str_replace(' ', '', $prefix) . '.' : '') . $lastName);
+        $queuedCount = 0;
+        $files = $request->file('files');
 
-            $contacts[] = Contact::create([
-                'first_name' => $firstName,
-                'prefix' => $prefix,
-                'last_name' => $lastName,
-                'gender' => rand(0, 1) ? 'male' : 'female',
-                'location' => $cities[array_rand($cities)],
-                'company_role' => $roles[array_rand($roles)],
-                'network_roles' => $selectedRoles,
-                'current_company' => $companies[array_rand($companies)],
-                'current_salary_cents' => rand(30000, 100000) * 100,
-                'education' => $educations[array_rand($educations)],
-                'email' => $emailName . rand(1, 999) . '@example.com',
-                'phone' => '+31 6 ' . rand(10000000, 99999999),
-                'linkedin_url' => 'https://linkedin.com/in/' . str_replace('.', '-', $emailName),
-                'cv_url' => $cvUrl,
-                'notes' => 'Bulk imported contact #' . ($i + 1),
-            ]);
+        foreach ($files as $file) {
+            $originalName = $file->getClientOriginalName();
+            $tempPath = $tempDir . '/' . uniqid() . '_' . $originalName;
+
+            // Move file to temp location
+            $file->move(dirname($tempPath), basename($tempPath));
+
+            // Dispatch job to process this CV
+            ProcessCvImport::dispatch(
+                $tempPath,
+                $originalName,
+                $tenant->id,
+                $auth->id,
+                $batchId
+            );
+
+            $queuedCount++;
+        }
+
+        // Initialize or update batch tracking in cache
+        if ($isExistingBatch) {
+            $existingData = cache()->get("cv_import_batch:{$batchId}");
+            $existingData['total'] = ($existingData['total'] ?? 0) + $queuedCount;
+            cache()->put("cv_import_batch:{$batchId}", $existingData, now()->addHours(24));
+        } else {
+            cache()->put("cv_import_batch:{$batchId}", [
+                'success' => [],
+                'failed' => [],
+                'skipped' => [],
+                'total' => $queuedCount,
+                'started_at' => now()->toISOString(),
+            ], now()->addHours(24));
         }
 
         return response()->json([
-            'message' => '50 contacten succesvol toegevoegd',
-            'contacts' => $contacts,
-        ], 201);
+            'message' => "{$queuedCount} CV's in de wachtrij geplaatst voor verwerking",
+            'batch_id' => $batchId,
+            'queued_count' => $queuedCount,
+        ], 202);
+    }
+
+    /**
+     * Get the status of a smart bulk import batch
+     */
+    public function smartBulkImportStatus(Request $request, string $batchId)
+    {
+        $auth = $request->user();
+
+        // Authorization: owners, admins, and recruiters can view import status
+        if (!in_array($auth->role, ['owner', 'admin', 'recruiter'])) {
+            abort(403, 'Je hebt geen toestemming om import status te bekijken');
+        }
+
+        $cacheKey = "cv_import_batch:{$batchId}";
+        $data = cache()->get($cacheKey);
+
+        if (!$data) {
+            return response()->json([
+                'message' => 'Batch niet gevonden of verlopen',
+            ], 404);
+        }
+
+        $successCount = count($data['success'] ?? []);
+        $failedCount = count($data['failed'] ?? []);
+        $skippedCount = count($data['skipped'] ?? []);
+        $totalCount = $data['total'] ?? 0;
+        $processedCount = $successCount + $failedCount + $skippedCount;
+
+        return response()->json([
+            'batch_id' => $batchId,
+            'total' => $totalCount,
+            'processed' => $processedCount,
+            'success_count' => $successCount,
+            'failed_count' => $failedCount,
+            'skipped_count' => $skippedCount,
+            'is_complete' => $processedCount >= $totalCount,
+            'success' => $data['success'] ?? [],
+            'failed' => $data['failed'] ?? [],
+            'skipped' => $data['skipped'] ?? [],
+            'started_at' => $data['started_at'] ?? null,
+        ]);
     }
 }
