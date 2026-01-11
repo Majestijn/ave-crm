@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+    ],
+
+    'google_cloud' => [
+        'project_id' => env('GOOGLE_CLOUD_PROJECT'),
+        'bucket' => env('GOOGLE_CLOUD_BUCKET'),
+        'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+        'location' => env('VERTEX_AI_LOCATION', 'europe-west4'),
+        'model' => env('VERTEX_AI_MODEL', 'gemini-2.0-flash-001'),
+    ],
+
 ];

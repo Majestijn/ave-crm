@@ -26,6 +26,7 @@ return new class extends Migration {
             $table->integer('vacation_days')->nullable(); // Number of vacation days
             $table->string('location')->nullable();
             $table->string('employment_type')->nullable(); // Fulltime, Parttime, etc.
+            $table->string('notes_image_path')->nullable(); // Image attachment for notes
 
             $table->timestamps();
             $table->softDeletes();

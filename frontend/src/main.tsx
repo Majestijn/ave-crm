@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { QueryProvider } from "./api/QueryProvider";
+import { ImportProgressProvider } from "./contexts/ImportProgressContext";
+import ImportProgressIndicator from "./components/features/ImportProgressIndicator";
 import router from "./router.tsx";
 
 const theme = createTheme({
@@ -20,7 +22,10 @@ createRoot(document.getElementById("root")!).render(
     <QueryProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <RouterProvider router={router} />
+        <ImportProgressProvider>
+          <RouterProvider router={router} />
+          <ImportProgressIndicator />
+        </ImportProgressProvider>
       </ThemeProvider>
     </QueryProvider>
   </StrictMode>

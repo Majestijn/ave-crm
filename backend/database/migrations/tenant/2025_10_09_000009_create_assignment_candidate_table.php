@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('assignment_contact', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('assignment_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('contact_id')->constrained()->cascadeOnDelete();
+            $table->string('status')->default('called'); // called, proposed, hired, rejected
             $table->timestamps();
+
+            $table->unique(['assignment_id', 'contact_id']);
         });
     }
 
