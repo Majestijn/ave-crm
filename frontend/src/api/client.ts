@@ -70,30 +70,13 @@ axiosInstance.interceptors.response.use(
         localStorage.removeItem("auth_token");
         localStorage.removeItem("current_user");
 
-        // Get base domain for redirect
-        const hostname = window.location.hostname;
-        const parts = hostname.split(".");
-        let baseDomain = hostname;
-
-        //switch (enumerator)
-        if (parts.length === 1) {
-          baseDomain = hostname;
-        } else if (parts.length === 2 && parts[1] === "localhost") {
-          baseDomain = "localhost";
-        } else if (parts.length > 2) {
-          baseDomain = parts.slice(1).join(".");
-        } else if (parts.length === 2) {
-          baseDomain = parts[1];
-        }
-
-        // Redirect to base domain login page if not already there
+        // Redirect to login page on same domain
+        // For single-tenant deployments (like Forge), stay on the same domain
         const currentPath = window.location.pathname;
         if (currentPath !== "/" && currentPath !== "/register") {
-          const protocol = window.location.protocol;
-          const port = window.location.port ? `:${window.location.port}` : "";
           // Use setTimeout to avoid redirect during render
           setTimeout(() => {
-            window.location.replace(`${protocol}//${baseDomain}${port}/`);
+            window.location.replace("/");
           }, 100);
         }
       }

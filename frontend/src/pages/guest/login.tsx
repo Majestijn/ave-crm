@@ -35,15 +35,27 @@ export default function LoginPage() {
   const [findingTenant, setFindingTenant] = useState(false);
 
   // Check if we're on a tenant domain (e.g., tenant1.localhost) vs base domain (localhost)
+  // For single-tenant deployments (Forge), always return true to show full login form
   const isTenantDomain = () => {
+    // Single-tenant mode: always show full login form (with password)
+    const singleTenant = import.meta.env.VITE_SINGLE_TENANT === 'true';
+    if (singleTenant) {
+      return true;
+    }
+    
+    // Forge domains are single-tenant: show full login form
+    const hostname = window.location.hostname;
+    if (hostname.endsWith(".on-forge.com")) {
+      return true;
+    }
+    
     // Check for explicit base domain from environment - if set, compare against it
     const envBaseDomain = import.meta.env.VITE_BASE_DOMAIN;
     if (envBaseDomain) {
       // If current hostname equals base domain, we're NOT on a tenant domain
-      return window.location.hostname !== envBaseDomain;
+      return hostname !== envBaseDomain;
     }
     
-    const hostname = window.location.hostname;
     const parts = hostname.split(".");
     
     // Single part = base domain (e.g., "localhost")
@@ -54,11 +66,6 @@ export default function LoginPage() {
     // Two parts where second is "localhost" = tenant domain (e.g., "tenant1.localhost")
     if (parts.length === 2 && parts[1] === "localhost") {
       return true;
-    }
-    
-    // Forge domains (xxx.on-forge.com) are NOT tenant domains - treat as base domain
-    if (hostname.endsWith(".on-forge.com")) {
-      return false;
     }
     
     // More than 2 parts = tenant subdomain (e.g., "tenant1.ave-crm.com")
