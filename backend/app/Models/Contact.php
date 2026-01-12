@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\GeocodingService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,6 +25,8 @@ class Contact extends Model
         'email',
         'phone',
         'location',
+        'latitude',
+        'longitude',
         'current_company',
         'company_role',
         'network_roles',
@@ -38,6 +42,8 @@ class Contact extends Model
         'date_of_birth' => 'date',
         'current_salary_cents' => 'integer',
         'network_roles' => 'array',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     protected $appends = ['name'];
@@ -64,6 +70,64 @@ class Contact extends Model
                 $contact->uid = (string) Str::ulid();
             }
         });
+
+        // Auto-geocode when location changes
+        static::saving(function ($contact) {
+            if ($contact->isDirty('location') && !empty($contact->location)) {
+                $geocoder = app(GeocodingService::class);
+                $coords = $geocoder->geocode($contact->location);
+                
+                if ($coords) {
+                    $contact->latitude = $coords['latitude'];
+                    $contact->longitude = $coords['longitude'];
+                }
+            }
+            
+            // Clear coordinates if location is cleared
+            if ($contact->isDirty('location') && empty($contact->location)) {
+                $contact->latitude = null;
+                $contact->longitude = null;
+            }
+        });
+    }
+
+    /**
+     * Scope to filter contacts within a radius of a location
+     * 
+     * @param Builder $query
+     * @param float $latitude Center point latitude
+     * @param float $longitude Center point longitude
+     * @param float $radiusKm Radius in kilometers
+     * @return Builder
+     */
+    public function scopeWithinRadius(Builder $query, float $latitude, float $longitude, float $radiusKm): Builder
+    {
+        // Haversine formula for PostgreSQL
+        // We need to use whereRaw for filtering (not HAVING, which requires GROUP BY)
+        $haversine = "(6371 * acos(
+            LEAST(1.0, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) +
+            sin(radians(?)) * sin(radians(latitude)))
+        ))";
+
+        return $query
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereRaw("{$haversine} <= ?", [$latitude, $longitude, $latitude, $radiusKm])
+            ->selectRaw("*, {$haversine} AS distance", [$latitude, $longitude, $latitude])
+            ->orderByRaw("{$haversine}", [$latitude, $longitude, $latitude]);
+    }
+
+    /**
+     * Scope to add distance from a point (without filtering)
+     */
+    public function scopeWithDistanceFrom(Builder $query, float $latitude, float $longitude): Builder
+    {
+        $haversine = "(6371 * acos(
+            LEAST(1.0, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) +
+            sin(radians(?)) * sin(radians(latitude)))
+        ))";
+
+        return $query->selectRaw("*, {$haversine} AS distance", [$latitude, $longitude, $latitude]);
     }
 
     /**

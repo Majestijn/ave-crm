@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use App\Jobs\ProcessCvImport;
+use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -17,13 +18,42 @@ class ContactController extends Controller
     {
         $auth = $request->user();
 
-        $contacts = Contact::query()
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get()
-            ->toArray();
+        $query = Contact::query();
+
+        // Apply radius filter if provided
+        if ($request->has('lat') && $request->has('lng') && $request->has('radius')) {
+            $lat = (float) $request->input('lat');
+            $lng = (float) $request->input('lng');
+            $radius = (float) $request->input('radius');
+            
+            $query->withinRadius($lat, $lng, $radius);
+        } else {
+            $query->orderBy('last_name')->orderBy('first_name');
+        }
+
+        $contacts = $query->get()->toArray();
 
         return response()->json($contacts);
+    }
+
+    /**
+     * Geocode a location string to coordinates
+     */
+    public function geocode(Request $request, GeocodingService $geocoder)
+    {
+        $request->validate([
+            'location' => ['required', 'string', 'max:255'],
+        ]);
+
+        $coords = $geocoder->geocode($request->input('location'));
+
+        if (!$coords) {
+            return response()->json([
+                'message' => 'Locatie niet gevonden',
+            ], 404);
+        }
+
+        return response()->json($coords);
     }
 
     /**
@@ -151,17 +181,25 @@ class ContactController extends Controller
      */
     public function candidates(Request $request)
     {
-        // Same pattern as index() - no tenant_id check needed in database-per-tenant setup
-        $candidates = Contact::query()
+        $query = Contact::query()
             ->where(function ($query) {
                 $query->whereJsonContains('network_roles', 'candidate')
                     ->orWhereJsonContains('network_roles', 'candidate_placed')
                     ->orWhereJsonContains('network_roles', 'candidate_rejected');
-            })
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get()
-            ->toArray();
+            });
+
+        // Apply radius filter if provided
+        if ($request->has('lat') && $request->has('lng') && $request->has('radius')) {
+            $lat = (float) $request->input('lat');
+            $lng = (float) $request->input('lng');
+            $radius = (float) $request->input('radius');
+            
+            $query->withinRadius($lat, $lng, $radius);
+        } else {
+            $query->orderBy('last_name')->orderBy('first_name');
+        }
+
+        $candidates = $query->get()->toArray();
 
         return response()->json($candidates);
     }

@@ -9,6 +9,9 @@ export type Contact = {
   email?: string;
   phone?: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
+  distance?: number; // Distance in km (only present when filtering by radius)
   current_company?: string;
   company_role?: string;
   network_roles?: string[];

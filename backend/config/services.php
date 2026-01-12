@@ -48,4 +48,8 @@ return [
         'model' => env('VERTEX_AI_MODEL', 'gemini-2.0-flash-001'),
     ],
 
+    'google' => [
+        'geocoding_api_key' => env('GOOGLE_GEOCODING_API_KEY'),
+    ],
+
 ];

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -19,6 +19,8 @@ import {
   Menu,
   Skeleton,
   Divider,
+  Slider,
+  Collapse,
 } from "@mui/material";
 import {
   DataGrid,
@@ -33,8 +35,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import ClearIcon from "@mui/icons-material/Clear";
 import mammoth from "mammoth";
-import { useContacts } from "../../api/queries/contacts";
+import { useContacts, useGeocode, type LocationFilter } from "../../api/queries/contacts";
 import {
   useCreateContact,
   useUpdateContact,
@@ -123,18 +128,29 @@ const ContactSchema = z.object({
 type ContactForm = z.infer<typeof ContactSchema>;
 
 export default function NetworkPage() {
+  // Location filter state - must be declared before useContacts
+  const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const [locationSearch, setLocationSearch] = useState("");
+  const [locationFilter, setLocationFilter] = useState<LocationFilter | undefined>(undefined);
+  const [radius, setRadius] = useState(25); // Default 25km
+  const [debouncedLocation, setDebouncedLocation] = useState("");
+  
+  // Data fetching hooks
   const {
     data: contacts = [],
     isLoading: loading,
     error: contactsError,
     refetch,
-  } = useContacts();
+  } = useContacts(locationFilter);
+  const { data: geocodeResult, isLoading: isGeocoding } = useGeocode(debouncedLocation || null);
+  
+  // Mutation hooks
   const createContactMutation = useCreateContact();
   const deleteContactMutation = useDeleteContact();
   const uploadDocumentMutation = useUploadContactDocument();
-
   const updateContactMutation = useUpdateContact();
 
+  // Dialog state
   const addContact = useDisclosure();
   const editContact = useDisclosure();
   const bulkImport = useDisclosure();
@@ -142,13 +158,39 @@ export default function NetworkPage() {
   const deleteConfirm = useDisclosure();
   const cvViewer = useDisclosure();
 
+  // Other state
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Debounce location search
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (locationSearch.trim().length >= 2) {
+        setDebouncedLocation(locationSearch.trim());
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [locationSearch]);
+  
+  // Apply location filter when geocode result comes back
+  const applyLocationFilter = useCallback(() => {
+    if (geocodeResult) {
+      setLocationFilter({
+        lat: geocodeResult.latitude,
+        lng: geocodeResult.longitude,
+        radius: radius,
+      });
+    }
+  }, [geocodeResult, radius]);
+  
+  const clearLocationFilter = useCallback(() => {
+    setLocationFilter(undefined);
+    setLocationSearch("");
+    setDebouncedLocation("");
+  }, []);
 
   // Import menu anchor
   const [importMenuAnchor, setImportMenuAnchor] = useState<null | HTMLElement>(
@@ -765,21 +807,105 @@ export default function NetworkPage() {
             </Typography>
           </Box>
         </Stack>
-        <TextField
-          placeholder="Zoeken op naam, email, bedrijf..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ minWidth: 280 }}
-        />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TextField
+            placeholder="Zoeken op naam, email, bedrijf..."
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ minWidth: 280 }}
+          />
+          <Button
+            variant={showLocationFilter || locationFilter ? "contained" : "outlined"}
+            size="small"
+            startIcon={<LocationOnIcon />}
+            onClick={() => setShowLocationFilter(!showLocationFilter)}
+            color={locationFilter ? "primary" : "inherit"}
+          >
+            {locationFilter ? `${radius} km` : "Locatie"}
+          </Button>
+        </Stack>
       </Paper>
+      
+      {/* Location Filter Panel */}
+      <Collapse in={showLocationFilter}>
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              placeholder="Zoek stad of plaats..."
+              size="small"
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationOnIcon color="action" />
+                  </InputAdornment>
+                ),
+                endAdornment: isGeocoding ? (
+                  <InputAdornment position="end">
+                    <Typography variant="caption" color="text.secondary">Zoeken...</Typography>
+                  </InputAdornment>
+                ) : null,
+              }}
+              sx={{ minWidth: 200 }}
+            />
+            <Box sx={{ minWidth: 200 }}>
+              <Typography variant="caption" color="text.secondary" gutterBottom>
+                Radius: {radius} km
+              </Typography>
+              <Slider
+                value={radius}
+                onChange={(_, value) => setRadius(value as number)}
+                min={5}
+                max={100}
+                step={5}
+                size="small"
+                valueLabelDisplay="auto"
+                valueLabelFormat={(v) => `${v} km`}
+              />
+            </Box>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={applyLocationFilter}
+              disabled={!geocodeResult || isGeocoding}
+            >
+              Toepassen
+            </Button>
+            {locationFilter && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ClearIcon />}
+                onClick={clearLocationFilter}
+              >
+                Wissen
+              </Button>
+            )}
+          </Stack>
+          {geocodeResult && locationSearch && (
+            <Typography variant="caption" color="success.main" sx={{ mt: 1, display: 'block' }}>
+              ✓ Locatie gevonden: {locationSearch}
+            </Typography>
+          )}
+          {locationFilter && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Toont contacten binnen {radius} km van {locationSearch || 'geselecteerde locatie'}
+              {contacts.length > 0 && contacts[0].distance !== undefined && (
+                <> — gesorteerd op afstand</>
+              )}
+            </Alert>
+          )}
+        </Paper>
+      </Collapse>
 
       {/* Smart CV Import Dialog */}
       <SmartBulkImportDialog
