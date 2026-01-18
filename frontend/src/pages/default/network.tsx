@@ -198,7 +198,10 @@ export default function NetworkPage() {
 
     const fetchImages = async () => {
       setNotesImagesLoading(true);
-      const baseURL = `${window.location.protocol}//${window.location.hostname}:8080/api/v1`;
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      const isLocal = hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".lvh.me");
+      const baseURL = isLocal ? `${protocol}//${hostname}:8080/api/v1` : `${protocol}//${hostname}/api/v1`;
       const token = localStorage.getItem("auth_token");
       const newUrls = new Map<number, string>();
 
