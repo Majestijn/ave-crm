@@ -87,7 +87,7 @@ export default function SmartBulkImportDialog({
   const [showSuccessList, setShowSuccessList] = useState(false);
   const [showSkippedList, setShowSkippedList] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Global progress context for minimized indicator
   const { startImport: startGlobalImport, updateStatus: updateGlobalStatus } = useImportProgress();

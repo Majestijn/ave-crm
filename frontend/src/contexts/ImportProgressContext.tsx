@@ -88,7 +88,7 @@ export function ImportProgressProvider({ children }: { children: React.ReactNode
     isMinimized: false,
   });
 
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasRefetchedRef = useRef(false);
   const importTypeRef = useRef<ImportType | null>(null);
 

@@ -71,7 +71,7 @@ export default function BatchImportDialog({
   const [showFailedList, setShowFailedList] = useState(false);
   const [showSkippedList, setShowSkippedList] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentBatchIdRef = useRef<string | null>(null);
 
   // Global progress context
