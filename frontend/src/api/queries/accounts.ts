@@ -3,16 +3,12 @@ import type { Account } from "../../types/accounts";
 import API from "../client";
 import { queryKeys } from "./keys";
 
-/**
- * Get all accounts
- */
 export const useAccounts = () => {
   return useQuery<Account[]>({
     queryKey: queryKeys.accounts.all,
     queryFn: async (): Promise<Account[]> => {
       const responseData = await API.get("/accounts");
 
-      // Handle paginated response or direct array
       if (Array.isArray(responseData)) {
         return responseData;
       } else if (
@@ -32,9 +28,6 @@ export const useAccounts = () => {
   });
 };
 
-/**
- * Get account by UID
- */
 export const useAccount = (uid: string | undefined) => {
   return useQuery<Account>({
     queryKey: queryKeys.accounts.detail(uid!),

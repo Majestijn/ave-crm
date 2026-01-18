@@ -44,14 +44,13 @@ class AccountController extends Controller
             'logo_url' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
+            'industry' => ['nullable', 'string', 'max:255'],
+            'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
         ]);
 
-        $account = Account::create([
-            'tenant_id' => $auth->tenant_id,
-            ...$data,
-        ]);
+        $account = Account::create($data);
 
         return response()->json($account, 201);
     }
@@ -83,15 +82,8 @@ class AccountController extends Controller
     {
         $auth = $request->user();
 
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-
-        // Find account by uid
-        $accountModel = Account::where('uid', $account)
-            ->where('tenant_id', $auth->tenant_id)
-            ->firstOrFail();
+        // Find account by uid (database-per-tenant ensures isolation)
+        $accountModel = Account::where('uid', $account)->firstOrFail();
 
         // Authorization check
         if (!$auth->can('update', $accountModel)) {
@@ -103,6 +95,8 @@ class AccountController extends Controller
             'logo_url' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
+            'industry' => ['nullable', 'string', 'max:255'],
+            'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -121,15 +115,8 @@ class AccountController extends Controller
     {
         $auth = $request->user();
 
-        // Security check: ensure user has tenant_id
-        if (empty($auth->tenant_id)) {
-            abort(403, 'User is not associated with a tenant');
-        }
-
-        // Find account by uid
-        $accountModel = Account::where('uid', $account)
-            ->where('tenant_id', $auth->tenant_id)
-            ->firstOrFail();
+        // Find account by uid (database-per-tenant ensures isolation)
+        $accountModel = Account::where('uid', $account)->firstOrFail();
 
         // Authorization check
         if (!$auth->can('delete', $accountModel)) {

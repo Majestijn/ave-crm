@@ -19,12 +19,15 @@ class Account extends Model
         'logo_url',
         'location',
         'website',
+        'industry',
+        'fte_count',
         'revenue_cents',
         'notes',
     ];
 
     protected $casts = [
         'uid' => 'string',
+        'fte_count' => 'integer',
         'revenue_cents' => 'integer',
     ];
 

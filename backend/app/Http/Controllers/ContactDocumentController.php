@@ -74,8 +74,8 @@ class ContactDocumentController extends Controller
         }
 
         $validated = $request->validate([
-            'file' => 'required|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png', // 10MB max
-            'type' => 'required|string|in:cv,certificate,other',
+            'file' => 'required|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp', // 10MB max
+            'type' => 'required|string|in:cv,certificate,notes,other',
         ]);
 
         $tenantId = Tenant::current()->id;
@@ -95,12 +95,6 @@ class ContactDocumentController extends Controller
             'mime_type' => $fileData['mime_type'],
             'file_size' => $fileData['file_size'],
         ]);
-
-        // If this is a CV, update the contact's cv_url field for backward compatibility
-        if ($validated['type'] === 'cv') {
-            $contact->cv_url = $this->getDownloadUrl($document);
-            $contact->save();
-        }
 
         return response()->json([
             'id' => $document->id,

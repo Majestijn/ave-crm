@@ -1,4 +1,4 @@
-﻿**Onderzoeksplan: Data Fetching & State Management**
+**Onderzoeksplan: Data Fetching & State Management**
 
 **AVE CRM Frontend**
 
@@ -120,10 +120,55 @@ Net als bij het multi-tenancy onderzoek pas ik Design Science Research toe. Deze
 **•  Showroom:** Vergelijken met best practices in de React community
 
 **•  Workshop:** Prototypen van de nieuwe hook architectuur
-# **5. Library Vergelijking (Overzicht Creëren)**
-**5.1 Kandidaten**
 
-Op basis van populariteit, onderhoud en features heb ik de volgende libraries geselecteerd voor vergelijking:
+**4.2 Zoekstrategie (Juiste Kennis Ontwikkelen)**
+Om tot een volledige longlist van kandidaten te komen, is een systematische zoekstrategie toegepast via Google, GitHub en vakliteratuur.
+
+| Fase | Zoekopdracht (Query) | Doel |
+| :--- | :--- | :--- |
+| **Oriëntatie** | `"best react data fetching libraries 2025"` | Identificeren van de huidige marktleiders en opkomende libraries. |
+| **Verdieping** | `"React Query vs SWR vs RTK Query comparison"` | Het vinden van vergelijkingen op basis van features en architectuur. |
+| **Validatie** | `"npm trends @tanstack/react-query swr @reduxjs/toolkit"` | Kwantitatieve data verzamelen over populariteit en onderhoud. |
+| **Best Practices** | `"server state management vs client state management react"` | Theoretische onderbouwing van de keuze voor een gespecialiseerde library. |
+| **Community** | `"State of React 2024 data fetching results"` | Inzicht krijgen in de adoptiegraad binnen de professionele community. |
+
+Naast zoekmachines zijn de volgende bronnen geraadpleegd:
+*   **NPM Trends:** Voor het vergelijken van downloadstatistieken en bundle sizes.
+*   **GitHub:** Voor het controleren van de 'health' van de repositories (update frequentie, open issues).
+*   **Officiële Documentatie:** Voor het beoordelen van de leercurve en kwaliteit van de support.
+
+# **5. Voorselectie & Marktverkenning**
+Voordat een diepgaande vergelijking plaatsvond, is eerst de volledige markt van React state management en data fetching verkend. Dit proces leidde tot de selectie van de drie kandidaten.
+
+**5.1 Marktstandaard: Server vs. Client State**
+Een belangrijk inzicht in modern React development is het onderscheid tussen **Client State** (UI status, modals, formulieren) en **Server State** (data uit de database, async).
+*   Voor *Client State* zijn libraries als Redux, Zustand of Context API geschikt.
+*   Voor *Server State* zijn deze ongeschikt omdat ze complexe logica vereisen voor caching, loading states, errors en deduplicatie.
+
+Omdat het probleem bij AVE CRM specifiek gaat over API data (Server State), vielen libraries zoals **Redux (plain)** en **Zustand** af voor de hoofdfunctie, tenzij gecombineerd met extra logica.
+
+**5.2 De Longlist**
+De volgende opties zijn overwogen tijdens de verkenning:
+
+1.  **TanStack Query (React Query):** De de-facto standaard in de industrie. Bekend om zijn robuustheid.
+2.  **SWR (Vercel):** Zeer populair in het Next.js ecosysteem, bekend om zijn minimalisme ("Stale-While-Revalidate").
+3.  **Apollo Client:** Dé standaard voor GraphQL.
+    *   *Afgevallen omdat:* AVE CRM gebruikt een REST API, geen GraphQL. Apollo is dan onnodige overhead.
+4.  **RTK Query:** Onderdeel van de officiële Redux Toolkit.
+    *   *Geselecteerd omdat:* Het een krachtig alternatief is als je al in het Redux ecosysteem zit.
+5.  **useEffect + Context (Native):** De huidige (en gratis) oplossing.
+    *   *Afgevallen omdat:* Dit is de oorzaak van de huidige problemen (geen caching, race conditions, complex onderhoud).
+
+**5.3 Conclusie Voorselectie**
+Uit deze marktverkenning zijn de drie meest relevante kandidaten voor een REST API architectuur overgebleven:
+1.  **TanStack Query:** Als de feature-rijke marktleider.
+2.  **SWR:** Als het lichtgewicht alternatief.
+3.  **RTK Query:** Als de gestructureerde, "opinionated" optie.
+
+# **6. Library Vergelijking (Overzicht Creëren)**
+**6.1 Kandidaten**
+
+Op basis van de voorselectie zijn dit de specificaties:
 
 **TanStack Query (v5):** De meest populaire server state library met 43k+ GitHub stars en ~13KB gzipped bundle size.
 
@@ -131,7 +176,7 @@ Op basis van populariteit, onderhoud en features heb ik de volgende libraries ge
 
 **RTK Query:** Onderdeel van Redux Toolkit, krachtig maar vereist Redux als dependency (~12KB gzipped).
 
-**5.2 Feature Vergelijking**
+**6.2 Feature Vergelijking**
 
 Alle drie de libraries ondersteunen de basis features: caching, background refetch, window focus refetch, prefetching en retry logic. De belangrijkste verschillen zitten in:
 
@@ -140,8 +185,8 @@ Alle drie de libraries ondersteunen de basis features: caching, background refet
 **DevTools:** TanStack Query heeft de beste DevTools voor het inspecteren van cache state. RTK Query werkt via de Redux DevTools. SWR heeft meer beperkte debugging tools.
 
 **Optimistic Updates:** TanStack Query en RTK Query ondersteunen dit out-of-the-box. Bij SWR is handmatige implementatie nodig.
-# **6. Kritische Evaluatie (Kritisch Oordelen)**
-**6.1 TanStack Query**
+# **7. Kritische Evaluatie (Kritisch Oordelen)**
+**7.1 TanStack Query**
 
 **Voordelen:**
 
@@ -163,7 +208,7 @@ Alle drie de libraries ondersteunen de basis features: caching, background refet
 
 •  Kan overkill zijn voor zeer simpele applicaties
 
-**6.2 SWR**
+**7.2 SWR**
 
 **Voordelen:**
 
@@ -181,7 +226,7 @@ Alle drie de libraries ondersteunen de basis features: caching, background refet
 
 •  DevTools minder uitgebreid
 
-**6.3 RTK Query**
+**7.3 RTK Query**
 
 **Voordelen:**
 
@@ -197,7 +242,7 @@ Alle drie de libraries ondersteunen de basis features: caching, background refet
 
 •  Meer boilerplate code nodig
 
-**6.4 Gewogen Beoordeling**
+**7.4 Gewogen Beoordeling**
 
 Op basis van de requirements van AVE CRM heb ik de volgende gewogen beoordeling gemaakt:
 
@@ -212,8 +257,8 @@ Op basis van de requirements van AVE CRM heb ik de volgende gewogen beoordeling 
 •  Community/Docs (15%): TanStack Query scoort 10, SWR 9, RTK Query 8
 
 **Totaalscore:** TanStack Query 8.85, SWR 8.35, RTK Query 7.65
-# **7. Advies (Software Adviseren)**
-**7.1 Aanbeveling**
+# **8. Advies (Software Adviseren)**
+**8.1 Aanbeveling**
 
 Ik adviseer **TanStack Query (v5)** voor de volgende redenen:
 
@@ -227,7 +272,7 @@ Ik adviseer **TanStack Query (v5)** voor de volgende redenen:
 
 **5.  Toekomstbestendig:** Actief onderhouden met een grote community, waardoor support gegarandeerd is.
 
-**7.2 Risico's en Mitigatie**
+**8.2 Risico's en Mitigatie**
 
 **Learning curve:** Gefaseerde implementatie - begin met één hook als proof-of-concept voordat de rest wordt gemigreerd.
 
@@ -235,11 +280,11 @@ Ik adviseer **TanStack Query (v5)** voor de volgende redenen:
 
 **Breaking changes:** Wrapper hooks maken voor abstractie, zodat componenten niet direct afhankelijk zijn van de library API.
 
-**7.3 Alternatief**
+**8.3 Alternatief**
 
 Als bundle size kritischer blijkt dan verwacht, adviseer ik SWR als tweede keuze. De ~4KB footprint is aantrekkelijk, maar de handmatige mutation handling voegt complexiteit toe die TanStack Query out-of-the-box oplost.
-# **8. Architectuur Ontwerp (Software Ontwerpen)**
-**8.1 Nieuwe Folder Structuur**
+# **9. Architectuur Ontwerp (Software Ontwerpen)**
+**9.1 Nieuwe Folder Structuur**
 
 De nieuwe structuur scheidt queries en mutations in aparte folders voor overzichtelijkheid:
 
@@ -265,11 +310,11 @@ frontend/src/api/
 
 `    `└── users.ts           # User mutations
 
-**8.2 Query Key Factory Pattern**
+**9.2 Query Key Factory Pattern**
 
 Een centrale plek voor alle query keys zorgt voor consistentie en maakt invalidation eenvoudiger. De keys zijn hiërarchisch opgebouwd zodat je zowel specifieke queries als groepen queries kunt invalideren.
 
-**8.3 Provider Setup**
+**9.3 Provider Setup**
 
 De QueryClient wordt geconfigureerd met standaard opties die passen bij de use case van AVE CRM:
 
@@ -280,7 +325,7 @@ De QueryClient wordt geconfigureerd met standaard opties die passen bij de use c
 •  retry: 3 - Automatisch 3 keer opnieuw proberen bij falen
 
 •  refetchOnWindowFocus: true - Data verversen bij terugkeer naar tabblad
-# **9. Implementatieplan (Software Realiseren)**
+# **10. Implementatieplan (Software Realiseren)**
 **Fase 1: Setup & Infrastructuur**
 
 •  TanStack Query en DevTools installeren
@@ -328,7 +373,7 @@ De QueryClient wordt geconfigureerd met standaard opties die passen bij de use c
 •  Performance meten en vergelijken met oude situatie
 
 •  Onderzoeksdocument finaliseren
-# **10. Evaluatiecriteria**
+# **11. Evaluatiecriteria**
 De implementatie wordt geëvalueerd op de volgende meetbare doelen:
 
 **Bundle size:** Huidige ~150KB, doel < 165KB (max +15KB toename)
@@ -338,7 +383,7 @@ De implementatie wordt geëvalueerd op de volgende meetbare doelen:
 **Code duplicatie:** Huidige ~120 regels, doel < 50 regels
 
 **API calls bij navigatie:** Huidig altijd, doel alleen bij stale data
-# **11. Bronnen**
+# **12. Bronnen**
 •  TanStack Query Documentatie: https://tanstack.com/query/latest
 
 •  SWR Documentatie: https://swr.vercel.app/
@@ -348,14 +393,14 @@ De implementatie wordt geëvalueerd op de volgende meetbare doelen:
 •  Bundlephobia: https://bundlephobia.com/
 
 •  ICT Research Methods: https://ictresearchmethods.nl/
-# **12. Relatie met HBO-i Competenties**
+# **13. Relatie met HBO-i Competenties**
 **Productvaardigheden:**
 
-**•  Overzicht Creëren:** Sectie 2 (probleemanalyse) en sectie 5 (library vergelijking)
+**•  Overzicht Creëren:** Sectie 2 (probleemanalyse), sectie 5 (marktverkenning) en sectie 6 (library vergelijking)
 
 **•  Juiste Kennis Ontwikkelen:** Sectie 4 (onderzoeksmethode) en bronnenonderzoek
 
-**•  Kritisch Oordelen:** Sectie 6 (kritische evaluatie met gewogen scores)
+**•  Kritisch Oordelen:** Sectie 7 (kritische evaluatie met gewogen scores)
 
 **•  Kwalitatief Product:** Dit document plus de uiteindelijke implementatie
 
@@ -363,8 +408,8 @@ De implementatie wordt geëvalueerd op de volgende meetbare doelen:
 
 **•  Software Analyseren:** Sectie 2 (huidige situatie, requirements, user stories)
 
-**•  Software Adviseren:** Sectie 7 (advies met risico's en mitigatie)
+**•  Software Adviseren:** Sectie 8 (advies met risico's en mitigatie)
 
-**•  Software Ontwerpen:** Sectie 8 (architectuur, patterns, folder structuur)
+**•  Software Ontwerpen:** Sectie 9 (architectuur, patterns, folder structuur)
 
-**•  Software Realiseren:** Sectie 9 (implementatieplan) plus de daadwerkelijke code
+**•  Software Realiseren:** Sectie 10 (implementatieplan) plus de daadwerkelijke code

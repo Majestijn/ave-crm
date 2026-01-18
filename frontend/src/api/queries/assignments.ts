@@ -37,18 +37,23 @@ export type CandidateAssignment = {
   contact: {
     uid: string;
     first_name: string;
+    prefix?: string;
     last_name: string;
+    email?: string;
+    phone?: string;
     company_role?: string;
     current_company?: string;
     location?: string;
+    date_of_birth?: string;
+    network_roles?: string[];
+    current_salary_cents?: number;
+    education?: string;
+    linkedin_url?: string;
   };
   status: CandidateAssignmentStatus;
   status_label: string;
 };
 
-/**
- * Get all assignments
- */
 export const useAssignments = () => {
   return useQuery({
     queryKey: queryKeys.assignments.all,
@@ -66,9 +71,6 @@ export const useAssignments = () => {
   });
 };
 
-/**
- * Get assignments by account UID
- */
 export const useAccountAssignments = (accountUid: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.assignments.byAccount(accountUid!),
@@ -89,9 +91,6 @@ export const useAccountAssignments = (accountUid: string | undefined) => {
   });
 };
 
-/**
- * Get candidates for an assignment
- */
 export const useAssignmentCandidates = (assignmentUid: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.assignments.candidates(assignmentUid!),

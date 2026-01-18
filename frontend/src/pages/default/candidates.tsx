@@ -15,6 +15,7 @@ import {
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import mammoth from "mammoth";
 import { useCandidates } from "../../hooks/useCandidates";
 import { useDisclosure } from "../../hooks/useDisclosure";
@@ -479,15 +480,31 @@ export default function CandidatesPage() {
                 width: 100,
                 getActions: (params) => {
                   const contact = params.row as Contact;
-                  return [
+                  const actions = [];
+                  
+                  if (contact.linkedin_url) {
+                    actions.push(
+                      <GridActionsCellItem
+                        key="linkedin"
+                        icon={<LinkedInIcon />}
+                        label="LinkedIn"
+                        onClick={() => window.open(contact.linkedin_url, "_blank", "noopener,noreferrer")}
+                        showInMenu={false}
+                      />
+                    );
+                  }
+                  
+                  actions.push(
                     <GridActionsCellItem
                       key="delete"
                       icon={<DeleteOutlineIcon />}
                       label="Verwijderen"
                       onClick={() => handleDeleteClick(contact)}
                       showInMenu={false}
-                    />,
-                  ];
+                    />
+                  );
+                  
+                  return actions;
                 },
               },
             ]}

@@ -91,6 +91,60 @@ class AssignmentActivityController extends Controller
     }
 
     /**
+     * Update an activity.
+     */
+    public function update(Request $request, int $activityId): JsonResponse
+    {
+        $activity = AccountActivity::findOrFail($activityId);
+
+        $validated = $request->validate([
+            'type' => 'sometimes|required|string',
+            'description' => 'sometimes|required|string',
+            'date' => 'sometimes|required|date',
+            'contact_uid' => 'nullable|string',
+        ]);
+
+        $data = [];
+
+        if (isset($validated['type'])) {
+            $data['type'] = $validated['type'];
+        }
+        if (isset($validated['description'])) {
+            $data['description'] = $validated['description'];
+        }
+        if (isset($validated['date'])) {
+            $data['date'] = $validated['date'];
+        }
+
+        // Resolve contact_uid to contact_id if provided
+        if (array_key_exists('contact_uid', $validated)) {
+            if (!empty($validated['contact_uid'])) {
+                $contact = Contact::where('uid', $validated['contact_uid'])->first();
+                $data['contact_id'] = $contact ? $contact->id : null;
+            } else {
+                $data['contact_id'] = null;
+            }
+        }
+
+        $activity->update($data);
+        $activity->load(['contact:id,uid,first_name,last_name', 'user:id,name']);
+
+        return response()->json([
+            'id' => $activity->id,
+            'type' => $activity->type,
+            'description' => $activity->description,
+            'date' => $activity->date,
+            'contact' => $activity->contact ? [
+                'uid' => $activity->contact->uid,
+                'first_name' => $activity->contact->first_name,
+                'last_name' => $activity->contact->last_name,
+            ] : null,
+            'created_by' => $activity->user ? $activity->user->name : null,
+            'created_at' => $activity->created_at,
+        ]);
+    }
+
+    /**
      * Delete an activity.
      */
     public function destroy(int $activityId): JsonResponse

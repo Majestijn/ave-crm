@@ -89,6 +89,31 @@ The frontend is developed on the host machine. You must be in the `frontend` dir
 - **Routing:** API routes are defined in `routes/api.php`.
 - **Database:** Database migrations manage the schema. Models use ULIDs (`uid`) as the public-facing identifier for routes (`getRouteKeyName()`).
 
+## 4. Recente Besluiten & Architectuur
+
+### E-mail & Agenda Migratie
+- **Besluit:** Migratie van Vimexx naar Microsoft 365 voor professionele agenda-synchronisatie met het CRM.
+- **Alternatief:** Gratis Hotmail-accounts zijn technisch mogelijk voor agenda-koppeling (via Microsoft Graph), maar tonen een onprofessioneel verzendadres.
+- **CalDAV:** CalDAV (Vimexx) is de budget-optie maar wordt afgeraden wegens complexiteit in Outlook/Mobiel en gebrekkige stabiliteit.
+
+### AI & CV Parsing (Bulk Import)
+- **Modellen:** 
+    - **Gemini 3 Pro (AI Studio API):** Voor real-time verwerking van individuele CV's.
+    - **Google Cloud Vertex AI (Batch Prediction):** Voor bulkverwerking van duizenden CV's (3500+).
+- **Infrastructuur:** Gebruikt `google-credentials.json` (Service Account) in `backend/storage/app/`. Verwerking vindt plaats in regio `europe-west4` (Nederland) voor AVG/GDPR compliance.
+- **Storage:** Cloudflare R2 wordt gebruikt met een **Folder-per-Tenant** strategie (`{tenant_id}/contacts/...`) voor maximale schaalbaarheid.
+
+### Frontend State Management
+- **Library:** TanStack Query (v5) is gekozen boven SWR en RTK Query.
+- **Onderbouwing:** Focus op 'Functional Suitability' en 'Maintainability' conform **ISO/IEC 25010**. TanStack biedt de meest complete feature-set (mutations, devtools, optimistic updates) out-of-the-box.
+- **Citaties:** Het onderzoeksrapport maakt gebruik van IEEE-verwijzingen en het DOT-framework voor onderbouwing (Juiste Kennis Ontwikkelen).
+
+## 5. Belangrijke Bestanden
+- `IMPLEMENTATIEPLAN_CV_GEMINI.md`: Plan voor de AI bulk import.
+- `M365_MIGRATION_PLAN.md`: Stappenplan voor de mail-verhuizing.
+- `DataFetching_State_Management_Plan.md`: Onderzoek en verantwoording frontend architectuur.
+- `backend/storage/app/google-credentials.json`: Google Cloud Service Account keys.
+
 ### Frontend (React)
 
 - **Language:** The frontend is written in **TypeScript**.

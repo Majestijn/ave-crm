@@ -19,14 +19,11 @@ export type CreateContactData = {
   phone?: string;
   linkedin_url?: string;
   notes?: string;
-  cv_file?: File | null; // CV file for upload
+  cv_file?: File | null;
 };
 
 export type UpdateContactData = Partial<Omit<CreateContactData, "cv_file">>;
 
-/**
- * Create a new contact with optional CV upload
- */
 export const useCreateContact = () => {
   const queryClient = useQueryClient();
 
@@ -40,9 +37,6 @@ export const useCreateContact = () => {
   });
 };
 
-/**
- * Upload CV document for a contact
- */
 export const useUploadContactDocument = () => {
   const queryClient = useQueryClient();
 
@@ -54,25 +48,44 @@ export const useUploadContactDocument = () => {
     }: {
       contactUid: string;
       file: File;
-      type?: "cv" | "certificate" | "other";
+      type?: "cv" | "certificate" | "notes" | "other";
     }) => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("type", type);
 
-      // Don't set Content-Type header - let Axios handle it automatically
-      // so the correct boundary is included for multipart/form-data
       return await API.post(`/contacts/${contactUid}/documents`, formData);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.contacts.documents(variables.contactUid),
+      });
     },
   });
 };
 
-/**
- * Update an existing contact
- */
+export const useDeleteContactDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      documentId,
+      contactUid,
+    }: {
+      documentId: number;
+      contactUid: string;
+    }) => {
+      return await API.delete(`/contact-documents/${documentId}`);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.contacts.documents(variables.contactUid),
+      });
+    },
+  });
+};
+
 export const useUpdateContact = () => {
   const queryClient = useQueryClient();
 
@@ -93,9 +106,6 @@ export const useUpdateContact = () => {
   });
 };
 
-/**
- * Delete a contact
- */
 export const useDeleteContact = () => {
   const queryClient = useQueryClient();
 

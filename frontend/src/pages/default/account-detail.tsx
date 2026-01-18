@@ -26,7 +26,11 @@ import {
   useAssignmentCandidates,
   type CandidateAssignment,
 } from "../../api/queries/assignments";
-import { useAssignmentActivities } from "../../api/queries/activities";
+import { useAssignmentActivities, type Activity, type ActivityType } from "../../api/queries/activities";
+import {
+  useUpdateAssignmentActivity,
+  useDeleteAssignmentActivity,
+} from "../../api/mutations/activities";
 import {
   AccountHeader,
   CompanyDetailsCard,
@@ -73,10 +77,23 @@ export default function AccountDetailPage() {
 
   const [selectedAssignment, setSelectedAssignment] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"events" | "candidates">("events");
+  const [activityTypeFilter, setActivityTypeFilter] = useState<ActivityType | "all">("all");
 
   // Activities query (depends on selectedAssignment)
   const { data: activitiesData = [], isLoading: activitiesLoading } =
     useAssignmentActivities(selectedAssignment);
+
+  // Filter activities by type
+  const filteredActivities = React.useMemo(() => {
+    if (activityTypeFilter === "all") {
+      return activitiesData;
+    }
+    return activitiesData.filter((activity) => activity.type === activityTypeFilter);
+  }, [activitiesData, activityTypeFilter]);
+
+  // Activity mutations
+  const updateActivityMutation = useUpdateAssignmentActivity(selectedAssignment);
+  const deleteActivityMutation = useDeleteAssignmentActivity(selectedAssignment);
 
   // Candidates query (depends on selectedAssignment)
   const { data: candidatesData = [], isLoading: candidatesLoading } =
@@ -216,10 +233,77 @@ export default function AccountDetailPage() {
               </Typography>
             </Paper>
           ) : activeTab === "events" ? (
-            <ActivityTimeline
-              activities={activitiesData}
-              isLoading={activitiesLoading}
+            <>
+              {/* Activity Type Filter */}
+              <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                    Filter:
+                  </Typography>
+                  <Chip
+                    label="Alle"
+                    size="small"
+                    variant={activityTypeFilter === "all" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "all" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("all")}
+                  />
+                  <Chip
+                    label="Gebeld"
+                    size="small"
+                    variant={activityTypeFilter === "call" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "call" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("call")}
+                  />
+                  <Chip
+                    label="Voorgesteld"
+                    size="small"
+                    variant={activityTypeFilter === "proposal" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "proposal" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("proposal")}
+                  />
+                  <Chip
+                    label="Gesprek"
+                    size="small"
+                    variant={activityTypeFilter === "interview" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "interview" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("interview")}
+                  />
+                  <Chip
+                    label="Aangenomen"
+                    size="small"
+                    variant={activityTypeFilter === "hired" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "hired" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("hired")}
+                  />
+                  <Chip
+                    label="Afgewezen"
+                    size="small"
+                    variant={activityTypeFilter === "rejected" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "rejected" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("rejected")}
+                  />
+                </Stack>
+              </Paper>
+              <ActivityTimeline
+                activities={filteredActivities}
+                isLoading={activitiesLoading}
+              onEdit={async (activity: Activity, data: { type: ActivityType; description: string; date: string }) => {
+                await updateActivityMutation.mutateAsync({
+                  activityId: activity.id,
+                  data: {
+                    type: data.type,
+                    description: data.description,
+                    date: data.date,
+                  },
+                });
+              }}
+              onDelete={async (activityId: number) => {
+                await deleteActivityMutation.mutateAsync(activityId);
+              }}
+              isEditing={updateActivityMutation.isPending}
+              isDeleting={deleteActivityMutation.isPending}
             />
+            </>
           ) : (
             /* Candidates List */
             <Paper elevation={0} sx={{ borderRadius: 2 }}>

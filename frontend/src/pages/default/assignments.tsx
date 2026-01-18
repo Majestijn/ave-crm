@@ -31,6 +31,8 @@ import {
   ExpandLess as ExpandLessIcon,
   Add as AddIcon,
   DeleteOutline as DeleteOutlineIcon,
+  Edit as EditIcon,
+  LinkedIn as LinkedInIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { Assignment } from "../../types/accounts";
@@ -86,6 +88,22 @@ type AssignmentWithDetails = Assignment & {
   notes_image_url?: string | null;
   benefits?: string[];
   candidates?: CandidateAssignment[];
+};
+
+// Helper function to format number with thousand separators (Dutch format)
+const formatNumberInput = (value: string): string => {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  // Format with thousand separators
+  return parseInt(digits, 10).toLocaleString("nl-NL");
+};
+
+// Helper function to parse formatted number back to integer
+const parseFormattedNumber = (value: string): number | "" => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return parseInt(digits, 10);
 };
 
 // Available employment benefits options
@@ -494,12 +512,8 @@ export default function AssignmentsPage() {
   const [newAssignmentTitle, setNewAssignmentTitle] = useState("");
   const [newAssignmentDescription, setNewAssignmentDescription] = useState("");
   const [newAssignmentAccountUid, setNewAssignmentAccountUid] = useState("");
-  const [newAssignmentSalaryMin, setNewAssignmentSalaryMin] = useState<
-    number | ""
-  >("");
-  const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState<
-    number | ""
-  >("");
+  const [newAssignmentSalaryMin, setNewAssignmentSalaryMin] = useState("");
+  const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState("");
   const [newAssignmentVacationDays, setNewAssignmentVacationDays] = useState<
     number | ""
   >("");
@@ -516,6 +530,28 @@ export default function AssignmentsPage() {
   const [createAssignmentError, setCreateAssignmentError] = useState<
     string | null
   >(null);
+
+  // Edit assignment dialog state
+  const editAssignmentDialog = useDisclosure();
+  const [editingAssignment, setEditingAssignment] =
+    useState<AssignmentWithDetails | null>(null);
+  const [editAssignmentTitle, setEditAssignmentTitle] = useState("");
+  const [editAssignmentDescription, setEditAssignmentDescription] = useState("");
+  const [editAssignmentAccountUid, setEditAssignmentAccountUid] = useState("");
+  const [editAssignmentSalaryMin, setEditAssignmentSalaryMin] = useState("");
+  const [editAssignmentSalaryMax, setEditAssignmentSalaryMax] = useState("");
+  const [editAssignmentVacationDays, setEditAssignmentVacationDays] = useState<
+    number | ""
+  >("");
+  const [editAssignmentLocation, setEditAssignmentLocation] = useState("");
+  const [editAssignmentEmploymentType, setEditAssignmentEmploymentType] =
+    useState("");
+  const [editAssignmentBenefits, setEditAssignmentBenefits] = useState<string[]>(
+    []
+  );
+  const [editAssignmentError, setEditAssignmentError] = useState<string | null>(
+    null
+  );
 
   // State for candidate assignments per assignment (populated by AssignmentCandidatesLoader)
   const [localCandidateAssignments, setLocalCandidateAssignments] = useState<{
@@ -608,8 +644,8 @@ export default function AssignmentsPage() {
         account_uid: newAssignmentAccountUid,
         title: newAssignmentTitle.trim(),
         description: newAssignmentDescription.trim() || null,
-        salary_min: newAssignmentSalaryMin || null,
-        salary_max: newAssignmentSalaryMax || null,
+        salary_min: parseFormattedNumber(newAssignmentSalaryMin) || null,
+        salary_max: parseFormattedNumber(newAssignmentSalaryMax) || null,
         vacation_days: newAssignmentVacationDays || null,
         location: newAssignmentLocation.trim() || null,
         employment_type: newAssignmentEmploymentType || null,
@@ -635,6 +671,61 @@ export default function AssignmentsPage() {
       console.error("Error creating assignment:", err);
       setCreateAssignmentError(
         err?.response?.data?.message || "Er is iets misgegaan bij het aanmaken"
+      );
+    }
+  };
+
+  const handleOpenEditDialog = (assignment: AssignmentWithDetails) => {
+    setEditingAssignment(assignment);
+    setEditAssignmentTitle(assignment.title || "");
+    setEditAssignmentDescription(assignment.description || "");
+    setEditAssignmentAccountUid(assignment.account?.uid || "");
+    setEditAssignmentSalaryMin(assignment.salary_min ? assignment.salary_min.toLocaleString("nl-NL") : "");
+    setEditAssignmentSalaryMax(assignment.salary_max ? assignment.salary_max.toLocaleString("nl-NL") : "");
+    setEditAssignmentVacationDays(assignment.vacation_days || "");
+    setEditAssignmentLocation(assignment.location || "");
+    setEditAssignmentEmploymentType(assignment.employment_type || "");
+    setEditAssignmentBenefits(assignment.benefits || []);
+    setEditAssignmentError(null);
+    editAssignmentDialog.open();
+  };
+
+  const handleCloseEditDialog = () => {
+    editAssignmentDialog.close();
+    setEditingAssignment(null);
+    setEditAssignmentError(null);
+  };
+
+  const handleUpdateAssignment = async () => {
+    if (!editingAssignment?.uid) return;
+
+    if (!editAssignmentTitle.trim()) {
+      setEditAssignmentError("Vul een titel in");
+      return;
+    }
+
+    setEditAssignmentError(null);
+
+    try {
+      await updateAssignmentMutation.mutateAsync({
+        uid: editingAssignment.uid,
+        data: {
+          title: editAssignmentTitle.trim(),
+          description: editAssignmentDescription.trim() || null,
+          salary_min: parseFormattedNumber(editAssignmentSalaryMin) || null,
+          salary_max: parseFormattedNumber(editAssignmentSalaryMax) || null,
+          vacation_days: editAssignmentVacationDays || null,
+          location: editAssignmentLocation.trim() || null,
+          employment_type: editAssignmentEmploymentType || null,
+          benefits: editAssignmentBenefits.length > 0 ? editAssignmentBenefits : null,
+        },
+      });
+
+      handleCloseEditDialog();
+    } catch (err: any) {
+      console.error("Error updating assignment:", err);
+      setEditAssignmentError(
+        err?.response?.data?.message || "Er is iets misgegaan bij het opslaan"
       );
     }
   };
@@ -1032,6 +1123,18 @@ export default function AssignmentsPage() {
                     </Link>
                   </Box>
                   <Stack direction="row" spacing={2} alignItems="center">
+                    <Tooltip title="Bewerk opdracht">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditDialog(assignment);
+                        }}
+                        sx={{ color: "text.secondary" }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <Button
                       variant="contained"
                       color={getStatusColor(currentStatus)}
@@ -1097,6 +1200,24 @@ export default function AssignmentsPage() {
                     sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: "divider" }}
                   >
                     <Stack spacing={3}>
+                      {assignment.description && (
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 600, mb: 1 }}
+                          >
+                            Omschrijving
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ whiteSpace: "pre-wrap" }}
+                          >
+                            {assignment.description}
+                          </Typography>
+                        </Box>
+                      )}
+
                       {assignment.location && (
                         <Typography variant="body2" color="text.secondary">
                           Locatie: {assignment.location}
@@ -1131,14 +1252,14 @@ export default function AssignmentsPage() {
                                 variant="caption"
                                 color="text.secondary"
                               >
-                                Salarisindicatie
+                                Jaarsalaris indicatie
                               </Typography>
                               <Typography variant="body2">
                                 {assignment.salary_min && assignment.salary_max
-                                  ? `€${assignment.salary_min.toLocaleString()} - €${assignment.salary_max.toLocaleString()}`
+                                  ? `€${assignment.salary_min.toLocaleString("nl-NL")} - €${assignment.salary_max.toLocaleString("nl-NL")}`
                                   : assignment.salary_min
-                                  ? `vanaf €${assignment.salary_min.toLocaleString()}`
-                                  : `tot €${assignment.salary_max?.toLocaleString()}`}
+                                  ? `vanaf €${assignment.salary_min.toLocaleString("nl-NL")}`
+                                  : `tot €${(assignment.salary_max || 0).toLocaleString("nl-NL")}`}
                               </Typography>
                             </Box>
                           )}
@@ -1296,8 +1417,11 @@ export default function AssignmentsPage() {
                                 <TableHead>
                                   <TableRow>
                                     <TableCell>Naam</TableCell>
+                                    <TableCell>E-mail</TableCell>
+                                    <TableCell>Telefoon</TableCell>
                                     <TableCell>Functie</TableCell>
                                     <TableCell>Bedrijf</TableCell>
+                                    <TableCell>Locatie</TableCell>
                                     <TableCell>Status</TableCell>
                                     <TableCell align="right">Acties</TableCell>
                                   </TableRow>
@@ -1326,8 +1450,36 @@ export default function AssignmentsPage() {
                                             },
                                           }}
                                         >
-                                          {`${candidate.contact.first_name} ${candidate.contact.last_name}`}
+                                          {candidate.contact.prefix
+                                            ? `${candidate.contact.first_name} ${candidate.contact.prefix} ${candidate.contact.last_name}`
+                                            : `${candidate.contact.first_name} ${candidate.contact.last_name}`}
                                         </Link>
+                                      </TableCell>
+                                      <TableCell>
+                                        {candidate.contact.email ? (
+                                          <Link
+                                            href={`mailto:${candidate.contact.email}`}
+                                            sx={{ color: "inherit" }}
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {candidate.contact.email}
+                                          </Link>
+                                        ) : (
+                                          "-"
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        {candidate.contact.phone ? (
+                                          <Link
+                                            href={`tel:${candidate.contact.phone}`}
+                                            sx={{ color: "inherit" }}
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {candidate.contact.phone}
+                                          </Link>
+                                        ) : (
+                                          "-"
+                                        )}
                                       </TableCell>
                                       <TableCell>
                                         {candidate.contact.company_role || "-"}
@@ -1335,6 +1487,9 @@ export default function AssignmentsPage() {
                                       <TableCell>
                                         {candidate.contact.current_company ||
                                           "-"}
+                                      </TableCell>
+                                      <TableCell>
+                                        {candidate.contact.location || "-"}
                                       </TableCell>
                                       <TableCell>
                                         <Box
@@ -1436,21 +1591,41 @@ export default function AssignmentsPage() {
                                         </Menu>
                                       </TableCell>
                                       <TableCell align="right">
-                                        <Tooltip title="Verwijderen uit opdracht">
-                                          <IconButton
-                                            size="small"
-                                            color="error"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleRemoveCandidateFromAssignment(
-                                                assignment.id,
-                                                candidate.id
-                                              );
-                                            }}
-                                          >
-                                            <DeleteOutlineIcon fontSize="small" />
-                                          </IconButton>
-                                        </Tooltip>
+                                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                          {candidate.contact.linkedin_url && (
+                                            <Tooltip title="Bekijk LinkedIn profiel">
+                                              <IconButton
+                                                size="small"
+                                                color="primary"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  window.open(
+                                                    candidate.contact.linkedin_url,
+                                                    "_blank",
+                                                    "noopener,noreferrer"
+                                                  );
+                                                }}
+                                              >
+                                                <LinkedInIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                          )}
+                                          <Tooltip title="Verwijderen uit opdracht">
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemoveCandidateFromAssignment(
+                                                  assignment.id,
+                                                  candidate.id
+                                                );
+                                              }}
+                                            >
+                                              <DeleteOutlineIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                        </Stack>
                                       </TableCell>
                                     </TableRow>
                                   ))}
@@ -1866,28 +2041,28 @@ export default function AssignmentsPage() {
 
             <Stack direction="row" spacing={2} alignItems="center">
               <TextField
-                label="Salaris min (EUR/maand)"
-                type="number"
+                label="Jaarsalaris min"
                 fullWidth
                 value={newAssignmentSalaryMin}
                 onChange={(e) =>
-                  setNewAssignmentSalaryMin(
-                    e.target.value ? parseInt(e.target.value) : ""
-                  )
+                  setNewAssignmentSalaryMin(formatNumberInput(e.target.value))
                 }
-                InputProps={{ inputProps: { min: 0 } }}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                }}
+                placeholder="bijv. 48.000"
               />
               <TextField
-                label="Salaris max (EUR/maand)"
-                type="number"
+                label="Jaarsalaris max"
                 fullWidth
                 value={newAssignmentSalaryMax}
                 onChange={(e) =>
-                  setNewAssignmentSalaryMax(
-                    e.target.value ? parseInt(e.target.value) : ""
-                  )
+                  setNewAssignmentSalaryMax(formatNumberInput(e.target.value))
                 }
-                InputProps={{ inputProps: { min: 0 } }}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                }}
+                placeholder="bijv. 60.000"
               />
             </Stack>
             <TextField
@@ -2037,6 +2212,164 @@ export default function AssignmentsPage() {
             disabled={createAssignmentMutation.isPending}
           >
             {createAssignmentMutation.isPending ? "Bezig..." : "Aanmaken"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Assignment Dialog */}
+      <Dialog
+        open={editAssignmentDialog.isOpen}
+        onClose={handleCloseEditDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Opdracht bewerken</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3} sx={{ pt: 1 }}>
+            <TextField
+              label="Titel"
+              required
+              fullWidth
+              value={editAssignmentTitle}
+              onChange={(e) => setEditAssignmentTitle(e.target.value)}
+              error={!editAssignmentTitle.trim() && !!editAssignmentError}
+            />
+
+            <TextField
+              label="Omschrijving"
+              fullWidth
+              multiline
+              rows={3}
+              value={editAssignmentDescription}
+              onChange={(e) => setEditAssignmentDescription(e.target.value)}
+            />
+
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Locatie"
+                fullWidth
+                value={editAssignmentLocation}
+                onChange={(e) => setEditAssignmentLocation(e.target.value)}
+              />
+              <FormControl fullWidth>
+                <InputLabel>Dienstverband</InputLabel>
+                <Select
+                  value={editAssignmentEmploymentType}
+                  onChange={(e) =>
+                    setEditAssignmentEmploymentType(e.target.value)
+                  }
+                  label="Dienstverband"
+                >
+                  <MenuItem value="">Geen</MenuItem>
+                  <MenuItem value="Fulltime">Fulltime</MenuItem>
+                  <MenuItem value="Parttime">Parttime</MenuItem>
+                  <MenuItem value="Freelance">Freelance</MenuItem>
+                  <MenuItem value="Interim">Interim</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+
+            <Stack direction="row" spacing={2} alignItems="center">
+              <TextField
+                label="Jaarsalaris min"
+                fullWidth
+                value={editAssignmentSalaryMin}
+                onChange={(e) =>
+                  setEditAssignmentSalaryMin(formatNumberInput(e.target.value))
+                }
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                }}
+                placeholder="bijv. 48.000"
+              />
+              <TextField
+                label="Jaarsalaris max"
+                fullWidth
+                value={editAssignmentSalaryMax}
+                onChange={(e) =>
+                  setEditAssignmentSalaryMax(formatNumberInput(e.target.value))
+                }
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                }}
+                placeholder="bijv. 60.000"
+              />
+            </Stack>
+            <TextField
+              label="Vakantiedagen"
+              type="number"
+              value={editAssignmentVacationDays}
+              onChange={(e) =>
+                setEditAssignmentVacationDays(
+                  e.target.value ? parseInt(e.target.value) : ""
+                )
+              }
+              InputProps={{ inputProps: { min: 0, max: 100 } }}
+              sx={{ width: 160 }}
+            />
+
+            {/* Benefits Selection - Toggleable Chips */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                Arbeidsvoorwaarden
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {benefitsOptions.map((benefit) => {
+                  const isSelected = editAssignmentBenefits.includes(benefit);
+                  return (
+                    <Chip
+                      key={benefit}
+                      label={benefit}
+                      size="small"
+                      variant={isSelected ? "filled" : "outlined"}
+                      color={isSelected ? "primary" : "default"}
+                      onClick={() => {
+                        if (isSelected) {
+                          setEditAssignmentBenefits(
+                            editAssignmentBenefits.filter((b) => b !== benefit)
+                          );
+                        } else {
+                          setEditAssignmentBenefits([
+                            ...editAssignmentBenefits,
+                            benefit,
+                          ]);
+                        }
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.dark" : "action.hover",
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+
+            {editAssignmentError && (
+              <Alert
+                severity="error"
+                onClose={() => setEditAssignmentError(null)}
+              >
+                {editAssignmentError}
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseEditDialog}
+            disabled={updateAssignmentMutation.isPending}
+          >
+            Annuleren
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleUpdateAssignment}
+            disabled={updateAssignmentMutation.isPending}
+          >
+            {updateAssignmentMutation.isPending ? "Bezig..." : "Opslaan"}
           </Button>
         </DialogActions>
       </Dialog>

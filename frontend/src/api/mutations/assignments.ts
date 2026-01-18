@@ -14,18 +14,14 @@ export type CreateAssignmentData = {
   location?: string | null;
   employment_type?: string | null;
   benefits?: string[] | null;
-  notes_image?: File | null; // File object for image upload
+  notes_image?: File | null;
 };
 
-/**
- * Create a new assignment with optional notes image
- */
 export const useCreateAssignment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CreateAssignmentData) => {
-      // Use FormData if there's an image to upload
       if (data.notes_image) {
         const formData = new FormData();
         formData.append("account_uid", data.account_uid);
@@ -49,17 +45,13 @@ export const useCreateAssignment = () => {
         }
         formData.append("notes_image", data.notes_image);
 
-        // Don't set Content-Type header - let Axios handle it automatically
-        // so the correct boundary is included for multipart/form-data
         return await API.post<AssignmentFromAPI>("/assignments", formData);
       }
 
-      // Regular JSON request without image
       const { notes_image, ...jsonData } = data;
       return await API.post<AssignmentFromAPI>("/assignments", jsonData);
     },
     onSuccess: () => {
-      // Invalidate assignments list to refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.assignments.all });
     },
   });
@@ -72,17 +64,13 @@ export type UpdateAssignmentData = {
   status?: string | null;
   salary_min?: number | null;
   salary_max?: number | null;
-  has_bonus?: boolean;
-  has_car?: boolean;
   vacation_days?: number | null;
   location?: string | null;
   employment_type?: string | null;
-  notes_image?: File | null; // File object for image upload
+  benefits?: string[] | null;
+  notes_image?: File | null;
 };
 
-/**
- * Update an assignment
- */
 export const useUpdateAssignment = () => {
   const queryClient = useQueryClient();
 
@@ -97,7 +85,6 @@ export const useUpdateAssignment = () => {
       return await API.put<AssignmentFromAPI>(`/assignments/${uid}`, data);
     },
     onSuccess: (_, variables) => {
-      // Invalidate specific assignment and list
       queryClient.invalidateQueries({
         queryKey: queryKeys.assignments.detail(variables.uid),
       });
@@ -106,9 +93,6 @@ export const useUpdateAssignment = () => {
   });
 };
 
-/**
- * Delete an assignment
- */
 export const useDeleteAssignment = () => {
   const queryClient = useQueryClient();
 
@@ -117,7 +101,6 @@ export const useDeleteAssignment = () => {
       return await API.delete(`/assignments/${uid}`);
     },
     onSuccess: () => {
-      // Invalidate assignments list
       queryClient.invalidateQueries({ queryKey: queryKeys.assignments.all });
     },
   });

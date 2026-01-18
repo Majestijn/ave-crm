@@ -21,6 +21,9 @@ import {
   Divider,
   Slider,
   Collapse,
+  CircularProgress,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import {
   DataGrid,
@@ -29,22 +32,36 @@ import {
 } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import ImageIcon from "@mui/icons-material/Image";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
 import EditIcon from "@mui/icons-material/Edit";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
+import CakeIcon from "@mui/icons-material/Cake";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import mammoth from "mammoth";
-import { useContacts, useGeocode, type LocationFilter } from "../../api/queries/contacts";
+import {
+  useContacts,
+  useGeocode,
+  useContactDocuments,
+  type LocationFilter,
+  type AgeFilter,
+  type ContactDocument,
+} from "../../api/queries/contacts";
+import { useAccounts } from "../../api/queries/accounts";
+import API from "../../api/client";
 import {
   useCreateContact,
   useUpdateContact,
   useDeleteContact,
   useUploadContactDocument,
+  useDeleteContactDocument,
 } from "../../api/mutations/contacts";
 import SmartBulkImportDialog from "../../components/features/SmartBulkImportDialog";
 import BatchImportDialog from "../../components/features/BatchImportDialog";
@@ -123,6 +140,8 @@ const ContactSchema = z.object({
   phone: z.string().optional(),
   linkedin_url: z.string().url().optional().or(z.literal("")),
   notes: z.string().optional(),
+  is_company_contact: z.boolean().optional(),
+  account_uid: z.string().optional(),
 });
 
 type ContactForm = z.infer<typeof ContactSchema>;
@@ -131,23 +150,102 @@ export default function NetworkPage() {
   // Location filter state - must be declared before useContacts
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
-  const [locationFilter, setLocationFilter] = useState<LocationFilter | undefined>(undefined);
+  const [locationFilter, setLocationFilter] = useState<
+    LocationFilter | undefined
+  >(undefined);
   const [radius, setRadius] = useState(25); // Default 25km
   const [debouncedLocation, setDebouncedLocation] = useState("");
-  
+
+  // Age filter state
+  const [showAgeFilter, setShowAgeFilter] = useState(false);
+  const [ageFilter, setAgeFilter] = useState<AgeFilter | undefined>(undefined);
+  const [minAgeInput, setMinAgeInput] = useState("");
+  const [maxAgeInput, setMaxAgeInput] = useState("");
+
   // Data fetching hooks
   const {
     data: contacts = [],
     isLoading: loading,
     error: contactsError,
     refetch,
-  } = useContacts(locationFilter);
-  const { data: geocodeResult, isLoading: isGeocoding } = useGeocode(debouncedLocation || null);
-  
+  } = useContacts(locationFilter, ageFilter);
+  const { data: accounts = [] } = useAccounts();
+  const { data: geocodeResult, isLoading: isGeocoding } = useGeocode(
+    debouncedLocation || null
+  );
+
+  // Notes viewer disclosure and state (declared before useContactDocuments that depends on it)
+  const notesViewer = useDisclosure();
+  const [notesViewingContact, setNotesViewingContact] = useState<Contact | null>(null);
+  const [notesImageUrls, setNotesImageUrls] = useState<Map<number, string>>(new Map());
+  const [notesImagesLoading, setNotesImagesLoading] = useState(false);
+
+  // Fetch documents for contact being viewed
+  const { data: contactDocuments = [], isLoading: documentsLoading } =
+    useContactDocuments(notesViewingContact?.uid || null);
+
+  // Filter to only notes images
+  const notesImages = contactDocuments.filter(
+    (doc: ContactDocument) =>
+      doc.type === "notes" && doc.mime_type.startsWith("image/")
+  );
+
+  // Fetch notes images with auth when viewer opens
+  React.useEffect(() => {
+    if (!notesViewer.isOpen || notesImages.length === 0) {
+      return;
+    }
+
+    const fetchImages = async () => {
+      setNotesImagesLoading(true);
+      const baseURL = `${window.location.protocol}//${window.location.hostname}:8080/api/v1`;
+      const token = localStorage.getItem("auth_token");
+      const newUrls = new Map<number, string>();
+
+      for (const doc of notesImages) {
+        try {
+          let url = doc.download_url;
+          if (!url.startsWith("http")) {
+            if (url.startsWith("/api/v1/")) {
+              url = url.replace("/api/v1", "");
+            }
+            if (!url.startsWith("/")) {
+              url = "/" + url;
+            }
+            url = `${baseURL}${url}`;
+          }
+
+          const response = await fetch(url, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            newUrls.set(doc.id, blobUrl);
+          }
+        } catch (err) {
+          console.error(`Error fetching notes image ${doc.id}:`, err);
+        }
+      }
+
+      setNotesImageUrls(newUrls);
+      setNotesImagesLoading(false);
+    };
+
+    fetchImages();
+
+    // Cleanup blob URLs on unmount or when viewer closes
+    return () => {
+      notesImageUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [notesViewer.isOpen, notesImages.length]);
+
   // Mutation hooks
   const createContactMutation = useCreateContact();
   const deleteContactMutation = useDeleteContact();
   const uploadDocumentMutation = useUploadContactDocument();
+  const deleteDocumentMutation = useDeleteContactDocument();
   const updateContactMutation = useUpdateContact();
 
   // Dialog state
@@ -164,7 +262,7 @@ export default function NetworkPage() {
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Debounce location search
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -174,7 +272,7 @@ export default function NetworkPage() {
     }, 500);
     return () => clearTimeout(timer);
   }, [locationSearch]);
-  
+
   // Apply location filter when geocode result comes back
   const applyLocationFilter = useCallback(() => {
     if (geocodeResult) {
@@ -185,7 +283,7 @@ export default function NetworkPage() {
       });
     }
   }, [geocodeResult, radius]);
-  
+
   const clearLocationFilter = useCallback(() => {
     setLocationFilter(undefined);
     setLocationSearch("");
@@ -200,6 +298,10 @@ export default function NetworkPage() {
   // CV upload state
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvFileName, setCvFileName] = useState<string | null>(null);
+
+  // Notes image upload state
+  const [notesImageFile, setNotesImageFile] = useState<File | null>(null);
+  const [notesImagePreview, setNotesImagePreview] = useState<string | null>(null);
 
   // CV viewer state
   const [viewingContact, setViewingContact] = useState<Contact | null>(null);
@@ -218,6 +320,7 @@ export default function NetworkPage() {
     formState: { errors, isSubmitting },
     reset,
     control,
+    watch,
   } = useForm<ContactForm>({
     resolver: zodResolver(ContactSchema),
     mode: "onBlur",
@@ -236,6 +339,8 @@ export default function NetworkPage() {
       phone: "",
       linkedin_url: "",
       notes: "",
+      is_company_contact: false,
+      account_uid: "",
     },
   });
 
@@ -324,6 +429,50 @@ export default function NetworkPage() {
           reset();
           setCvFile(null);
           setCvFileName(null);
+          handleClearNotesImage();
+          return;
+        }
+      }
+
+      // If there's a notes image, upload it separately
+      if (notesImageFile && createdContact?.uid) {
+        try {
+          await uploadDocumentMutation.mutateAsync({
+            contactUid: createdContact.uid,
+            file: notesImageFile,
+            type: "notes",
+          });
+        } catch (notesErr) {
+          console.error("Error uploading notes image:", notesErr);
+          // Contact was created, but notes upload failed - show warning but don't block
+          setSubmitError(
+            "Contact aangemaakt, maar notitie-afbeelding upload is mislukt. Je kunt het later opnieuw proberen."
+          );
+          addContact.close();
+          reset();
+          setCvFile(null);
+          setCvFileName(null);
+          handleClearNotesImage();
+          return;
+        }
+      }
+
+      // If is_company_contact is checked and account_uid is provided, link the contact to the account
+      if (data.is_company_contact && data.account_uid && createdContact?.uid) {
+        try {
+          await API.post(`/accounts/${data.account_uid}/contacts`, {
+            contact_uid: createdContact.uid,
+          });
+        } catch (linkErr) {
+          console.error("Error linking contact to account:", linkErr);
+          setSubmitError(
+            "Contact aangemaakt, maar koppeling aan bedrijf is mislukt. Je kunt dit handmatig doen via de klantpagina."
+          );
+          addContact.close();
+          reset();
+          setCvFile(null);
+          setCvFileName(null);
+          handleClearNotesImage();
           return;
         }
       }
@@ -332,6 +481,7 @@ export default function NetworkPage() {
       reset();
       setCvFile(null);
       setCvFileName(null);
+      handleClearNotesImage();
     } catch (err: any) {
       console.error(err);
       if (err?.response?.data?.message) {
@@ -378,6 +528,41 @@ export default function NetworkPage() {
   const handleClearCvFile = () => {
     setCvFile(null);
     setCvFileName(null);
+  };
+
+  // Handle notes image file selection
+  const handleNotesImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setSubmitError("Selecteer een afbeelding (JPG, PNG, GIF, etc.)");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setSubmitError("Afbeelding mag maximaal 10MB zijn");
+      return;
+    }
+
+    // Create preview URL
+    if (notesImagePreview) {
+      URL.revokeObjectURL(notesImagePreview);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setNotesImagePreview(previewUrl);
+    setNotesImageFile(file);
+  };
+
+  // Clear notes image
+  const handleClearNotesImage = () => {
+    if (notesImagePreview) {
+      URL.revokeObjectURL(notesImagePreview);
+    }
+    setNotesImageFile(null);
+    setNotesImagePreview(null);
   };
 
   // Edit contact handlers
@@ -586,6 +771,79 @@ export default function NetworkPage() {
     setCvError(null);
   };
 
+  // Notes viewer handlers
+  const handleViewNotes = (contact: Contact) => {
+    setNotesViewingContact(contact);
+    notesViewer.open();
+  };
+
+  const handleCloseNotesViewer = () => {
+    notesViewer.close();
+    setNotesViewingContact(null);
+    // Clean up blob URLs
+    notesImageUrls.forEach((url) => URL.revokeObjectURL(url));
+    setNotesImageUrls(new Map());
+  };
+
+  // Delete a notes image
+  const handleDeleteNotesImage = async (documentId: number) => {
+    if (!notesViewingContact) return;
+    
+    if (!window.confirm("Weet je zeker dat je deze notitie-afbeelding wilt verwijderen?")) {
+      return;
+    }
+
+    try {
+      await deleteDocumentMutation.mutateAsync({
+        documentId,
+        contactUid: notesViewingContact.uid,
+      });
+      // Clean up the blob URL for this image
+      const url = notesImageUrls.get(documentId);
+      if (url) {
+        URL.revokeObjectURL(url);
+        const newUrls = new Map(notesImageUrls);
+        newUrls.delete(documentId);
+        setNotesImageUrls(newUrls);
+      }
+    } catch (err) {
+      console.error("Error deleting notes image:", err);
+      alert("Fout bij verwijderen van notitie-afbeelding");
+    }
+  };
+
+  // Upload additional notes image
+  const handleUploadNotesImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !notesViewingContact) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Selecteer een afbeelding (JPG, PNG, GIF, etc.)");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Afbeelding mag maximaal 10MB zijn");
+      return;
+    }
+
+    try {
+      await uploadDocumentMutation.mutateAsync({
+        contactUid: notesViewingContact.uid,
+        file,
+        type: "notes",
+      });
+    } catch (err) {
+      console.error("Error uploading notes image:", err);
+      alert("Fout bij uploaden van notitie-afbeelding");
+    }
+
+    // Reset the input
+    event.target.value = "";
+  };
+
   const columns: GridColDef[] = [
     {
       field: "name",
@@ -670,10 +928,34 @@ export default function NetworkPage() {
       field: "actions",
       type: "actions",
       headerName: "",
-      width: 100,
+      width: 180,
       getActions: (params) => {
         const contact = params.row as Contact;
-        return [
+        const actions = [];
+        
+        if (contact.linkedin_url) {
+          actions.push(
+            <GridActionsCellItem
+              key="linkedin"
+              icon={<LinkedInIcon />}
+              label="LinkedIn"
+              onClick={() => window.open(contact.linkedin_url, "_blank", "noopener,noreferrer")}
+              showInMenu={false}
+            />
+          );
+        }
+
+        actions.push(
+          <GridActionsCellItem
+            key="notes"
+            icon={<PhotoLibraryIcon />}
+            label="Notities bekijken"
+            onClick={() => handleViewNotes(contact)}
+            showInMenu={false}
+          />,
+        );
+        
+        actions.push(
           <GridActionsCellItem
             key="edit"
             icon={<EditIcon />}
@@ -687,8 +969,10 @@ export default function NetworkPage() {
             label="Verwijderen"
             onClick={() => handleDeleteClick(contact)}
             showInMenu={false}
-          />,
-        ];
+          />
+        );
+        
+        return actions;
       },
     },
   ];
@@ -823,7 +1107,9 @@ export default function NetworkPage() {
             sx={{ minWidth: 280 }}
           />
           <Button
-            variant={showLocationFilter || locationFilter ? "contained" : "outlined"}
+            variant={
+              showLocationFilter || locationFilter ? "contained" : "outlined"
+            }
             size="small"
             startIcon={<LocationOnIcon />}
             onClick={() => setShowLocationFilter(!showLocationFilter)}
@@ -831,9 +1117,20 @@ export default function NetworkPage() {
           >
             {locationFilter ? `${radius} km` : "Locatie"}
           </Button>
+          <Button
+            variant={showAgeFilter || ageFilter ? "contained" : "outlined"}
+            size="small"
+            startIcon={<CakeIcon />}
+            onClick={() => setShowAgeFilter(!showAgeFilter)}
+            color={ageFilter ? "primary" : "inherit"}
+          >
+            {ageFilter
+              ? `${ageFilter.minAge || ""}${ageFilter.minAge && ageFilter.maxAge ? "-" : ""}${ageFilter.maxAge || ""} jaar`
+              : "Leeftijd"}
+          </Button>
         </Stack>
       </Paper>
-      
+
       {/* Location Filter Panel */}
       <Collapse in={showLocationFilter}>
         <Paper sx={{ p: 2, mb: 2 }}>
@@ -851,7 +1148,9 @@ export default function NetworkPage() {
                 ),
                 endAdornment: isGeocoding ? (
                   <InputAdornment position="end">
-                    <Typography variant="caption" color="text.secondary">Zoeken...</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Zoeken...
+                    </Typography>
                   </InputAdornment>
                 ) : null,
               }}
@@ -892,16 +1191,86 @@ export default function NetworkPage() {
             )}
           </Stack>
           {geocodeResult && locationSearch && (
-            <Typography variant="caption" color="success.main" sx={{ mt: 1, display: 'block' }}>
+            <Typography
+              variant="caption"
+              color="success.main"
+              sx={{ mt: 1, display: "block" }}
+            >
               ✓ Locatie gevonden: {locationSearch}
             </Typography>
           )}
           {locationFilter && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              Toont contacten binnen {radius} km van {locationSearch || 'geselecteerde locatie'}
+              Toont contacten binnen {radius} km van{" "}
+              {locationSearch || "geselecteerde locatie"}
               {contacts.length > 0 && contacts[0].distance !== undefined && (
                 <> — gesorteerd op afstand</>
               )}
+            </Alert>
+          )}
+        </Paper>
+      </Collapse>
+
+      {/* Age Filter Panel */}
+      <Collapse in={showAgeFilter}>
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              label="Min. leeftijd"
+              type="number"
+              size="small"
+              value={minAgeInput}
+              onChange={(e) => setMinAgeInput(e.target.value)}
+              inputProps={{ min: 0, max: 100 }}
+              sx={{ width: 120 }}
+            />
+            <Typography>-</Typography>
+            <TextField
+              label="Max. leeftijd"
+              type="number"
+              size="small"
+              value={maxAgeInput}
+              onChange={(e) => setMaxAgeInput(e.target.value)}
+              inputProps={{ min: 0, max: 100 }}
+              sx={{ width: 120 }}
+            />
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => {
+                const minAge = minAgeInput ? parseInt(minAgeInput, 10) : undefined;
+                const maxAge = maxAgeInput ? parseInt(maxAgeInput, 10) : undefined;
+                if (minAge !== undefined || maxAge !== undefined) {
+                  setAgeFilter({ minAge, maxAge });
+                }
+              }}
+              disabled={!minAgeInput && !maxAgeInput}
+            >
+              Toepassen
+            </Button>
+            {ageFilter && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ClearIcon />}
+                onClick={() => {
+                  setAgeFilter(undefined);
+                  setMinAgeInput("");
+                  setMaxAgeInput("");
+                }}
+              >
+                Wissen
+              </Button>
+            )}
+          </Stack>
+          {ageFilter && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Toont contacten{" "}
+              {ageFilter.minAge && ageFilter.maxAge
+                ? `tussen ${ageFilter.minAge} en ${ageFilter.maxAge} jaar`
+                : ageFilter.minAge
+                ? `van ${ageFilter.minAge} jaar of ouder`
+                : `tot ${ageFilter.maxAge} jaar`}
             </Alert>
           )}
         </Paper>
@@ -932,6 +1301,7 @@ export default function NetworkPage() {
           reset();
           setCvFile(null);
           setCvFileName(null);
+          handleClearNotesImage();
         }}
       >
         <DialogTitle>Nieuw contact</DialogTitle>
@@ -964,15 +1334,36 @@ export default function NetworkPage() {
               />
             </Stack>
 
-            <TextField
-              label="Geboortedatum"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              error={!!errors.date_of_birth}
-              helperText={errors.date_of_birth?.message ?? " "}
-              {...register("date_of_birth")}
-              sx={{ width: 200 }}
-            />
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Geboortedatum"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                error={!!errors.date_of_birth}
+                helperText={errors.date_of_birth?.message ?? " "}
+                {...register("date_of_birth")}
+                sx={{ width: 200 }}
+              />
+
+              <Controller
+                name="gender"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    label="Geslacht"
+                    {...field}
+                    value={field.value || ""}
+                    sx={{ width: 150 }}
+                    helperText=" "
+                  >
+                    <MenuItem value="">-</MenuItem>
+                    <MenuItem value="man">Man</MenuItem>
+                    <MenuItem value="vrouw">Vrouw</MenuItem>
+                  </TextField>
+                )}
+              />
+            </Stack>
 
             <Stack direction="row" spacing={2}>
               <TextField
@@ -1093,6 +1484,48 @@ export default function NetworkPage() {
               fullWidth
             />
 
+            {/* Company Contact Section */}
+            <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
+              <Controller
+                name="is_company_contact"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={field.value || false}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Is contactpersoon van een bedrijf"
+                  />
+                )}
+              />
+              {watch("is_company_contact") && (
+                <Controller
+                  name="account_uid"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      label="Kies bedrijf"
+                      {...field}
+                      value={field.value || ""}
+                      fullWidth
+                      sx={{ mt: 1 }}
+                    >
+                      <MenuItem value="">Selecteer een bedrijf...</MenuItem>
+                      {accounts.map((account) => (
+                        <MenuItem key={account.uid} value={account.uid}>
+                          {account.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              )}
+            </Box>
+
             {/* CV Upload Section */}
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -1136,6 +1569,69 @@ export default function NetworkPage() {
               </Typography>
             </Box>
 
+            {/* Notes Image Upload Section */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Notitie afbeelding (optioneel)
+              </Typography>
+              {notesImagePreview ? (
+                <Box sx={{ position: "relative", display: "inline-block" }}>
+                  <Box
+                    component="img"
+                    src={notesImagePreview}
+                    alt="Notitie preview"
+                    sx={{
+                      maxWidth: "100%",
+                      maxHeight: 200,
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleClearNotesImage}
+                    sx={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      bgcolor: "error.main",
+                      color: "white",
+                      "&:hover": { bgcolor: "error.dark" },
+                    }}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                    {notesImageFile
+                      ? `${(notesImageFile.size / 1024 / 1024).toFixed(2)} MB`
+                      : ""}
+                  </Typography>
+                </Box>
+              ) : (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<ImageIcon />}
+                >
+                  Afbeelding selecteren
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleNotesImageChange}
+                  />
+                </Button>
+              )}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 0.5 }}
+              >
+                Upload een foto van je notities (max 10MB)
+              </Typography>
+            </Box>
+
             <TextField
               label="Notities"
               multiline
@@ -1161,6 +1657,7 @@ export default function NetworkPage() {
               reset();
               setCvFile(null);
               setCvFileName(null);
+              handleClearNotesImage();
             }}
           >
             Annuleren
@@ -1264,15 +1761,36 @@ export default function NetworkPage() {
               />
             </Stack>
 
-            <TextField
-              label="Geboortedatum"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              error={!!editErrors.date_of_birth}
-              helperText={editErrors.date_of_birth?.message ?? " "}
-              {...editRegister("date_of_birth")}
-              sx={{ width: 200 }}
-            />
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Geboortedatum"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                error={!!editErrors.date_of_birth}
+                helperText={editErrors.date_of_birth?.message ?? " "}
+                {...editRegister("date_of_birth")}
+                sx={{ width: 200 }}
+              />
+
+              <Controller
+                name="gender"
+                control={editControl}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    label="Geslacht"
+                    {...field}
+                    value={field.value || ""}
+                    sx={{ width: 150 }}
+                    helperText=" "
+                  >
+                    <MenuItem value="">-</MenuItem>
+                    <MenuItem value="man">Man</MenuItem>
+                    <MenuItem value="vrouw">Vrouw</MenuItem>
+                  </TextField>
+                )}
+              />
+            </Stack>
 
             <Stack direction="row" spacing={2}>
               <TextField
@@ -1504,6 +2022,131 @@ export default function NetworkPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCvViewer}>Sluiten</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notes Viewer Dialog */}
+      <Dialog
+        open={notesViewer.isOpen}
+        onClose={handleCloseNotesViewer}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Notities van{" "}
+          {notesViewingContact ? formatContactName(notesViewingContact) : ""}
+        </DialogTitle>
+        <DialogContent dividers>
+          {documentsLoading && (
+            <Box sx={{ p: 3, textAlign: "center" }}>
+              <CircularProgress size={24} sx={{ mr: 1 }} />
+              <Typography variant="body2" component="span">
+                Notities laden...
+              </Typography>
+            </Box>
+          )}
+          {!documentsLoading && notesImages.length === 0 && (
+            <Box sx={{ p: 3, textAlign: "center" }}>
+              <PhotoLibraryIcon
+                sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+              />
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                Geen notitie-afbeeldingen gevonden voor dit contact.
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<ImageIcon />}
+                disabled={uploadDocumentMutation.isPending}
+              >
+                {uploadDocumentMutation.isPending ? "Uploaden..." : "Afbeelding toevoegen"}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleUploadNotesImage}
+                />
+              </Button>
+            </Box>
+          )}
+          {(documentsLoading || notesImagesLoading) && notesImages.length > 0 && (
+            <Box sx={{ p: 3, textAlign: "center" }}>
+              <CircularProgress size={24} sx={{ mr: 1 }} />
+              <Typography variant="body2" component="span">
+                Afbeeldingen laden...
+              </Typography>
+            </Box>
+          )}
+          {!documentsLoading && !notesImagesLoading && notesImages.length > 0 && (
+            <Stack spacing={3}>
+              {notesImages.map((doc: ContactDocument) => {
+                const imageUrl = notesImageUrls.get(doc.id);
+                if (!imageUrl) return null;
+                return (
+                  <Box key={doc.id}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ mb: 1 }}
+                    >
+                      <Typography variant="subtitle2">
+                        {doc.original_filename}
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ ml: 1 }}
+                        >
+                          ({doc.formatted_file_size})
+                        </Typography>
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteNotesImage(doc.id)}
+                        disabled={deleteDocumentMutation.isPending}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                    <Box
+                      component="img"
+                      src={imageUrl}
+                      alt={doc.original_filename}
+                      sx={{
+                        maxWidth: "100%",
+                        maxHeight: 600,
+                        borderRadius: 1,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => window.open(imageUrl, "_blank")}
+                    />
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="outlined"
+            component="label"
+            startIcon={<ImageIcon />}
+            disabled={uploadDocumentMutation.isPending}
+          >
+            {uploadDocumentMutation.isPending ? "Uploaden..." : "Afbeelding toevoegen"}
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              onChange={handleUploadNotesImage}
+            />
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button onClick={handleCloseNotesViewer}>Sluiten</Button>
         </DialogActions>
       </Dialog>
 

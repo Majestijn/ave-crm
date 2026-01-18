@@ -569,9 +569,6 @@ PROMPT;
             'mime_type' => $mimeType,
             'file_size' => filesize($filepath),
         ]);
-
-        $contact->cv_url = "/api/v1/contact-documents/{$document->id}/download";
-        $contact->save();
     }
 
     /**

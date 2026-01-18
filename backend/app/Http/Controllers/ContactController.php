@@ -25,10 +25,27 @@ class ContactController extends Controller
             $lat = (float) $request->input('lat');
             $lng = (float) $request->input('lng');
             $radius = (float) $request->input('radius');
-            
+
             $query->withinRadius($lat, $lng, $radius);
         } else {
             $query->orderBy('last_name')->orderBy('first_name');
+        }
+
+        // Apply age filter if provided
+        if ($request->has('min_age') || $request->has('max_age')) {
+            $query->whereNotNull('date_of_birth');
+            
+            if ($request->has('min_age')) {
+                $minAge = (int) $request->input('min_age');
+                $maxDate = now()->subYears($minAge)->format('Y-m-d');
+                $query->where('date_of_birth', '<=', $maxDate);
+            }
+            
+            if ($request->has('max_age')) {
+                $maxAge = (int) $request->input('max_age');
+                $minDate = now()->subYears($maxAge + 1)->addDay()->format('Y-m-d');
+                $query->where('date_of_birth', '>=', $minDate);
+            }
         }
 
         $contacts = $query->get()->toArray();
@@ -122,7 +139,6 @@ class ContactController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
-            'cv_url' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -193,7 +209,7 @@ class ContactController extends Controller
             $lat = (float) $request->input('lat');
             $lng = (float) $request->input('lng');
             $radius = (float) $request->input('radius');
-            
+
             $query->withinRadius($lat, $lng, $radius);
         } else {
             $query->orderBy('last_name')->orderBy('first_name');

@@ -26,6 +26,8 @@ return new class extends Migration {
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('location')->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
 
             // Professional information
             $table->string('current_company')->nullable();
@@ -36,7 +38,6 @@ return new class extends Migration {
 
             // External links
             $table->string('linkedin_url')->nullable();
-            $table->string('cv_url')->nullable();
 
             // Additional information
             $table->text('notes')->nullable();
@@ -44,6 +45,9 @@ return new class extends Migration {
             // Timestamps
             $table->timestamps();
             $table->softDeletes();
+
+            // Indexes
+            $table->index(['latitude', 'longitude']);
         });
     }
 

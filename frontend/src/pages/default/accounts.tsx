@@ -40,25 +40,31 @@ const AccountSchema = z.object({
   logo_url: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
-  revenue_cents: z.number().optional(),
+  industry: z.string().optional().or(z.literal("")),
+  fte_count: z.number().optional(),
+  revenue_euros: z.number().optional(),
   notes: z.string().optional().or(z.literal("")),
 });
 
 type AccountForm = z.infer<typeof AccountSchema>;
 
-// Helper function to format revenue
+// Helper function to format revenue (stored in cents, display in euros)
 const formatRevenue = (revenueCents?: number): string => {
   if (!revenueCents) return "-";
 
-  const millions = revenueCents / 1000000;
-  const billions = revenueCents / 1000000000;
+  const euros = revenueCents / 100;
+  const thousands = euros / 1000;
+  const millions = euros / 1000000;
+  const billions = euros / 1000000000;
 
   if (billions >= 1) {
-    return `${billions.toFixed(0)} mld`;
+    return `€${billions.toFixed(1)} mld`;
   } else if (millions >= 1) {
-    return `${millions.toFixed(0)} mln`;
+    return `€${millions.toFixed(1)} mln`;
+  } else if (thousands >= 1) {
+    return `€${thousands.toFixed(0)}k`;
   } else {
-    return `${(revenueCents / 1000).toFixed(0)} k`;
+    return `€${euros.toFixed(0)}`;
   }
 };
 
@@ -86,7 +92,9 @@ export default function AccountsPage() {
       logo_url: "",
       location: "",
       website: "",
-      revenue_cents: undefined,
+      industry: "",
+      fte_count: undefined,
+      revenue_euros: undefined,
       notes: "",
     },
   });
@@ -94,7 +102,12 @@ export default function AccountsPage() {
   const onSubmit = async (data: AccountForm) => {
     setSubmitError(null);
     try {
-      await API.post("/accounts", data);
+      const submitData = {
+        ...data,
+        revenue_cents: data.revenue_euros ? Math.round(data.revenue_euros * 100) : undefined,
+      };
+      delete (submitData as any).revenue_euros;
+      await API.post("/accounts", submitData);
       addAccount.close();
       reset();
       await refresh();
@@ -208,13 +221,35 @@ export default function AccountsPage() {
               />
             </Stack>
 
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Branche"
+                error={!!errors.industry}
+                helperText={errors.industry?.message ?? " "}
+                {...register("industry")}
+                fullWidth
+              />
+              <TextField
+                label="Aantal FTE"
+                type="number"
+                error={!!errors.fte_count}
+                helperText={errors.fte_count?.message ?? " "}
+                {...register("fte_count", { valueAsNumber: true })}
+                fullWidth
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+            </Stack>
+
             <TextField
-              label="Omzet (in cents)"
+              label="Jaaromzet"
               type="number"
-              error={!!errors.revenue_cents}
-              helperText={errors.revenue_cents?.message || "Bijv. 750000000 voor 750 miljoen"}
-              {...register("revenue_cents", { valueAsNumber: true })}
+              error={!!errors.revenue_euros}
+              helperText={errors.revenue_euros?.message || "Voer het bedrag in euro's in"}
+              {...register("revenue_euros", { valueAsNumber: true })}
               fullWidth
+              InputProps={{
+                startAdornment: <InputAdornment position="start">€</InputAdornment>,
+              }}
             />
 
             <TextField

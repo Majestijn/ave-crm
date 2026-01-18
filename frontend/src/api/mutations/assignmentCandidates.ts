@@ -24,9 +24,6 @@ export type CandidateAssignment = {
   status_label: string;
 };
 
-/**
- * Add candidates to an assignment
- */
 export const useAddAssignmentCandidates = () => {
   const queryClient = useQueryClient();
 
@@ -44,7 +41,6 @@ export const useAddAssignmentCandidates = () => {
       );
     },
     onSuccess: (_, variables) => {
-      // Invalidate candidates for this assignment
       queryClient.invalidateQueries({
         queryKey: queryKeys.assignments.candidates(variables.assignmentUid),
       });
@@ -52,9 +48,6 @@ export const useAddAssignmentCandidates = () => {
   });
 };
 
-/**
- * Update candidate status for an assignment
- */
 export const useUpdateAssignmentCandidateStatus = () => {
   const queryClient = useQueryClient();
 
@@ -74,7 +67,6 @@ export const useUpdateAssignmentCandidateStatus = () => {
       );
     },
     onSuccess: (_, variables) => {
-      // Invalidate candidates for this assignment
       queryClient.invalidateQueries({
         queryKey: queryKeys.assignments.candidates(variables.assignmentUid),
       });
@@ -82,9 +74,6 @@ export const useUpdateAssignmentCandidateStatus = () => {
   });
 };
 
-/**
- * Remove candidate from an assignment
- */
 export const useRemoveAssignmentCandidate = () => {
   const queryClient = useQueryClient();
 
@@ -101,7 +90,6 @@ export const useRemoveAssignmentCandidate = () => {
       );
     },
     onSuccess: (_, variables) => {
-      // Invalidate candidates for this assignment
       queryClient.invalidateQueries({
         queryKey: queryKeys.assignments.candidates(variables.assignmentUid),
       });

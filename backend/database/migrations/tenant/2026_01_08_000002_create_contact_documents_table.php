@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('contact_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contact_id')->constrained()->onDelete('cascade');
-            $table->string('type'); // 'cv', 'certificate', 'other'
+            $table->string('type'); // 'cv', 'certificate', 'notes', 'other'
             $table->string('original_filename');
             $table->string('storage_path');
             $table->string('mime_type');

@@ -31,6 +31,8 @@ export type Account = {
   logo_url?: string;
   location?: string;
   website?: string;
+  industry?: string;
+  fte_count?: number;
   revenue_cents?: number;
   notes?: string;
   assignments_count?: number;

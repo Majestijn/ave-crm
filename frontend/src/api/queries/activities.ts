@@ -24,9 +24,6 @@ export type Activity = {
   created_by?: string;
 };
 
-/**
- * Get activities for an assignment
- */
 export const useAssignmentActivities = (assignmentUid: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.assignments.activities(assignmentUid!),
@@ -47,3 +44,22 @@ export const useAssignmentActivities = (assignmentUid: string | undefined) => {
   });
 };
 
+export const useAccountActivities = (accountUid: string | undefined) => {
+  return useQuery({
+    queryKey: queryKeys.accounts.activities(accountUid!),
+    queryFn: async () => {
+      const responseData = await API.get<Activity[] | { data: Activity[] }>(
+        `/accounts/${accountUid}/activities`
+      );
+
+      if (Array.isArray(responseData)) {
+        return responseData;
+      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
+        return responseData.data;
+      }
+
+      return [] as Activity[];
+    },
+    enabled: !!accountUid,
+  });
+};

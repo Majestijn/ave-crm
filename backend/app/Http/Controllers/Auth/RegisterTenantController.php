@@ -28,21 +28,11 @@ class RegisterTenantController extends Controller
         $baseSlug = $data['slug'] ?? Str::slug($data['company']);
         $slug = $this->uniqueTenantSlug($baseSlug);
 
-        // Determine domain based on deployment mode
-        $singleTenantMode = config('app.single_tenant_mode', false);
-        $requestHost = $request->getHost();
-        
-        if ($singleTenantMode || str_ends_with($requestHost, '.on-forge.com')) {
-            // Single-tenant mode: use the current domain
-            $domain = $data['domain'] ?? $requestHost;
-            Log::info('Single-tenant mode: using current domain ' . $domain);
-        } else {
-            // Multi-tenant mode: create subdomain
-            $suffix = config('app.tenant_domain_suffix', 'localhost');
-            $suffix = ltrim($suffix, '.');
-            $domain = $data['domain'] ?? ($slug . '.' . $suffix);
-            Log::info('Multi-tenant mode: creating subdomain ' . $domain);
-        }
+        // Generate tenant subdomain: {slug}.{base_domain}
+        $suffix = config('app.tenant_domain_suffix', 'localhost');
+        $suffix = ltrim($suffix, '.');
+        $domain = $data['domain'] ?? ($slug . '.' . $suffix);
+        Log::info('Creating tenant subdomain: ' . $domain);
 
         Log::info('Creating tenant with slug: ' . $slug);
 

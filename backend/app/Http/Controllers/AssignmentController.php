@@ -153,11 +153,11 @@ class AssignmentController extends Controller
             'status' => 'sometimes|string|in:active,proposed,hired,completed,cancelled',
             'salary_min' => 'nullable|integer|min:0',
             'salary_max' => 'nullable|integer|min:0',
-            'has_bonus' => 'nullable|boolean',
-            'has_car' => 'nullable|boolean',
             'vacation_days' => 'nullable|integer|min:0|max:100',
             'location' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:255',
+            'benefits' => 'nullable|array',
+            'benefits.*' => 'string|max:100',
             'notes_image' => 'nullable|file|image|max:5120', // max 5MB
         ]);
 

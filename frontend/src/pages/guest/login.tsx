@@ -23,7 +23,7 @@ import type { User } from "../../types/users";
 
 const LoginSchema = z.object({
   email: z.string().email(),
-  password: z.string(),
+  password: z.string().optional(),
 });
 
 type LoginForm = z.infer<typeof LoginSchema>;
@@ -34,54 +34,8 @@ export default function LoginPage() {
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
   const [findingTenant, setFindingTenant] = useState(false);
 
-  // Check if we're on a tenant domain (e.g., tenant1.localhost) vs base domain (localhost)
-  // For single-tenant deployments (Forge), always return true to show full login form
-  const isTenantDomain = () => {
-    // Single-tenant mode: always show full login form (with password)
-    const singleTenant = import.meta.env.VITE_SINGLE_TENANT === 'true';
-    if (singleTenant) {
-      return true;
-    }
-    
-    // Forge domains are single-tenant: show full login form
-    const hostname = window.location.hostname;
-    if (hostname.endsWith(".on-forge.com")) {
-      return true;
-    }
-    
-    // Check for explicit base domain from environment - if set, compare against it
-    const envBaseDomain = import.meta.env.VITE_BASE_DOMAIN;
-    if (envBaseDomain) {
-      // If current hostname equals base domain, we're NOT on a tenant domain
-      return hostname !== envBaseDomain;
-    }
-    
-    const parts = hostname.split(".");
-    
-    // Single part = base domain (e.g., "localhost")
-    if (parts.length === 1) {
-      return false;
-    }
-    
-    // Two parts where second is "localhost" = tenant domain (e.g., "tenant1.localhost")
-    if (parts.length === 2 && parts[1] === "localhost") {
-      return true;
-    }
-    
-    // More than 2 parts = tenant subdomain (e.g., "tenant1.ave-crm.com")
-    if (parts.length > 2) {
-      return true;
-    }
-    
-    // Two parts where second is NOT "localhost" = could be base domain (e.g., "ave-crm.com")
-    // But we'll treat it as potentially a tenant domain to be safe
-    // In production, you'd want to check against a known base domain list
-    return false;
-  };
-
-  // Get base domain for registration redirect
-  const getBaseDomain = () => {
-    // Check for explicit base domain from environment
+  // Get the base domain from environment or derive from hostname
+  const getBaseDomain = (): string => {
     const envBaseDomain = import.meta.env.VITE_BASE_DOMAIN;
     if (envBaseDomain) {
       return envBaseDomain;
@@ -90,29 +44,60 @@ export default function LoginPage() {
     const hostname = window.location.hostname;
     const parts = hostname.split(".");
     
-    // If it's just "localhost", return as is
+    // localhost → localhost
     if (parts.length === 1) {
       return hostname;
     }
     
-    // If second part is "localhost", base is "localhost"
+    // tenant1.localhost → localhost
     if (parts.length === 2 && parts[1] === "localhost") {
       return "localhost";
     }
     
-    // For tenant subdomains like "tenant1.ave-crm.com", remove first part
-    // But NOT for domains like "xxx.on-forge.com" (Forge domains)
-    if (parts.length > 2 && !parts[1].includes("on-forge")) {
-      return parts.slice(1).join(".");
+    // tenant1.ave-crm.nl → ave-crm.nl
+    if (parts.length >= 2) {
+      return parts.slice(-2).join(".");
     }
     
-    // For 2-part domains like "tenant1.ave-crm.com", return second part
-    if (parts.length === 2) {
-      return parts[1];
-    }
-    
-    // Fallback: use current hostname (single-tenant deployment)
     return hostname;
+  };
+
+  // Check if we're on a tenant subdomain vs the base domain
+  // Base domain: ave-crm.nl, localhost
+  // Tenant domain: tenant1.ave-crm.nl, tenant1.localhost
+  const isTenantDomain = (): boolean => {
+    const hostname = window.location.hostname;
+    const baseDomain = getBaseDomain();
+    
+    // If hostname equals base domain, we're on the base domain (not a tenant)
+    if (hostname === baseDomain) {
+      return false;
+    }
+    
+    // If hostname ends with base domain, we're on a tenant subdomain
+    if (hostname.endsWith(`.${baseDomain}`)) {
+      return true;
+    }
+    
+    // Fallback: check hostname structure
+    const parts = hostname.split(".");
+    
+    // Single part = base domain
+    if (parts.length === 1) {
+      return false;
+    }
+    
+    // tenant1.localhost = tenant domain
+    if (parts.length === 2 && parts[1] === "localhost") {
+      return true;
+    }
+    
+    // 3+ parts like tenant1.ave-crm.nl = tenant domain
+    if (parts.length > 2) {
+      return true;
+    }
+    
+    return false;
   };
 
   const {
@@ -213,6 +198,15 @@ export default function LoginPage() {
     // If on base domain, find tenant first
     if (!isTenantDomain()) {
       await handleEmailBlur(data.email);
+      return;
+    }
+
+    // On tenant domain, password is required
+    if (!data.password) {
+      setError("password", {
+        type: "required",
+        message: "Wachtwoord is verplicht",
+      });
       return;
     }
 

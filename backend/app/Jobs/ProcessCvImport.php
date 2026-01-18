@@ -139,24 +139,13 @@ class ProcessCvImport implements ShouldQueue
             Storage::disk('r2')->put($storagePath, $fileContent, 'private');
 
             // Create ContactDocument record
-            $document = ContactDocument::create([
+            ContactDocument::create([
                 'contact_id' => $contact->id,
                 'type' => 'cv',
                 'original_filename' => $this->originalFilename,
                 'storage_path' => $storagePath,
                 'mime_type' => $mimeType,
                 'file_size' => $fileSize,
-            ]);
-
-            // Update contact with cv_url pointing to the document download endpoint
-            $cvUrl = "/api/v1/contact-documents/{$document->id}/download";
-            $contact->cv_url = $cvUrl;
-            $contact->save();
-
-            Log::info('ProcessCvImport: Updated cv_url', [
-                'contact_id' => $contact->id,
-                'document_id' => $document->id,
-                'cv_url' => $cvUrl,
             ]);
 
             // Record success

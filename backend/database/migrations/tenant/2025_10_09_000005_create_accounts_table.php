@@ -18,6 +18,8 @@ return new class extends Migration {
             $table->string('logo_url')->nullable();
             $table->string('location')->nullable();
             $table->string('website')->nullable();
+            $table->string('industry')->nullable(); // Branche
+            $table->integer('fte_count')->nullable(); // Aantal FTE
             $table->bigInteger('revenue_cents')->nullable();
             $table->text('notes')->nullable();
 

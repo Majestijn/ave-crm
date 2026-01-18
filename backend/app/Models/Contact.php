@@ -33,7 +33,6 @@ class Contact extends Model
         'current_salary_cents',
         'education',
         'linkedin_url',
-        'cv_url',
         'notes',
     ];
 
@@ -46,7 +45,7 @@ class Contact extends Model
         'longitude' => 'float',
     ];
 
-    protected $appends = ['name'];
+    protected $appends = ['name', 'cv_url'];
 
     public function getNameAttribute(): string
     {
@@ -56,6 +55,20 @@ class Contact extends Model
         }
         $parts[] = $this->last_name;
         return trim(implode(' ', $parts));
+    }
+
+    /**
+     * Get the CV URL from the most recent CV document
+     */
+    public function getCvUrlAttribute(): ?string
+    {
+        $cvDocument = $this->documents()->where('type', 'cv')->latest()->first();
+        
+        if (!$cvDocument) {
+            return null;
+        }
+
+        return "/contact-documents/{$cvDocument->id}/download";
     }
 
     public function getRouteKeyName(): string

@@ -57,11 +57,49 @@ class AccountActivityController extends Controller
     }
 
     /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, AccountActivity $accountActivity)
+    {
+        $validated = $request->validate([
+            'type' => 'sometimes|required|string',
+            'description' => 'sometimes|required|string',
+            'date' => 'sometimes|required|date',
+            'contact_uid' => 'nullable|exists:contacts,uid',
+        ]);
+
+        $data = [];
+
+        if (isset($validated['type'])) {
+            $data['type'] = $validated['type'];
+        }
+        if (isset($validated['description'])) {
+            $data['description'] = $validated['description'];
+        }
+        if (isset($validated['date'])) {
+            $data['date'] = $validated['date'];
+        }
+
+        // Resolve contact_uid to contact_id if provided
+        if (array_key_exists('contact_uid', $validated)) {
+            if (!empty($validated['contact_uid'])) {
+                $contact = \App\Models\Contact::where('uid', $validated['contact_uid'])->first();
+                $data['contact_id'] = $contact ? $contact->id : null;
+            } else {
+                $data['contact_id'] = null;
+            }
+        }
+
+        $accountActivity->update($data);
+
+        return response()->json($accountActivity->load(['contact', 'assignment']));
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(AccountActivity $accountActivity)
     {
-        // Authorization check needed? Assuming tenant scope handles visibility.
         $accountActivity->delete();
 
         return response()->noContent();

@@ -3,6 +3,8 @@ export const queryKeys = {
   accounts: {
     all: ["accounts"] as const,
     detail: (uid: string) => ["accounts", uid] as const,
+    activities: (accountUid: string) =>
+      ["accounts", accountUid, "activities"] as const,
   },
   assignments: {
     all: ["assignments"] as const,
@@ -18,6 +20,7 @@ export const queryKeys = {
     all: ["contacts"] as const,
     candidates: ["contacts", "candidates"] as const,
     detail: (uid: string) => ["contacts", uid] as const,
+    documents: (uid: string) => ["contacts", uid, "documents"] as const,
   },
   users: {
     all: ["users"] as const,

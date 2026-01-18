@@ -58,9 +58,6 @@ return [
     'feed_url' => env('APP_FEED_URL', env('APP_URL', 'http://localhost')),
 
     'tenant_domain_suffix' => env('TENANT_DOMAIN_SUFFIX', 'localhost'),
-    
-    // Single-tenant mode: all users share the same domain (no subdomains)
-    'single_tenant_mode' => env('SINGLE_TENANT_MODE', false),
 
     'asset_url' => env('ASSET_URL'),
 

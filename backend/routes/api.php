@@ -77,6 +77,8 @@ Route::prefix('/v1')->group(function () {
 
         Route::get('/accounts/{account}/activities', [AccountActivityController::class, 'index']);
         Route::post('/accounts/{account}/activities', [AccountActivityController::class, 'store']);
+        Route::put('/activities/{accountActivity}', [AccountActivityController::class, 'update']);
+        Route::patch('/activities/{accountActivity}', [AccountActivityController::class, 'update']);
         Route::delete('/activities/{accountActivity}', [AccountActivityController::class, 'destroy']);
 
         // Account contacts (contactpersonen per klant)
@@ -91,6 +93,8 @@ Route::prefix('/v1')->group(function () {
         // Assignment activities (per opdracht)
         Route::get('/assignments/{assignment}/activities', [AssignmentActivityController::class, 'index']);
         Route::post('/assignments/{assignment}/activities', [AssignmentActivityController::class, 'store']);
+        Route::put('/assignment-activities/{activity}', [AssignmentActivityController::class, 'update']);
+        Route::patch('/assignment-activities/{activity}', [AssignmentActivityController::class, 'update']);
         Route::delete('/assignment-activities/{activity}', [AssignmentActivityController::class, 'destroy']);
 
         // Assignment candidates (kandidaten per opdracht)

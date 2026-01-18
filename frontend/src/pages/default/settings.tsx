@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Visibility from "@mui/icons-material/Visibility";
 import { useDisclosure } from "../../hooks/useDisclosure";
@@ -376,6 +377,7 @@ const ExistingUsersList = ({
               user={{ uid: u.uid, name: u.name, email: u.email, role: u.role }}
               currentUser={currentUser}
               onDelete={refresh}
+              onUpdate={refresh}
             />
           ))}
         </Stack>
@@ -384,17 +386,90 @@ const ExistingUsersList = ({
   );
 };
 
+const EditUserSchema = z.object({
+  name: z.string().min(1, "Naam is verplicht"),
+  email: z.string().email("Ongeldig e-mailadres"),
+  role: z.enum(["admin", "recruiter", "viewer"]),
+  password: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.length >= 8,
+      "Minimaal 8 tekens"
+    )
+    .refine(
+      (val) => !val || /\d/.test(val),
+      "Minstens 1 cijfer"
+    )
+    .refine(
+      (val) => !val || /[^A-Za-z0-9]/.test(val),
+      "Minstens 1 speciaal teken"
+    ),
+});
+
+type EditUserForm = z.infer<typeof EditUserSchema>;
+
 const UserRow = ({ 
   user, 
   currentUser, 
-  onDelete 
+  onDelete,
+  onUpdate,
 }: { 
   user: { uid?: string; name?: string; email: string; role?: string };
   currentUser: User | null;
   onDelete: () => Promise<void>;
+  onUpdate: () => Promise<void>;
 }) => {
   const deleteDialog = useDisclosure();
+  const editDialog = useDisclosure();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    control,
+    watch,
+    setError,
+  } = useForm<EditUserForm>({
+    resolver: zodResolver(EditUserSchema),
+    mode: "onBlur",
+    defaultValues: {
+      name: user.name || "",
+      email: user.email,
+      role: (user.role as "admin" | "recruiter" | "viewer") || "recruiter",
+      password: "",
+    },
+  });
+
+  const password = watch("password") ?? "";
+  const passwordChecklist = {
+    hasMinLength: password.length >= 8,
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[^A-Za-z0-9]/.test(password),
+  };
+
+  // Check if user can be edited
+  const canEdit = useMemo(() => {
+    if (!currentUser) return false;
+    
+    // Can't edit yourself (use profile settings for that)
+    const isSelf = (user.uid && currentUser.uid && user.uid === currentUser.uid) || 
+                   user.email === currentUser.email;
+    if (isSelf) return false;
+    
+    // Admins cannot edit owners
+    if (currentUser.role === 'admin' && user.role === 'owner') {
+      return false;
+    }
+    
+    // Only owners and admins can edit users
+    return currentUser.role === 'owner' || currentUser.role === 'admin';
+  }, [user, currentUser]);
 
   // Check if user can be deleted
   const canDelete = useMemo(() => {
@@ -414,6 +489,67 @@ const UserRow = ({
     return currentUser.role === 'owner' || currentUser.role === 'admin';
   }, [user, currentUser]);
 
+  const handleOpenEdit = () => {
+    reset({
+      name: user.name || "",
+      email: user.email,
+      role: (user.role as "admin" | "recruiter" | "viewer") || "recruiter",
+      password: "",
+    });
+    setEditError(null);
+    setShowPassword(false);
+    editDialog.open();
+  };
+
+  const handleCloseEdit = () => {
+    editDialog.close();
+    setEditError(null);
+    setShowPassword(false);
+  };
+
+  const handleUpdate = async (data: EditUserForm) => {
+    if (!user.uid) return;
+    
+    setIsUpdating(true);
+    setEditError(null);
+    
+    try {
+      const updateData: Record<string, string> = {
+        name: data.name,
+        email: data.email,
+        role: data.role,
+      };
+      
+      // Only include password if it was changed
+      if (data.password && data.password.length > 0) {
+        updateData.password = data.password;
+      }
+      
+      await API.put(`/users/${user.uid}`, updateData);
+      handleCloseEdit();
+      await onUpdate();
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      if (err?.response?.data?.message) {
+        setEditError(err.response.data.message);
+      } else if (err?.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        Object.keys(errors).forEach((key) => {
+          if (key in data) {
+            setError(key as keyof EditUserForm, {
+              type: "server",
+              message: Array.isArray(errors[key]) ? errors[key][0] : errors[key],
+            });
+          }
+        });
+      } else {
+        setEditError("Er is iets misgegaan. Probeer het opnieuw.");
+      }
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!user.uid) return;
     
@@ -424,7 +560,6 @@ const UserRow = ({
       await onDelete();
     } catch (err: any) {
       console.error('Error deleting user:', err);
-      // You might want to show an error message here
     } finally {
       setIsDeleting(false);
     }
@@ -446,6 +581,16 @@ const UserRow = ({
         <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
           {user.role ?? "recruiter"}
         </Typography>
+        {canEdit && (
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<EditIcon />}
+            onClick={handleOpenEdit}
+          >
+            Bewerken
+          </Button>
+        )}
         {canDelete && (
           <Button
             size="small"
@@ -460,6 +605,113 @@ const UserRow = ({
         )}
       </Box>
 
+      {/* Edit Dialog */}
+      <Dialog 
+        open={editDialog.isOpen} 
+        onClose={handleCloseEdit}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Gebruiker bewerken</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Naam"
+              required
+              error={!!errors.name}
+              {...register("name")}
+              helperText={errors.name?.message ?? " "}
+            />
+            <TextField
+              label="E-mailadres"
+              type="email"
+              required
+              error={!!errors.email}
+              {...register("email")}
+              helperText={errors.email?.message ?? " "}
+            />
+            <Controller
+              name="role"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  select
+                  label="Rol"
+                  fullWidth
+                  {...field}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message ?? " "}
+                >
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="recruiter">Recruiter</MenuItem>
+                  <MenuItem value="viewer">Viewer</MenuItem>
+                </TextField>
+              )}
+            />
+            <TextField
+              label="Nieuw wachtwoord (optioneel)"
+              type={showPassword ? "text" : "password"}
+              error={!!errors.password}
+              helperText={errors.password?.message ?? "Laat leeg om wachtwoord niet te wijzigen"}
+              {...register("password")}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      aria-label="Toon/Verberg wachtwoord"
+                      onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {password.length > 0 && (
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 0.5,
+                  color: "text.secondary",
+                  fontSize: 13,
+                  pl: 1.75,
+                }}
+              >
+                <ChecklistRow ok={passwordChecklist.hasMinLength}>
+                  Minimaal 8 tekens
+                </ChecklistRow>
+                <ChecklistRow ok={passwordChecklist.hasNumber}>
+                  Minstens 1 cijfer
+                </ChecklistRow>
+                <ChecklistRow ok={passwordChecklist.hasSpecial}>
+                  Minstens 1 speciaal teken
+                </ChecklistRow>
+              </Box>
+            )}
+            {editError && (
+              <Alert severity="error" onClose={() => setEditError(null)}>
+                {editError}
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEdit} disabled={isUpdating}>
+            Annuleren
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSubmit(handleUpdate)}
+            disabled={isUpdating}
+          >
+            {isUpdating ? "Bezig..." : "Opslaan"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Dialog */}
       <Dialog open={deleteDialog.isOpen} onClose={deleteDialog.close}>
         <DialogTitle>Gebruiker verwijderen</DialogTitle>
         <DialogContent>

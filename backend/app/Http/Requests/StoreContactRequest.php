@@ -37,7 +37,6 @@ class StoreContactRequest extends FormRequest
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
             'education' => ['nullable', 'in:MBO,HBO,UNI'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
-            'cv_url' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ];
     }
