@@ -50,9 +50,36 @@ class CvParsingService
         $phpWord = WordIOFactory::load($filePath);
         $text = '';
 
+        // First, try to extract headers from raw XML (more reliable)
+        $headerText = $this->extractHeadersFromXml($filePath);
+        if (!empty($headerText)) {
+            $text .= $headerText . "\n";
+        }
+
         foreach ($phpWord->getSections() as $section) {
+            // Extract headers first (often contain name/contact info)
+            foreach (['first', 'even', 'default'] as $headerType) {
+                $header = $section->getHeader($headerType);
+                if ($header) {
+                    foreach ($header->getElements() as $element) {
+                        $text .= $this->extractTextFromElement($element) . "\n";
+                    }
+                }
+            }
+
+            // Extract main body content
             foreach ($section->getElements() as $element) {
                 $text .= $this->extractTextFromElement($element) . "\n";
+            }
+
+            // Extract footers (might contain contact info)
+            foreach (['first', 'even', 'default'] as $footerType) {
+                $footer = $section->getFooter($footerType);
+                if ($footer) {
+                    foreach ($footer->getElements() as $element) {
+                        $text .= $this->extractTextFromElement($element) . "\n";
+                    }
+                }
             }
         }
 
@@ -65,6 +92,30 @@ class CvParsingService
     }
 
     /**
+     * Extract headers from Word document XML
+     */
+    protected function extractHeadersFromXml(string $filePath): string
+    {
+        $text = '';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($filePath) === true) {
+            for ($i = 1; $i <= 3; $i++) {
+                $headerContent = $zip->getFromName("word/header{$i}.xml");
+                if ($headerContent) {
+                    $headerText = strip_tags($headerContent);
+                    $headerText = html_entity_decode($headerText, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                    $headerText = preg_replace('/\s+/', ' ', $headerText);
+                    $text .= trim($headerText) . "\n";
+                }
+            }
+            $zip->close();
+        }
+
+        return trim($text);
+    }
+
+    /**
      * Fallback extraction by reading raw XML from docx
      */
     protected function extractFromWordFallback(string $filePath): string
@@ -73,15 +124,39 @@ class CvParsingService
 
         $zip = new \ZipArchive();
         if ($zip->open($filePath) === true) {
+            // Read headers first (often contain name)
+            for ($i = 1; $i <= 3; $i++) {
+                $headerContent = $zip->getFromName("word/header{$i}.xml");
+                if ($headerContent) {
+                    $headerText = strip_tags($headerContent);
+                    $headerText = html_entity_decode($headerText, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                    $headerText = preg_replace('/\s+/', ' ', $headerText);
+                    $text .= trim($headerText) . "\n";
+                }
+            }
+
             // Read the main document content
             $content = $zip->getFromName('word/document.xml');
             if ($content) {
                 // Remove XML tags and decode entities
-                $text = strip_tags($content);
-                $text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                $docText = strip_tags($content);
+                $docText = html_entity_decode($docText, ENT_QUOTES | ENT_XML1, 'UTF-8');
                 // Clean up whitespace
-                $text = preg_replace('/\s+/', ' ', $text);
+                $docText = preg_replace('/\s+/', ' ', $docText);
+                $text .= $docText;
             }
+
+            // Read footers (might contain contact info)
+            for ($i = 1; $i <= 3; $i++) {
+                $footerContent = $zip->getFromName("word/footer{$i}.xml");
+                if ($footerContent) {
+                    $footerText = strip_tags($footerContent);
+                    $footerText = html_entity_decode($footerText, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                    $footerText = preg_replace('/\s+/', ' ', $footerText);
+                    $text .= "\n" . trim($footerText);
+                }
+            }
+
             $zip->close();
         }
 
@@ -158,6 +233,23 @@ class CvParsingService
             ];
         }
 
+        // Log incoming text length for debugging
+        Log::info('Gemini parsing started', [
+            'text_length' => strlen($text),
+            'first_100_chars' => substr($text, 0, 100),
+        ]);
+
+        // Limit text to 50,000 characters to prevent timeout issues
+        // This is more than enough for CV parsing (normal CV = 3,000-5,000 chars)
+        $maxChars = 50000;
+        if (strlen($text) > $maxChars) {
+            Log::warning('CV text truncated', [
+                'original_length' => strlen($text),
+                'truncated_to' => $maxChars,
+            ]);
+            $text = substr($text, 0, $maxChars);
+        }
+
         $prompt = <<<PROMPT
 Je bent een CV-parser. Analyseer de volgende CV-tekst en extraheer de kandidaatgegevens.
 
@@ -187,7 +279,7 @@ JSON RESPONSE:
 PROMPT;
 
         try {
-            $response = Http::timeout(30)->post(
+            $response = Http::timeout(120)->post(
                 "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}",
                 [
                     'contents' => [
@@ -253,6 +345,11 @@ PROMPT;
                     'error' => 'Empty response from Gemini',
                 ];
             }
+
+            // Log the raw Gemini response content
+            Log::info('Gemini raw response content', [
+                'content' => substr($content, 0, 500),
+            ]);
 
             // Clean up the response (remove markdown code blocks if present)
             $content = preg_replace('/^```json\s*/', '', $content);
