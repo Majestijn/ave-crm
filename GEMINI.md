@@ -15,7 +15,15 @@ The project is structured as a modern web application with:
 
 Key entities in the application appear to be `Accounts`, `Candidates`, `Assignments`, and `Users`.
 
-## 2. Building and Running
+## 2. Huidige Status
+*Laatst bijgewerkt: 02-02-2026*
+
+Het project bevindt zich in een gevorderde validatiefase waarbij de technische architectuur grotendeels staat en de focus verschuift naar business-implementatie en schaalbaarheid.
+- **Techniek:** Core functionaliteit (Multi-tenancy, AI parsing, Cloudflare R2 opslag) is technisch gevalideerd.
+- **Business:** Pricing strategie en verdienmodel zijn vastgesteld op basis van marktonderzoek en kostenanalyse.
+- **Volgende Stappen:** Implementatie van betalingsmodules (Stripe?), inrichten van productie-omgeving en onboarding-flow voor bureaus.
+
+## 3. Building and Running
 
 The project uses a combination of Docker for the backend and local Node.js for the frontend.
 
@@ -79,7 +87,7 @@ The frontend is developed on the host machine. You must be in the `frontend` dir
   npm run lint
   ```
 
-## 3. Development Conventions
+## 4. Development Conventions
 
 ### Backend (Laravel)
 
@@ -89,7 +97,12 @@ The frontend is developed on the host machine. You must be in the `frontend` dir
 - **Routing:** API routes are defined in `routes/api.php`.
 - **Database:** Database migrations manage the schema. Models use ULIDs (`uid`) as the public-facing identifier for routes (`getRouteKeyName()`).
 
-## 4. Recente Besluiten & Architectuur
+## 5. Recente Besluiten & Architectuur
+
+### Business & Pricing (02-02-2026)
+- **Model:** 'Challenger' pricing vastgesteld op **€29 per gebruiker/maand** om agressief marktaandeel te pakken t.o.v. Bullhorn/Salesforce.
+- **Upsell:** Bulk AI-parsing wordt een betaalde add-on (€20 voor 500 CV's). Marge hierop is >60% (kosten <€8).
+- **Schaalbaarheid:** Bij 5% marktaandeel (575 bureaus) wordt een nettowinst van ~€48k/maand geprojecteerd. Hostingkosten zijn verwaarloosbaar t.o.v. de user-omzet.
 
 ### E-mail & Agenda Migratie
 - **Besluit:** Migratie van Vimexx naar Microsoft 365 voor professionele agenda-synchronisatie met het CRM.
@@ -108,7 +121,7 @@ The frontend is developed on the host machine. You must be in the `frontend` dir
 - **Onderbouwing:** Focus op 'Functional Suitability' en 'Maintainability' conform **ISO/IEC 25010**. TanStack biedt de meest complete feature-set (mutations, devtools, optimistic updates) out-of-the-box.
 - **Citaties:** Het onderzoeksrapport maakt gebruik van IEEE-verwijzingen en het DOT-framework voor onderbouwing (Juiste Kennis Ontwikkelen).
 
-## 5. Belangrijke Bestanden
+## 6. Belangrijke Bestanden
 - `IMPLEMENTATIEPLAN_CV_GEMINI.md`: Plan voor de AI bulk import.
 - `M365_MIGRATION_PLAN.md`: Stappenplan voor de mail-verhuizing.
 - `DataFetching_State_Management_Plan.md`: Onderzoek en verantwoording frontend architectuur.
@@ -121,3 +134,10 @@ The frontend is developed on the host machine. You must be in the `frontend` dir
 - **State Management & Data Fetching:** Data is fetched from the backend API using custom hooks (e.g., `useAccounts`). These hooks encapsulate logic for making API calls with `axios`, and managing loading, data, and error states.
 - **Routing:** Client-side routing is managed by `react-router-dom`. Routes are defined in `src/router.tsx`.
 - **Code Style:** ESLint is configured to enforce code style. Run `npm run lint` to check.
+
+## 7. Historie
+
+### 02-02-2026: Pricing & Business Case Analyse
+- **Activiteit:** Onderzoek gedaan naar prijsstelling van concurrenten (Salesforce, HubSpot, Bullhorn) en analyse van interne kosten voor hosting en AI.
+- **Besluit:** Pricing model vastgesteld op €29/user/maand + betaalde add-ons voor bulk AI.
+- **Inzicht:** Winstgevendheid is extreem hoog bij schaalvergroting (break-even bij 2 users). Bij 1150 aangesloten bureaus (10% markt) is de potentiële winst ~€100k/maand.

@@ -64,6 +64,15 @@ export default function AddActivityDialog({
       case "rejected":
         template = `${contactName} afgewezen`;
         break;
+      case "personality_test":
+        template = `Persoonlijkheidstest afgenomen met ${contactName}`;
+        break;
+      case "test":
+        template = `Test afgenomen met ${contactName}`;
+        break;
+      case "interview_training":
+        template = `Sollicitatie training met ${contactName}`;
+        break;
       default:
         template = "";
     }
@@ -116,6 +125,9 @@ export default function AddActivityDialog({
               <MenuItem value="interview">Gesprek</MenuItem>
               <MenuItem value="hired">Aangenomen</MenuItem>
               <MenuItem value="rejected">Afgewezen</MenuItem>
+              <MenuItem value="personality_test">Persoonlijkheidstest afgenomen</MenuItem>
+              <MenuItem value="test">Test afgenomen</MenuItem>
+              <MenuItem value="interview_training">Sollicitatie training</MenuItem>
             </Select>
           </FormControl>
 

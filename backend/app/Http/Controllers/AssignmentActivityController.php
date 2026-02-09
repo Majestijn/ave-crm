@@ -73,6 +73,13 @@ class AssignmentActivityController extends Controller
         }
 
         $activity = AccountActivity::create($data);
+        
+        // If activity type is "hired", automatically update assignment status to "shadow_management"
+        if ($validated['type'] === 'hired') {
+            $assignment->status = 'shadow_management';
+            $assignment->save();
+        }
+        
         $activity->load(['contact:id,uid,first_name,last_name', 'user:id,name']);
 
         return response()->json([
@@ -127,6 +134,16 @@ class AssignmentActivityController extends Controller
         }
 
         $activity->update($data);
+        
+        // If activity type is updated to "hired", automatically update assignment status to "shadow_management"
+        if (isset($validated['type']) && $validated['type'] === 'hired') {
+            $assignment = $activity->assignment;
+            if ($assignment) {
+                $assignment->status = 'shadow_management';
+                $assignment->save();
+            }
+        }
+        
         $activity->load(['contact:id,uid,first_name,last_name', 'user:id,name']);
 
         return response()->json([

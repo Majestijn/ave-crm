@@ -36,7 +36,7 @@ class UpdateUserRequest extends FormRequest
                 // In database-per-tenant, email uniqueness is already scoped to the tenant database
                 Rule::unique('users','email')->ignore($user->id),
             ],
-            'role' => ['sometimes','in:admin,recruiter,viewer'],
+            'role' => ['sometimes','in:admin,recruiter,viewer,owner,management'],
             'password' => ['nullable','string','min:8','regex:/\d/','regex:/[^A-Za-z0-9]/'],
         ];
     }

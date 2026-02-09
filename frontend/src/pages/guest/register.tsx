@@ -6,8 +6,12 @@ import {
   TextField,
   Button,
   Link,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
-import React from "react";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import Visibility from "@mui/icons-material/Visibility";
+import React, { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { Box } from "@mui/material";
 import { z } from "zod";
@@ -51,6 +55,8 @@ type RegisterResponse = {
 
 export default function Register() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const companyRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -195,13 +201,27 @@ export default function Register() {
                     passwordRef.current = e;
                   }}
                   label="Wachtwoord"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   fullWidth
                   required
                   error={!!errors.password}
                   helperText={errors.password?.message ?? " "}
                   InputLabelProps={{ shrink: !!password }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          aria-label="Toon/Verberg wachtwoord"
+                          onClick={() => setShowPassword(!showPassword)}
+                          onMouseDown={(e) => e.preventDefault()}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               )}
             />
@@ -228,13 +248,27 @@ export default function Register() {
                     confirmPasswordRef.current = e;
                   }}
                   label="Wachtwoord herhalen"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   fullWidth
                   required
                   error={!!errors.confirmPassword}
                   helperText={errors.confirmPassword?.message ?? " "}
                   InputLabelProps={{ shrink: !!confirmPassword }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          aria-label="Toon/Verberg wachtwoord"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onMouseDown={(e) => e.preventDefault()}
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               )}
             />

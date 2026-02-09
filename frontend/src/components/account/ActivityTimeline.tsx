@@ -26,6 +26,9 @@ import {
   Cancel as CancelIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Psychology as PsychologyIcon,
+  Quiz as QuizIcon,
+  School as SchoolIcon,
 } from "@mui/icons-material";
 import type { Activity, ActivityType } from "../../api/queries/activities";
 import { formatContactName, formatDateNL, normalizeDate } from "../../utils/formatters";
@@ -64,6 +67,12 @@ const getActivityIcon = (type: string) => {
       return <CheckCircleIcon {...iconProps} />;
     case "rejected":
       return <CancelIcon {...iconProps} />;
+    case "personality_test":
+      return <PsychologyIcon {...iconProps} />;
+    case "test":
+      return <QuizIcon {...iconProps} />;
+    case "interview_training":
+      return <SchoolIcon {...iconProps} />;
     default:
       return <PhoneIcon {...iconProps} />;
   }
@@ -324,6 +333,9 @@ export default function ActivityTimeline({
                 <MenuItem value="interview">Gesprek</MenuItem>
                 <MenuItem value="hired">Aangenomen</MenuItem>
                 <MenuItem value="rejected">Afgewezen</MenuItem>
+                <MenuItem value="personality_test">Persoonlijkheidstest afgenomen</MenuItem>
+                <MenuItem value="test">Test afgenomen</MenuItem>
+                <MenuItem value="interview_training">Sollicitatie training</MenuItem>
               </Select>
             </FormControl>
 

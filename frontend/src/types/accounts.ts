@@ -36,6 +36,8 @@ export type Account = {
   revenue_cents?: number;
   notes?: string;
   assignments_count?: number;
+  active_assignments_count?: number;
+  has_active_assignments?: boolean;
   contacts?: AccountContact[];
   assignments?: Assignment[];
   created_at?: string;

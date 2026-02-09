@@ -282,6 +282,27 @@ export default function AccountDetailPage() {
                     color={activityTypeFilter === "rejected" ? "primary" : "default"}
                     onClick={() => setActivityTypeFilter("rejected")}
                   />
+                  <Chip
+                    label="Persoonlijkheidstest"
+                    size="small"
+                    variant={activityTypeFilter === "personality_test" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "personality_test" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("personality_test")}
+                  />
+                  <Chip
+                    label="Test"
+                    size="small"
+                    variant={activityTypeFilter === "test" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "test" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("test")}
+                  />
+                  <Chip
+                    label="Sollicitatie training"
+                    size="small"
+                    variant={activityTypeFilter === "interview_training" ? "filled" : "outlined"}
+                    color={activityTypeFilter === "interview_training" ? "primary" : "default"}
+                    onClick={() => setActivityTypeFilter("interview_training")}
+                  />
                 </Stack>
               </Paper>
               <ActivityTimeline

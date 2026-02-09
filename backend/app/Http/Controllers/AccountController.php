@@ -22,6 +22,27 @@ class AccountController extends Controller
             ->withCount('assignments')
             ->orderBy('name')
             ->get()
+            ->map(function ($account) {
+                $accountArray = $account->toArray();
+                
+                // Check if account has any assignments
+                $totalAssignments = $account->assignments_count ?? 0;
+                
+                if ($totalAssignments === 0) {
+                    // No assignments means non-active
+                    $accountArray['has_active_assignments'] = false;
+                } else {
+                    // Check if all assignments are completed or cancelled
+                    $nonActiveCount = \App\Models\Assignment::where('account_id', $account->id)
+                        ->whereIn('status', ['completed', 'cancelled'])
+                        ->count();
+                    
+                    // Account is active if not all assignments are completed/cancelled
+                    $accountArray['has_active_assignments'] = $nonActiveCount < $totalAssignments;
+                }
+                
+                return $accountArray;
+            })
             ->toArray();
 
         return response()->json($accounts);

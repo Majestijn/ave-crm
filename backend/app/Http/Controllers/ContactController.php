@@ -228,8 +228,8 @@ class ContactController extends Controller
     {
         $auth = $request->user();
 
-        // Authorization: owners, admins, and recruiters can bulk import
-        if (!in_array($auth->role, ['owner', 'admin', 'recruiter'])) {
+        // Authorization: owners, admins, management, and recruiters can bulk import
+        if (!in_array($auth->role, ['owner', 'admin', 'management', 'recruiter'])) {
             abort(403, 'Je hebt geen toestemming om bulk import uit te voeren');
         }
 
@@ -318,8 +318,8 @@ class ContactController extends Controller
     {
         $auth = $request->user();
 
-        // Authorization: owners, admins, and recruiters can view import status
-        if (!in_array($auth->role, ['owner', 'admin', 'recruiter'])) {
+        // Authorization: owners, admins, management, and recruiters can view import status
+        if (!in_array($auth->role, ['owner', 'admin', 'management', 'recruiter'])) {
             abort(403, 'Je hebt geen toestemming om import status te bekijken');
         }
 

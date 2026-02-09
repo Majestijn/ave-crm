@@ -38,7 +38,7 @@ class AccountPolicy
     public function create(User $auth): bool
     {
         // Owners, admins, and recruiters can create accounts
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**
@@ -47,7 +47,7 @@ class AccountPolicy
     public function update(User $auth, Account $model): bool
     {
         // In database-per-tenant, if both exist in the same database, they're in the same tenant
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**
@@ -57,7 +57,7 @@ class AccountPolicy
     {
         // In database-per-tenant, if both exist in the same database, they're in the same tenant
         // Owners, admins, and recruiters can delete accounts
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**

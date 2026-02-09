@@ -65,7 +65,7 @@ const NewUserSchema = z.object({
     .min(8, "Minimaal 8 tekens")
     .regex(/\d/, "Minstens 1 cijfer")
     .regex(/[^A-Za-z0-9]/, "Minstens 1 speciaal teken"),
-  role: z.enum(["admin", "recruiter", "viewer"]),
+  role: z.enum(["admin", "recruiter", "viewer", "owner", "management"]),
 });
 
 type NewUserForm = z.infer<typeof NewUserSchema>;
@@ -193,7 +193,7 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
         Gebruikers
       </Typography>
 
-      {(currentUser?.role === 'owner' || currentUser?.role === 'admin') && (
+      {(currentUser?.role === 'owner' || currentUser?.role === 'admin' || currentUser?.role === 'management') && (
         <Box sx={{ mb: 2 }}>
           <Button
             variant="contained"
@@ -289,6 +289,8 @@ const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
                   <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="recruiter">Recruiter</MenuItem>
                   <MenuItem value="viewer">Viewer</MenuItem>
+                  <MenuItem value="owner">Owner</MenuItem>
+                  <MenuItem value="management">Management</MenuItem>
                 </TextField>
               )}
             />
@@ -389,7 +391,7 @@ const ExistingUsersList = ({
 const EditUserSchema = z.object({
   name: z.string().min(1, "Naam is verplicht"),
   email: z.string().email("Ongeldig e-mailadres"),
-  role: z.enum(["admin", "recruiter", "viewer"]),
+  role: z.enum(["admin", "recruiter", "viewer", "owner", "management"]),
   password: z
     .string()
     .optional()
@@ -441,7 +443,7 @@ const UserRow = ({
     defaultValues: {
       name: user.name || "",
       email: user.email,
-      role: (user.role as "admin" | "recruiter" | "viewer") || "recruiter",
+      role: (user.role as "admin" | "recruiter" | "viewer" | "owner" | "management") || "recruiter",
       password: "",
     },
   });
@@ -462,13 +464,13 @@ const UserRow = ({
                    user.email === currentUser.email;
     if (isSelf) return false;
     
-    // Admins cannot edit owners
-    if (currentUser.role === 'admin' && user.role === 'owner') {
+    // Admins and management cannot edit owners
+    if ((currentUser.role === 'admin' || currentUser.role === 'management') && user.role === 'owner') {
       return false;
     }
     
-    // Only owners and admins can edit users
-    return currentUser.role === 'owner' || currentUser.role === 'admin';
+    // Only owners, admins, and management can edit users
+    return currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'management';
   }, [user, currentUser]);
 
   // Check if user can be deleted
@@ -480,20 +482,20 @@ const UserRow = ({
                    user.email === currentUser.email;
     if (isSelf) return false;
     
-    // Admins cannot delete owners
-    if (currentUser.role === 'admin' && user.role === 'owner') {
+    // Admins and management cannot delete owners
+    if ((currentUser.role === 'admin' || currentUser.role === 'management') && user.role === 'owner') {
       return false;
     }
     
-    // Only owners and admins can delete users
-    return currentUser.role === 'owner' || currentUser.role === 'admin';
+    // Only owners, admins, and management can delete users
+    return currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'management';
   }, [user, currentUser]);
 
   const handleOpenEdit = () => {
     reset({
       name: user.name || "",
       email: user.email,
-      role: (user.role as "admin" | "recruiter" | "viewer") || "recruiter",
+      role: (user.role as "admin" | "recruiter" | "viewer" | "owner" | "management") || "recruiter",
       password: "",
     });
     setEditError(null);
@@ -645,6 +647,8 @@ const UserRow = ({
                   <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="recruiter">Recruiter</MenuItem>
                   <MenuItem value="viewer">Viewer</MenuItem>
+                  <MenuItem value="owner">Owner</MenuItem>
+                  <MenuItem value="management">Management</MenuItem>
                 </TextField>
               )}
             />

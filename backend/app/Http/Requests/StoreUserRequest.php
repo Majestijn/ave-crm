@@ -41,7 +41,7 @@ class StoreUserRequest extends FormRequest
                     }
                 },
             ],
-            'role' => ['required', 'in:admin,recruiter,viewer'],
+            'role' => ['required', 'in:admin,recruiter,viewer,owner,management'],
             'password' => ['nullable', 'string', 'min:8', 'regex:/\d/', 'regex:/[^A-Za-z0-9]/'],
         ];
     }

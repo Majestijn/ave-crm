@@ -7,7 +7,10 @@ export type ActivityType =
   | "proposal"
   | "interview"
   | "hired"
-  | "rejected";
+  | "rejected"
+  | "personality_test"
+  | "test"
+  | "interview_training";
 
 export type Activity = {
   id: number;

@@ -323,7 +323,7 @@ export default function AccountsPage() {
               <Box
                 sx={{
                   width: 4,
-                  bgcolor: "green",
+                  bgcolor: account.has_active_assignments ? "green" : "grey.400",
                   flexShrink: 0,
                 }}
               />

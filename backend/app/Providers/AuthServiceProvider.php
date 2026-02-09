@@ -27,9 +27,9 @@ class AuthServiceProvider extends ServiceProvider
             Log::info('Gate: manage-users', [
                 'user_id' => $user->id,
                 'role' => $user->role,
-                'result' => in_array($user->role, ['owner', 'admin']),
+                'result' => in_array($user->role, ['owner', 'admin', 'management']),
             ]);
-            return in_array($user->role, ['owner', 'admin']);
+            return in_array($user->role, ['owner', 'admin', 'management']);
         });
     }
 }

@@ -54,95 +54,100 @@ def create_presentation():
     title = slide.shapes.title
     subtitle = slide.placeholders[1]
     title.text = "Eindpresentatie Stage AVE CRM"
-    subtitle.text = "Professionalisering van Recruitment Software\n\nStijn van der Neut\n15 Januari 2026"
+    subtitle.text = "Van Legacy naar SaaS: Professionalisering van Recruitment Software\n\nStijn van der Neut\n19 Januari 2026"
 
     # Slide 2: Agenda
     add_slide("Agenda", [
-        "Project Context: AVE CRM",
-        "Mijn Rol & HBO-i Beroepstaken",
-        "Technische Diepgang (Onderzoek & Realisatie)",
-        "Persoonlijke Ontwikkeling (Reflectie)",
-        "Toekomstvisie (Strategisch Plan)",
-        "Vragen"
+        "Situatieschets & Aanleiding",
+        "Opdracht, Scope & Tijdsframe",
+        "Probleemstelling",
+        "Onderzoek (Build vs Buy)",
+        "De Oplossing (Tech Stack)",
+        "Diepgang: Multi-Tenancy",
+        "Diepgang: AI Bulk Import",
+        "Persoonlijke Ontwikkeling",
+        "Toekomstvisie"
     ])
 
-    # Slide 3: Project Context: AVE CRM
-    add_slide("Project Context: AVE CRM", [
-        ("Doel:", "Ontwikkeling van een modern SaaS-platform voor recruitment.", "Vervanging van verouderde legacy processen."),
-        ("Tech Stack:", "Frontend: React 19 + TypeScript (Vite, Material-UI)", "Backend: Laravel 12 (PHP 8.3)", "Database: PostgreSQL (Multi-tenant)"),
-        ("Infrastructuur:", "Docker, Cloudflare R2 (Storage), Google Cloud (AI)")
+    # Slide 3: Situatieschets & Aanleiding
+    add_slide("Situatieschets & Aanleiding", [
+        ("Organisatie:", "AVE Consultancy: Headhuntingbureau met groeiambitie."),
+        ("Oude Situatie:", "Versnipperde data in Dropbox mappen.", "Klantgegevens in losse Excel sheets.", "Communicatie in individuele mailboxen."),
+        ("Het Gevolg:", "Geen centraal inzicht.", "Tijdrovende zoektochten naar informatie.")
     ])
 
-    # Slide 4: HBO-i Beroepstaken Overview
-    add_slide("HBO-i Beroepstaken", [
-        ("Software Analyseren:", "Requirements analyse, Multi-tenancy strategieën (GDPR)."),
-        ("Software Adviseren:", "Architectuur keuzes (TanStack Query, R2 Storage)."),
-        ("Software Ontwerpen:", "Database-per-Tenant architectuur, Hybride ID strategie."),
-        ("Software Realiseren:", "Full-stack development, AI integraties, Outlook migratie."),
-        ("Manage & Control:", "Scrum werkwijze, CI/CD, Code reviews.")
+    # Slide 4: Opdracht, Scope & Tijdsframe
+    add_slide("Opdracht, Scope & Tijdsframe", [
+        ("De Opdracht:", "Ontwikkel een toekomstbestendige fundering.", "Doel: SaaS-platform (Software as a Service)."),
+        ("Tijdsframe:", "20 weken (September - Januari)."),
+        ("Scope (MVP):", "Focus op Relatiebeheer (CRM).", "Kandidaten, Klanten en Opdrachten.", "Out-of-scope: Facturatie & Mobile App.")
     ])
 
-    # Slide 5: Technisch Hoogstandje 1: Multi-Tenancy
-    add_slide("Techniek: Multi-Tenancy Architectuur", [
-        ("Probleem:", "Strikte data-isolatie vereist voor GDPR (kandidaten/medische data)."),
-        ("Oplossing: Database per Tenant", "Fysiek gescheiden databases per klant.", "Veiligheid 'by design' (geen vergeten WHERE-clauses)."),
-        ("Implementatie:", "Spatie Laravel Multitenancy package.", "Custom 'SwitchTenantCacheTask' voor Redis isolatie."),
-        ("Security:", "Hybride ID Strategie: Auto-increment intern (snelheid), ULID extern (veiligheid).")
+    # Slide 5: Probleemstelling
+    add_slide("Probleemstelling", [
+        ("1. Inefficiëntie:", "Handmatige verwerking kost dagen."),
+        ("2. Risico (GDPR/AVG):", "Excel-lijsten mailen is onveilig.", "Persoonsgegevens verspreid over laptops."),
+        ("3. Gebrek aan Inzicht:", "Geen relaties in data.", "Niet kunnen sturen op cijfers.")
     ])
 
-    # Slide 6: Technisch Hoogstandje 2: AI-Driven Recruitment
-    add_slide("Techniek: AI-Driven Recruitment", [
-        ("Feature: CV Import & Parsing", "Smart Import: Real-time via Google Gemini 3 Pro.", "Bulk Import: Batch processing via Vertex AI (3500+ CVs)."),
-        ("Pipeline:", "Frontend (Chunking) -> Queue -> AI -> R2 Storage."),
-        ("Waarde:", "Van handmatige invoer naar secondenwerk.", "Automatische extractie van skills, opleiding en ervaring.")
+    # Slide 6: Onderzoek (Build vs Buy)
+    add_slide("Onderzoek: Build vs Buy", [
+        ("Optie A: Enterprise (Bullhorn/Salesforce)", "Extreem duur & complex voor start-up.", "Lange implementatietijd."),
+        ("Optie B: HR Software (Recruitee)", "Gericht op HR-afdelingen, niet op bureaus.", "Mist 'makelaarsfunctie' (Kandidaat <-> Klant)."),
+        ("Conclusie (Gap-analyse):", "Maatwerk is noodzakelijk.", "Eigendom van data & proces is cruciaal.")
     ])
 
-    # Slide 7: Architectuur Upgrade: Data Fetching
-    add_slide("Professionalisering: Data Fetching", [
-        ("Oude Situatie:", "Custom hooks, geen caching, veel boilerplate code."),
-        ("Onderzoek (DSR):", "Vergelijking TanStack Query vs SWR vs RTK Query."),
-        ("Resultaat: TanStack Query", "50% minder code in hooks.", "Automatische caching, background refetching, optimistic updates.", "Verbeterde User Experience (snellere navigatie).")
+    # Slide 7: De Oplossing (Tech Stack)
+    add_slide("De Oplossing: Tech Stack", [
+        ("Backend:", "Laravel 12 (PHP) - Wereldwijde standaard, veilig & stabiel."),
+        ("Frontend:", "React 19 - Snel, modern, 'app-gevoel'."),
+        ("Storage:", "Cloudflare R2 - Veilige, goedkope opslag voor CV's.")
     ])
 
-    # Slide 8: Infrastructuur & Deployment
-    add_slide("Infrastructuur & Deployment", [
-        ("Cloudflare R2:", "Migratie naar Object Storage voor CV's en afbeeldingen.", "Schaalbaar en kosten-efficiënt."),
-        ("Microsoft 365 Migratie:", "Professionalisering e-mail en agenda.", "Integratie met CRM (Outlook kalender sync)."),
-        ("Deployment Strategie:", "Laravel Forge + DigitalOcean.", "Automated deployments, SSL, Queues, Backups.")
+    # Slide 8: Diepgang 1: Multi-Tenancy
+    add_slide("Diepgang: Multi-Tenancy (Veiligheid)", [
+        ("Vraag:", "Hoe scheiden we data van verschillende klanten?"),
+        ("Strategie: Database-per-Tenant", "Fysiek gescheiden databases per klant.", "100% Data-isolatie."),
+        ("Werking:", "Domein (klant.avecrm.nl) bepaalt de database.", "Veiligheid 'by design' (fouten in code lekken geen data).")
     ])
 
-    # Slide 9: Persoonlijke Ontwikkeling
-    add_slide("Persoonlijke Ontwikkeling (Reflectie)", [
-        ("Kernontwikkeling:", "Transformatie van 'Afwachtend' naar 'Proactief'."),
-        ("Het leerproces:", "Start: 'Ik moet het alleen oplossen' (onzekerheid).", "Inzicht: Hulp vragen is professioneel eigenaarschap."),
-        ("Acties:", "Wekelijkse meetings geïnitieerd.", "Zelf de agenda en planning bepalen.")
+    # Slide 9: Diepgang 2: AI Bulk Import
+    add_slide("Diepgang: AI Bulk Import", [
+        ("Uitdaging:", "3500+ Oude CV's digitaliseren."),
+        ("Oplossing:", "Google Gemini 3 Pro Pipeline."),
+        ("Proces:", "1. Upload PDF -> 2. AI Leest & Begrijpt -> 3. Opslaan in Database."),
+        ("Resultaat:", "Van 15 min/CV naar secondenwerk.", "Direct doorzoekbare database.")
     ])
 
-    # Slide 10: Omgaan met Tegenslag (Sprint 5)
-    add_slide("Veerkracht & Herstel", [
-        ("Situatie:", "Terugval door persoonlijke omstandigheden ('Oestergedrag')."),
-        ("Leermoment:", "Niet harder werken, maar eerder communiceren.", "Transparantie over 'mindere dagen' bouwt juist vertrouwen."),
-        ("Resultaat:", "Regie herpakt, Outlook koppeling succesvol afgerond.", "Bewijs van veerkracht (niveau 2/3).")
+    # Slide 10: Persoonlijke Ontwikkeling (Veerkracht)
+    add_slide("Reflectie: Veerkracht & Eerlijkheid", [
+        ("De Tegenslag:", "Sprint 4: Dataverlies door crash & geen backups.", "Eerste reactie: Paniek & terugtrekken ('Oestergedrag')."),
+        ("Het Herstel:", "Eerlijk opgebiecht aan begeleider.", "Direct Automated Backup script gebouwd."),
+        ("De Les:", "Fouten maken mag, verzwijgen niet.", "Transparantie bouwt vertrouwen.")
     ])
 
-    # Slide 11: Strategische Toekomstvisie
-    add_slide("Strategisch Langetermijnplan", [
-        ("Fase 1: MVP & Fundering (Nu)", "Technische realisatie & Multi-tenancy architectuur."),
-        ("Fase 2: Interne Validatie", "'Eat your own dog food' - optimalisatie door eigen gebruik."),
-        ("Fase 3: SaaS Commercialisering", "White-label verkoop aan andere bureaus (1.5 - 2 jaar)."),
-        ("Expansie:", "Opzetten interne ICT-recruitment tak gefaciliteerd door het CRM.")
+    # Slide 11: Persoonlijke Ontwikkeling (Professionaliteit)
+    add_slide("Reflectie: Van Student naar Professional", [
+        ("Start:", "Afwachtend: 'Wat moet ik doen?'"),
+        ("Nu:", "Proactief: 'Hier is het plan voor de migratie'.", "Zelfstandig meetings & planning beheerd."),
+        ("Rol:", "Strategisch Partner (Adviseur & Bouwer).")
     ])
 
-    # Slide 12: Conclusie
+    # Slide 12: Toekomstvisie
+    add_slide("Toekomstvisie & Roadmap", [
+        ("Nu:", "Livegang MVP & Interne 'Dogfooding'."),
+        ("Binnenkort:", "Outlook Agenda Integratie (Microsoft Graph)."),
+        ("Lange termijn:", "Commercialisering naar andere bureaus (SaaS).")
+    ])
+
+    # Slide 13: Conclusie
     add_slide("Conclusie", [
-        "Product:", "Een modern, veilig en schaalbaar SaaS CRM.",
-        "Proces:", "Methodisch gewerkt (DSR, Scrum, Code Reviews).",
-        "Persoonlijk:", "Gegroeid van Junior Developer naar Strategisch Partner.",
+        "Resultaat:", "Van analoge chaos naar digitaal fundament.", "Veilig, schaalbaar & slim (AI).", "Bewezen groei als professional.",
         "",
-        "Zijn er nog vragen?"
+        "Bedankt voor uw aandacht. Zijn er nog vragen?"
     ])
 
-    output_file = "Eindpresentatie_Stage_AVE_CRM.pptx"
+    output_file = "Eindpresentatie_Stage_AVE_CRM_v3.pptx"
     prs.save(output_file)
     print(f"Successfully generated '{output_file}'")
 

@@ -21,7 +21,7 @@ class ContactPolicy
      */
     public function viewAny(User $auth): bool
     {
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**
@@ -29,7 +29,7 @@ class ContactPolicy
      */
     public function view(User $auth, Contact $model): bool
     {
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**
@@ -37,7 +37,7 @@ class ContactPolicy
      */
     public function create(User $auth): bool
     {
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**
@@ -45,7 +45,7 @@ class ContactPolicy
      */
     public function update(User $auth, Contact $model): bool
     {
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**
@@ -53,7 +53,7 @@ class ContactPolicy
      */
     public function delete(User $auth, Contact $model): bool
     {
-        return in_array($auth->role, ['owner', 'admin', 'recruiter']);
+        return in_array($auth->role, ['owner', 'admin', 'management', 'recruiter']);
     }
 
     /**
@@ -61,7 +61,7 @@ class ContactPolicy
      */
     public function restore(User $auth, Contact $model): bool
     {
-        return in_array($auth->role, ['owner', 'admin']);
+        return in_array($auth->role, ['owner', 'admin', 'management']);
     }
 
     /**
@@ -69,6 +69,6 @@ class ContactPolicy
      */
     public function forceDelete(User $auth, Contact $model): bool
     {
-        return in_array($auth->role, ['owner', 'admin']);
+        return in_array($auth->role, ['owner', 'admin', 'management']);
     }
 }

@@ -18,6 +18,9 @@ export const activityColors: Record<string, string> = {
   interview: "#ed6c02", // Orange
   hired: "#2e7d32", // Green
   rejected: "#d32f2f", // Red
+  personality_test: "#9c27b0", // Purple
+  test: "#00acc1", // Cyan
+  interview_training: "#f57c00", // Deep orange
 };
 
 export const getActivityColor = (type: string): string => {

@@ -22,8 +22,8 @@ class BatchCvImportController extends Controller
     {
         $auth = $request->user();
 
-        // Authorization: only owners and admins can batch import
-        if (!in_array($auth->role, ['owner', 'admin'])) {
+        // Authorization: only owners, admins, and management can batch import
+        if (!in_array($auth->role, ['owner', 'admin', 'management'])) {
             abort(403, 'Je hebt geen toestemming voor bulk import');
         }
 
@@ -87,7 +87,7 @@ class BatchCvImportController extends Controller
         $auth = $request->user();
 
         // Authorization
-        if (!in_array($auth->role, ['owner', 'admin', 'recruiter'])) {
+        if (!in_array($auth->role, ['owner', 'admin', 'management', 'recruiter'])) {
             abort(403, 'Je hebt geen toestemming om import status te bekijken');
         }
 
@@ -129,7 +129,7 @@ class BatchCvImportController extends Controller
     {
         $auth = $request->user();
 
-        if (!in_array($auth->role, ['owner', 'admin', 'recruiter'])) {
+        if (!in_array($auth->role, ['owner', 'admin', 'management', 'recruiter'])) {
             abort(403, 'Je hebt geen toestemming om imports te bekijken');
         }
 

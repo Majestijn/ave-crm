@@ -382,6 +382,7 @@ const statusOptions = [
   { value: "active", label: "Actief" },
   { value: "proposed", label: "Voorgesteld" },
   { value: "hired", label: "Aangenomen" },
+  { value: "shadow_management", label: "Shadow Management" },
   { value: "completed", label: "Voltooid" },
   { value: "cancelled", label: "Geannuleerd" },
 ];

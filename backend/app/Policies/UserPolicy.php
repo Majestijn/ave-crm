@@ -40,8 +40,8 @@ class UserPolicy
      */
     public function create(User $auth): bool
     {
-        // Only owners and admins can create users
-        return in_array($auth->role, ['owner', 'admin']);
+        // Only owners, admins, and management can create users
+        return in_array($auth->role, ['owner', 'admin', 'management']);
     }
 
     /**
@@ -50,8 +50,8 @@ class UserPolicy
     public function update(User $auth, User $model): bool
     {
         // In database-per-tenant, if both users exist, they're in the same tenant
-        // Users can update themselves, admins/owners can update others
-        return $auth->id === $model->id || in_array($auth->role, ['owner', 'admin']);
+        // Users can update themselves, admins/management/owners can update others
+        return $auth->id === $model->id || in_array($auth->role, ['owner', 'admin', 'management']);
     }
 
     /**
@@ -64,14 +64,14 @@ class UserPolicy
             return false;
         }
         
-        // Admins cannot delete owners
-        if ($auth->role === 'admin' && $model->role === 'owner') {
+        // Admins and management cannot delete owners
+        if (in_array($auth->role, ['admin', 'management']) && $model->role === 'owner') {
             return false;
         }
         
-        // Only owners and admins can delete users
+        // Only owners, admins, and management can delete users
         // In database-per-tenant, if both users exist, they're in the same tenant
-        return in_array($auth->role, ['owner', 'admin']);
+        return in_array($auth->role, ['owner', 'admin', 'management']);
     }
 
     /**
