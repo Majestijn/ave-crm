@@ -2,20 +2,32 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
+use Google\Cloud\AIPlatform\V1\Client\PredictionServiceClient;
+use Google\Cloud\AIPlatform\V1\GenerateContentRequest;
+use Google\Cloud\AIPlatform\V1\Part;
+use Google\Cloud\AIPlatform\V1\Content;
+use Google\Cloud\AIPlatform\V1\GenerationConfig;
 use Illuminate\Support\Facades\Log;
 use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory as WordIOFactory;
 
 class CvParsingService
 {
-    protected string $apiKey;
-    protected string $model;
+    protected string $projectId;
+    protected string $location;
+    protected string $modelId;
 
     public function __construct()
     {
-        $this->apiKey = config('services.gemini.api_key');
-        $this->model = config('services.gemini.model', 'gemini-2.5-flash');
+        $projectId = config('services.google_cloud.project_id');
+        if (empty($projectId)) {
+            throw new \RuntimeException(
+                'GOOGLE_CLOUD_PROJECT is not set. Add it to your Forge Environment variables and run: php artisan config:clear && php artisan config:cache'
+            );
+        }
+        $this->projectId = (string) $projectId;
+        $this->location = (string) (config('services.google_cloud.location') ?? 'europe-west4');
+        $this->modelId = (string) (config('services.google_cloud.model') ?? 'gemini-2.0-flash-001');
     }
 
     /**
@@ -33,10 +45,33 @@ class CvParsingService
     }
 
     /**
-     * Extract text from PDF
+     * Extract text from PDF using pdftotext (poppler-utils) for better handling
+     * of complex layouts, link boxes, and overlapping elements.
+     * Falls back to Smalot\PdfParser if pdftotext is not available.
      */
     protected function extractFromPdf(string $filePath): string
     {
+        // Try pdftotext first (much better with complex PDFs)
+        $pdftotextPath = trim(shell_exec('which pdftotext 2>/dev/null') ?? '');
+
+        if (!empty($pdftotextPath)) {
+            $escapedPath = escapeshellarg($filePath);
+            $output = shell_exec("pdftotext -layout {$escapedPath} - 2>/dev/null");
+
+            if (!empty(trim($output ?? ''))) {
+                Log::info('PDF text extracted via pdftotext', [
+                    'file' => basename($filePath),
+                    'text_length' => strlen($output),
+                ]);
+                return $output;
+            }
+
+            Log::warning('pdftotext returned empty output, falling back to PdfParser', [
+                'file' => basename($filePath),
+            ]);
+        }
+
+        // Fallback to Smalot PdfParser
         $parser = new PdfParser();
         $pdf = $parser->parseFile($filePath);
         return $pdf->getText();
@@ -206,7 +241,7 @@ class CvParsingService
     }
 
     /**
-     * Parse CV text using Gemini AI
+     * Parse CV text using Vertex AI (Online Prediction)
      * 
      * @return array{
      *   success: bool,
@@ -224,29 +259,25 @@ class CvParsingService
      *   error?: string
      * }
      */
-    public function parseWithGemini(string $text): array
+    public function parseWithVertex(string $text): array
     {
-        if (empty($this->apiKey)) {
+        if (empty($this->projectId)) {
             return [
                 'success' => false,
-                'error' => 'Gemini API key not configured',
+                'error' => 'Google Cloud Project ID not configured',
             ];
         }
 
         // Log incoming text length for debugging
-        Log::info('Gemini parsing started', [
+        Log::info('Vertex AI parsing started', [
             'text_length' => strlen($text),
             'first_100_chars' => substr($text, 0, 100),
+            'model' => $this->modelId,
         ]);
 
-        // Limit text to 50,000 characters to prevent timeout issues
-        // This is more than enough for CV parsing (normal CV = 3,000-5,000 chars)
-        $maxChars = 50000;
+        // Limit text to 30,000 characters (token limit safety)
+        $maxChars = 30000;
         if (strlen($text) > $maxChars) {
-            Log::warning('CV text truncated', [
-                'original_length' => strlen($text),
-                'truncated_to' => $maxChars,
-            ]);
             $text = substr($text, 0, $maxChars);
         }
 
@@ -267,113 +298,66 @@ Geef het resultaat terug als JSON met ALLEEN deze velden:
 - skills: relevante vaardigheden, gescheiden door komma's (optioneel)
 
 BELANGRIJK:
-- Retourneer ALLEEN geldige JSON, geen andere tekst
-- Als je een veld niet kunt vinden, laat het dan weg uit de JSON
-- first_name en last_name zijn VERPLICHT - als je deze niet kunt vinden, retourneer dan: {"error": "Naam niet gevonden"}
-- Zorg dat Nederlandse namen correct worden geparsed (bijv. "Jan van der Berg" = first_name: "Jan", prefix: "van der", last_name: "Berg")
+- Retourneer ALLEEN geldige JSON, geen andere tekst.
+- Als je een veld niet kunt vinden, laat het dan weg uit de JSON.
+- first_name en last_name zijn VERPLICHT.
+- Zorg dat Nederlandse namen correct worden geparsed.
 
 CV TEKST:
 {$text}
-
-JSON RESPONSE:
 PROMPT;
 
         try {
-            $response = Http::timeout(120)->post(
-                "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}",
-                [
-                    'contents' => [
-                        [
-                            'parts' => [
-                                ['text' => $prompt]
-                            ]
-                        ]
-                    ],
-                    'generationConfig' => [
-                        'temperature' => 0.1,
-                        'maxOutputTokens' => 8192,
-                    ]
-                ]
-            );
+            // Initialize Client
+            $client = new PredictionServiceClient([
+                'apiEndpoint' => "{$this->location}-aiplatform.googleapis.com",
+            ]);
 
-            if (!$response->successful()) {
-                Log::error('Gemini API error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
+            // Prepare Content
+            $part = (new Part())->setText($prompt);
+            $content = (new Content())
+                ->setRole('user')
+                ->setParts([$part]);
 
-                // Throw exception for rate limiting so the job can retry
-                if ($response->status() === 429) {
-                    throw new \RuntimeException('Gemini API rate limit exceeded (429). Will retry.');
+            // Configuration
+            $generationConfig = (new GenerationConfig())
+                ->setTemperature(0.1)
+                ->setMaxOutputTokens(8192);
+
+            // Construct Resource Name
+            $endpoint = "projects/{$this->projectId}/locations/{$this->location}/publishers/google/models/{$this->modelId}";
+
+            // Execute Request
+            $request = (new GenerateContentRequest())
+                ->setModel($endpoint)
+                ->setContents([$content])
+                ->setGenerationConfig($generationConfig);
+
+            $response = $client->generateContent($request);
+
+            // Process Response
+            $responseText = '';
+            foreach ($response->getCandidates() as $candidate) {
+                // Vertex AI sometimes streams, but here we just concat
+                foreach ($candidate->getContent()->getParts() as $part) {
+                    $responseText .= $part->getText();
                 }
-
-                return [
-                    'success' => false,
-                    'error' => 'Gemini API error: ' . $response->status(),
-                ];
             }
 
-            $result = $response->json();
+            // Clean up Markdown JSON blocks
+            $responseText = preg_replace('/^```json\s*/', '', $responseText);
+            $responseText = preg_replace('/\s*```$/', '', $responseText);
+            $responseText = trim($responseText);
 
-            // Log the full response for debugging
-            Log::info('Gemini API response', [
-                'has_candidates' => isset($result['candidates']),
-                'candidates_count' => count($result['candidates'] ?? []),
-                'prompt_feedback' => $result['promptFeedback'] ?? null,
-                'finish_reason' => $result['candidates'][0]['finishReason'] ?? null,
-            ]);
+            Log::info('Vertex AI raw response', ['response' => substr($responseText, 0, 500)]);
 
-            // Check for content filtering or safety blocks
-            if (isset($result['promptFeedback']['blockReason'])) {
-                Log::warning('Gemini blocked the request', [
-                    'block_reason' => $result['promptFeedback']['blockReason'],
-                ]);
-                return [
-                    'success' => false,
-                    'error' => 'Gemini content blocked: ' . $result['promptFeedback']['blockReason'],
-                ];
-            }
-
-            $content = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
-
-            if (!$content) {
-                Log::warning('Empty Gemini response', [
-                    'full_response' => json_encode($result),
-                ]);
-                return [
-                    'success' => false,
-                    'error' => 'Empty response from Gemini',
-                ];
-            }
-
-            // Log the raw Gemini response content
-            Log::info('Gemini raw response content', [
-                'content' => substr($content, 0, 500),
-            ]);
-
-            // Clean up the response (remove markdown code blocks if present)
-            $content = preg_replace('/^```json\s*/', '', $content);
-            $content = preg_replace('/\s*```$/', '', $content);
-            $content = trim($content);
-
-            $data = json_decode($content, true);
+            $data = json_decode($responseText, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error('Failed to parse Gemini response as JSON', [
-                    'content' => $content,
-                    'error' => json_last_error_msg(),
-                ]);
+                Log::error('Vertex AI JSON parse error', ['error' => json_last_error_msg(), 'content' => $responseText]);
                 return [
                     'success' => false,
-                    'error' => 'Invalid JSON response from Gemini',
-                ];
-            }
-
-            // Check for error response from AI
-            if (isset($data['error'])) {
-                return [
-                    'success' => false,
-                    'error' => $data['error'],
+                    'error' => 'Invalid JSON response from Vertex AI',
                 ];
             }
 
@@ -385,7 +369,7 @@ PROMPT;
                 ];
             }
 
-            // Map education to valid values
+            // Normalize fields
             if (isset($data['education'])) {
                 $data['education'] = $this->normalizeEducation($data['education']);
             }
@@ -394,13 +378,12 @@ PROMPT;
                 'success' => true,
                 'data' => $data,
             ];
+
         } catch (\Exception $e) {
-            Log::error('Gemini API exception', [
-                'message' => $e->getMessage(),
-            ]);
+            Log::error('Vertex AI Exception', ['message' => $e->getMessage()]);
             return [
                 'success' => false,
-                'error' => 'Exception: ' . $e->getMessage(),
+                'error' => 'Vertex AI Error: ' . $e->getMessage(),
             ];
         }
     }
@@ -461,7 +444,7 @@ PROMPT;
                 ];
             }
 
-            return $this->parseWithGemini($text);
+            return $this->parseWithVertex($text);
         } catch (\Exception $e) {
             Log::error('CV parsing failed', [
                 'file' => $filePath,
