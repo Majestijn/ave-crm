@@ -14,10 +14,18 @@ import {
   InputAdornment,
   CircularProgress,
   Alert,
+  MenuItem,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import type { Account } from "../../types/accounts";
 import { formatRevenueFullEuro } from "../../utils/formatters";
+
+// Helper function to format number with thousand separators (Dutch format)
+const formatNumberInput = (value: string): string => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return parseInt(digits, 10).toLocaleString("nl-NL");
+};
 import { useUpdateAccount, type UpdateAccountData } from "../../api/mutations/accounts";
 
 type Props = {
@@ -32,12 +40,13 @@ export default function CompanyDetailsCard({ account }: Props) {
     location: account.location || "",
     website: account.website || "",
     industry: account.industry || "",
+    category: account.category || "",
     fte_count: account.fte_count || null,
     revenue_cents: account.revenue_cents || null,
     notes: account.notes || "",
   });
   const [revenueInput, setRevenueInput] = useState(
-    account.revenue_cents ? (account.revenue_cents / 100).toString() : ""
+    account.revenue_cents ? Math.round(account.revenue_cents / 100).toLocaleString("nl-NL") : ""
   );
   const [fteInput, setFteInput] = useState(
     account.fte_count ? account.fte_count.toString() : ""
@@ -52,12 +61,13 @@ export default function CompanyDetailsCard({ account }: Props) {
       location: account.location || "",
       website: account.website || "",
       industry: account.industry || "",
+      category: account.category || "",
       fte_count: account.fte_count || null,
       revenue_cents: account.revenue_cents || null,
       notes: account.notes || "",
     });
     setRevenueInput(
-      account.revenue_cents ? (account.revenue_cents / 100).toString() : ""
+      account.revenue_cents ? Math.round(account.revenue_cents / 100).toLocaleString("nl-NL") : ""
     );
     setFteInput(account.fte_count ? account.fte_count.toString() : "");
     setEditOpen(true);
@@ -69,11 +79,12 @@ export default function CompanyDetailsCard({ account }: Props) {
   };
 
   const handleRevenueChange = (value: string) => {
-    setRevenueInput(value);
-    const parsed = parseFloat(value.replace(/[^\d.,]/g, "").replace(",", "."));
-    if (!isNaN(parsed)) {
-      setFormData((prev) => ({ ...prev, revenue_cents: Math.round(parsed * 100) }));
-    } else if (value === "") {
+    const formatted = formatNumberInput(value);
+    setRevenueInput(formatted);
+    const digits = value.replace(/\D/g, "");
+    if (digits) {
+      setFormData((prev) => ({ ...prev, revenue_cents: parseInt(digits, 10) * 100 }));
+    } else {
       setFormData((prev) => ({ ...prev, revenue_cents: null }));
     }
   };
@@ -97,6 +108,7 @@ export default function CompanyDetailsCard({ account }: Props) {
       location: formData.location || null,
       website: formData.website || null,
       industry: formData.industry || null,
+      category: formData.category || null,
       fte_count: formData.fte_count,
       revenue_cents: formData.revenue_cents,
       notes: formData.notes || null,
@@ -146,7 +158,7 @@ export default function CompanyDetailsCard({ account }: Props) {
                   href={account.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: "inherit", textDecoration: "none" }}
+                  style={{ color: "inherit", textDecoration: "underline" }}
                 >
                   {account.website.replace(/^https?:\/\//, "")}
                 </a>
@@ -158,6 +170,10 @@ export default function CompanyDetailsCard({ account }: Props) {
           <Box display="flex" justifyContent="space-between">
             <Typography color="text.secondary">Branche</Typography>
             <Typography fontWeight="bold">{account.industry || "-"}</Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between">
+            <Typography color="text.secondary">Categorie</Typography>
+            <Typography fontWeight="bold">{account.category || "-"}</Typography>
           </Box>
           <Box display="flex" justifyContent="space-between">
             <Typography color="text.secondary">Aantal FTE</Typography>
@@ -244,6 +260,19 @@ export default function CompanyDetailsCard({ account }: Props) {
                 fullWidth
                 placeholder="bijv. IT, Financiën, Logistiek"
               />
+
+              <TextField
+                select
+                label="Categorie"
+                value={formData.category || ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                fullWidth
+              >
+                <MenuItem value="">Geen categorie</MenuItem>
+                <MenuItem value="FMCG">FMCG</MenuItem>
+                <MenuItem value="Foodservice">Foodservice</MenuItem>
+                <MenuItem value="Overig">Overig</MenuItem>
+              </TextField>
 
               <TextField
                 label="Aantal FTE"

@@ -20,6 +20,7 @@ class Account extends Model
         'location',
         'website',
         'industry',
+        'category',
         'fte_count',
         'revenue_cents',
         'notes',

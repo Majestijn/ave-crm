@@ -9,7 +9,10 @@ import {
   TextField,
   Autocomplete,
   Typography,
+  Divider,
 } from "@mui/material";
+import { PersonAdd as PersonAddIcon } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import type { Contact } from "../../types/contacts";
 import { useAddContactToAccount } from "../../api/mutations/accounts";
 import { formatContactName, formatNetworkRoles } from "../../utils/formatters";
@@ -30,6 +33,7 @@ export default function AddContactDialog({
   contacts,
   existingContactUids,
 }: Props) {
+  const navigate = useNavigate();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +68,19 @@ export default function AddContactDialog({
     setSelectedContact(null);
     setError(null);
     onClose();
+  };
+
+  const handleCreateNew = () => {
+    handleClose();
+    navigate("/network", {
+      state: {
+        openAddContact: true,
+        prefill: {
+          is_company_contact: true,
+          account_uid: accountUid,
+        },
+      },
+    });
   };
 
   const getOptionLabel = (option: Contact): string => {
@@ -101,6 +118,15 @@ export default function AddContactDialog({
               {error}
             </Typography>
           )}
+          <Divider />
+          <Button
+            variant="outlined"
+            startIcon={<PersonAddIcon />}
+            onClick={handleCreateNew}
+            sx={{ textTransform: "none" }}
+          >
+            Nieuw contact aanmaken
+          </Button>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 3 }}>

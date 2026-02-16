@@ -7,6 +7,7 @@ RUN apk add --no-cache \
       oniguruma-dev \
       postgresql-dev \
       libzip-dev \
+      poppler-utils \
       $PHPIZE_DEPS \
   && docker-php-ext-install -j$(nproc) \
       intl mbstring pdo pdo_pgsql zip bcmath opcache

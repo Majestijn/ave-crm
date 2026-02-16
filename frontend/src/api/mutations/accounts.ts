@@ -13,6 +13,7 @@ export type UpdateAccountData = {
   location?: string | null;
   website?: string | null;
   industry?: string | null;
+  category?: string | null;
   fte_count?: number | null;
   revenue_cents?: number | null;
   notes?: string | null;

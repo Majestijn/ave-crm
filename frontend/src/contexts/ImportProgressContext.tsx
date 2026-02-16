@@ -79,18 +79,42 @@ const BATCH_POLL_INTERVAL = 5000;
 
 export function ImportProgressProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  
-  const [progress, setProgress] = useState<ImportProgress>({
-    batchId: null,
-    importType: null,
-    status: null,
-    isActive: false,
-    isMinimized: false,
+
+  const STORAGE_KEY = 'AVE_CRM_IMPORT_PROGRESS';
+
+  const [progress, setProgress] = useState<ImportProgress>(() => {
+    // Initialize from localStorage if available
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error("Failed to parse stored import progress", e);
+    }
+
+    return {
+      batchId: null,
+      importType: null,
+      status: null,
+      isActive: false,
+      isMinimized: false,
+    };
   });
 
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasRefetchedRef = useRef(false);
   const importTypeRef = useRef<ImportType | null>(null);
+  const hasResumedRef = useRef(false);
+
+  // Persist state changes
+  useEffect(() => {
+    if (progress.isActive) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [progress]);
 
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current) {
@@ -110,7 +134,9 @@ export function ImportProgressProvider({ children }: { children: React.ReactNode
 
       if (status.is_complete) {
         stopPolling();
-        
+        // Clear storage on completion, but keep state active so user sees result
+        localStorage.removeItem(STORAGE_KEY);
+
         if (!hasRefetchedRef.current && status.success_count > 0) {
           hasRefetchedRef.current = true;
           queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });
@@ -126,7 +152,7 @@ export function ImportProgressProvider({ children }: { children: React.ReactNode
   const pollBatchStatus = useCallback(async (batchId: string) => {
     try {
       const vertexStatus = await API.get<VertexBatchStatus>(`/cv-import/batch/${batchId}`);
-      
+
       // Convert to common BatchStatus format
       const status: BatchStatus = {
         batch_id: vertexStatus.batch_id,
@@ -148,7 +174,8 @@ export function ImportProgressProvider({ children }: { children: React.ReactNode
 
       if (status.is_complete) {
         stopPolling();
-        
+        localStorage.removeItem(STORAGE_KEY);
+
         if (!hasRefetchedRef.current && status.success_count > 0) {
           hasRefetchedRef.current = true;
           queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });
@@ -173,6 +200,18 @@ export function ImportProgressProvider({ children }: { children: React.ReactNode
     pollBatchStatus(batchId);
     pollIntervalRef.current = setInterval(() => pollBatchStatus(batchId), BATCH_POLL_INTERVAL);
   }, [pollBatchStatus, stopPolling]);
+
+  // Resume polling on mount if active
+  useEffect(() => {
+    if (!hasResumedRef.current && progress.isActive && progress.batchId) {
+      hasResumedRef.current = true;
+      if (progress.importType === 'smart') {
+        startSmartPolling(progress.batchId);
+      } else if (progress.importType === 'batch') {
+        startBatchPolling(progress.batchId);
+      }
+    }
+  }, [progress.isActive, progress.batchId, progress.importType, startSmartPolling, startBatchPolling]);
 
   // Start Smart Import (individual CVs)
   const startImport = useCallback((batchId: string, totalFiles: number) => {
@@ -225,6 +264,8 @@ export function ImportProgressProvider({ children }: { children: React.ReactNode
   }, [startBatchPolling]);
 
   const updateStatus = useCallback((status: BatchStatus) => {
+    // We don't manually set progress here often, usually polling does it
+    // But if we do, make sure we keep existing context
     setProgress((prev) => ({
       ...prev,
       status,
@@ -233,10 +274,12 @@ export function ImportProgressProvider({ children }: { children: React.ReactNode
 
   const completeImport = useCallback(() => {
     stopPolling();
+    localStorage.removeItem(STORAGE_KEY);
   }, [stopPolling]);
 
   const dismissProgress = useCallback(() => {
     stopPolling();
+    localStorage.removeItem(STORAGE_KEY);
     setProgress({
       batchId: null,
       importType: null,

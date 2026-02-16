@@ -19,6 +19,7 @@ const axiosInstance = axios.create({
   baseURL: getBaseUrl(),
   headers: {
     "Content-Type": "application/json",
+    "X-Tenant": window.location.hostname,
   },
 });
 

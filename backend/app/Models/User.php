@@ -109,4 +109,24 @@ class User extends Authenticatable
         }
         return $this->calendar_token;
     }
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $tenant = \Spatie\Multitenancy\Models\Tenant::current();
+        
+        if ($tenant && app()->environment('local')) {
+            $url = "http://{$tenant->domain}:5173/reset-password?token={$token}&email={$this->email}";
+        } elseif ($tenant) {
+             $url = "https://{$tenant->domain}/reset-password?token={$token}&email={$this->email}";
+        } else {
+            $url = config('app.frontend_url', 'http://localhost:5173') . "/reset-password?token={$token}&email={$this->email}";
+        }
+
+        $this->notify(new \App\Notifications\ResetPasswordNotification($url));
+    }
 }

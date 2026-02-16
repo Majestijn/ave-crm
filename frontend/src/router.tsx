@@ -14,12 +14,17 @@ import SettingsPage from "./pages/default/settings.tsx";
 import Network from "./pages/default/network";
 import NotFound from "./pages/not-found";
 
+import ForgotPassword from "./pages/guest/forgot-password";
+import ResetPassword from "./pages/guest/reset-password";
+
 const router = createBrowserRouter([
   {
     element: <GuestLayout />,
     children: [
       { path: "/", element: <LoginPage /> },
       { path: "/register", element: <Register /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/reset-password", element: <ResetPassword /> },
     ],
   },
   {

@@ -84,26 +84,16 @@ class ResetDemo extends Command
             return 1;
         }
 
-        // 3. Truncate tenants table
-        $this->info("Truncating tenants table...");
-        Tenant::truncate();
-        $this->info("✓ Tenants table cleared.");
-
-        // 4. Clear landlord jobs/failed_jobs tables
-        $this->info("Clearing landlord job tables...");
-        try {
-            DB::connection('landlord')->table('jobs')->truncate();
-            $this->info("✓ Jobs table cleared.");
-        } catch (\Exception $e) {
-            $this->info("  (jobs table doesn't exist or is empty)");
-        }
+        // 3. Refresh Landlord Database (Drops all tables and re-migrates the correct ones)
+        $this->info("Refreshing landlord database (migrate:fresh)...");
         
-        try {
-            DB::connection('landlord')->table('failed_jobs')->truncate();
-            $this->info("✓ Failed jobs table cleared.");
-        } catch (\Exception $e) {
-            $this->info("  (failed_jobs table doesn't exist or is empty)");
-        }
+        $this->call('migrate:fresh', [
+            '--database' => 'landlord',
+            '--path' => 'database/migrations/landlord',
+            '--force' => true,
+        ]);
+        
+        $this->info("✓ Landlord database refreshed and squeaky clean.");
 
         // 5. Clear R2 storage
         $this->info("Clearing R2 storage...");

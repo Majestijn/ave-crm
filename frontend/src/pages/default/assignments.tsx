@@ -391,13 +391,13 @@ const candidateStatusOptions: {
   value: CandidateAssignment["status"];
   label: string;
 }[] = [
-  { value: "called", label: "Gebeld" },
-  { value: "proposed", label: "Voorgesteld" },
-  { value: "first_interview", label: "1e gesprek" },
-  { value: "second_interview", label: "2e gesprek" },
-  { value: "hired", label: "Aangenomen" },
-  { value: "rejected", label: "Afgewezen" },
-];
+    { value: "called", label: "Gebeld" },
+    { value: "proposed", label: "Voorgesteld" },
+    { value: "first_interview", label: "1e gesprek" },
+    { value: "second_interview", label: "2e gesprek" },
+    { value: "hired", label: "Aangenomen" },
+    { value: "rejected", label: "Afgewezen" },
+  ];
 
 const getStatusColor = (
   status: string
@@ -1101,6 +1101,8 @@ export default function AssignmentsPage() {
                   direction="row"
                   justifyContent="space-between"
                   alignItems="center"
+                  onClick={() => toggleExpanded(assignment.id)}
+                  sx={{ cursor: "pointer" }}
                 >
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
@@ -1109,10 +1111,11 @@ export default function AssignmentsPage() {
                     <Link
                       component="button"
                       variant="body2"
-                      onClick={() =>
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
                         assignment.account?.uid &&
-                        navigate(`/accounts/${assignment.account.uid}`)
-                      }
+                          navigate(`/accounts/${assignment.account.uid}`);
+                      }}
                       sx={{
                         textDecoration: "underline",
                         color: "primary.main",
@@ -1140,21 +1143,24 @@ export default function AssignmentsPage() {
                       variant="contained"
                       color={getStatusColor(currentStatus)}
                       endIcon={<SwapVertIcon />}
-                      onClick={(e) => handleStatusMenuOpen(assignment.id, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusMenuOpen(assignment.id, e);
+                      }}
                       sx={{
                         bgcolor:
                           currentStatus === "proposed"
                             ? "#d32f2f"
                             : currentStatus === "hired"
-                            ? "#2e7d32"
-                            : undefined,
+                              ? "#2e7d32"
+                              : undefined,
                         "&:hover": {
                           bgcolor:
                             currentStatus === "proposed"
                               ? "#b71c1c"
                               : currentStatus === "hired"
-                              ? "#1b5e20"
-                              : undefined,
+                                ? "#1b5e20"
+                                : undefined,
                         },
                       }}
                     >
@@ -1177,21 +1183,7 @@ export default function AssignmentsPage() {
                         </MenuItem>
                       ))}
                     </Menu>
-                    <Box
-                      onClick={() => toggleExpanded(assignment.id)}
-                      sx={{
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        p: 0.5,
-                        borderRadius: 1,
-                        "&:hover": {
-                          bgcolor: "action.hover",
-                        },
-                      }}
-                    >
-                      {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                    </Box>
+                    {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                   </Stack>
                 </Stack>
 
@@ -1259,8 +1251,8 @@ export default function AssignmentsPage() {
                                 {assignment.salary_min && assignment.salary_max
                                   ? `€${assignment.salary_min.toLocaleString("nl-NL")} - €${assignment.salary_max.toLocaleString("nl-NL")}`
                                   : assignment.salary_min
-                                  ? `vanaf €${assignment.salary_min.toLocaleString("nl-NL")}`
-                                  : `tot €${(assignment.salary_max || 0).toLocaleString("nl-NL")}`}
+                                    ? `vanaf €${assignment.salary_min.toLocaleString("nl-NL")}`
+                                    : `tot €${(assignment.salary_max || 0).toLocaleString("nl-NL")}`}
                               </Typography>
                             </Box>
                           )}
@@ -1411,7 +1403,7 @@ export default function AssignmentsPage() {
                           </Button>
                         </Stack>
                         {assignmentCandidates &&
-                        assignmentCandidates.length > 0 ? (
+                          assignmentCandidates.length > 0 ? (
                           <>
                             <TableContainer>
                               <Table size="small">
@@ -1535,12 +1527,12 @@ export default function AssignmentsPage() {
                                         <Menu
                                           anchorEl={
                                             candidateStatusMenuAnchor[
-                                              `${assignment.id}-${candidate.id}`
+                                            `${assignment.id}-${candidate.id}`
                                             ]
                                           }
                                           open={Boolean(
                                             candidateStatusMenuAnchor[
-                                              `${assignment.id}-${candidate.id}`
+                                            `${assignment.id}-${candidate.id}`
                                             ]
                                           )}
                                           onClose={() =>
@@ -1767,8 +1759,8 @@ export default function AssignmentsPage() {
                     const randomLocation =
                       Math.random() > 0.5
                         ? locations[
-                            Math.floor(Math.random() * locations.length)
-                          ]
+                        Math.floor(Math.random() * locations.length)
+                        ]
                         : "";
 
                     setCompanyRoleFilter(randomRole);
@@ -1946,11 +1938,10 @@ export default function AssignmentsPage() {
           >
             {addCandidatesMutation.isPending
               ? "Bezig..."
-              : `Toevoegen (${
-                  [...selectedCandidateIds].filter(
-                    (uid) => !getLinkedCandidateUids().has(uid)
-                  ).length
-                } nieuw)`}
+              : `Toevoegen (${[...selectedCandidateIds].filter(
+                (uid) => !getLinkedCandidateUids().has(uid)
+              ).length
+              } nieuw)`}
           </Button>
         </DialogActions>
       </Dialog>

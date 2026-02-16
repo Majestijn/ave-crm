@@ -90,7 +90,7 @@ export default function SmartBulkImportDialog({
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Global progress context for minimized indicator
-  const { startImport: startGlobalImport, updateStatus: updateGlobalStatus } = useImportProgress();
+  const { startImport: startGlobalImport, updateStatus: updateGlobalStatus, dismissProgress } = useImportProgress();
 
   const validTypes = [
     "application/pdf",
@@ -276,6 +276,9 @@ export default function SmartBulkImportDialog({
     if (importState === "complete" && batchStatus && batchStatus.success_count > 0) {
       onSuccess?.();
     }
+
+    // Clear global progress when closing the dialog
+    dismissProgress();
 
     // Reset state
     setError(null);

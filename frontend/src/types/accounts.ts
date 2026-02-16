@@ -5,9 +5,9 @@ export type AccountContact = {
     uid: string;
     first_name: string;
     last_name: string;
-  name: string;
+    name: string;
     email?: string;
-  phone?: string;
+    phone?: string;
     company_role?: string;
     network_roles?: string[];
   };
@@ -32,6 +32,7 @@ export type Account = {
   location?: string;
   website?: string;
   industry?: string;
+  category?: string;
   fte_count?: number;
   revenue_cents?: number;
   notes?: string;

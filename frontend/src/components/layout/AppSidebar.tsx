@@ -126,7 +126,7 @@ export default function AppSidebar() {
               <ListItem key={item.to} disablePadding sx={{ mb: 0.5 }}>
                 <NavLink
                   to={item.to}
-                  style={{ textDecoration: "none", width: "100%" }}
+                  style={{ textDecoration: "none", width: "100%", color: "inherit" }}
                 >
                   {({ isActive }) => (
                     <ListItemButton
@@ -141,6 +141,9 @@ export default function AppSidebar() {
                           "& .MuiListItemIcon-root": {
                             color: "primary.contrastText",
                           },
+                          "& .MuiListItemText-primary": {
+                            color: "primary.contrastText",
+                          },
                           "&:hover": { bgcolor: "primary.dark" },
                         },
                         "&:hover": { bgcolor: "action.hover" },
@@ -149,7 +152,12 @@ export default function AppSidebar() {
                       <ListItemIcon sx={{ minWidth: 36 }}>
                         {item.icon}
                       </ListItemIcon>
-                      <ListItemText primary={item.label} />
+                      <ListItemText 
+                        primary={item.label}
+                        primaryTypographyProps={{
+                          sx: { color: isActive ? "primary.contrastText" : "text.primary" }
+                        }}
+                      />
                     </ListItemButton>
                   )}
                 </NavLink>
@@ -179,6 +187,9 @@ export default function AppSidebar() {
                         "& .MuiListItemIcon-root": {
                           color: "primary.contrastText",
                         },
+                        "& .MuiListItemText-primary": {
+                          color: "primary.contrastText",
+                        },
                         "&:hover": { bgcolor: "primary.dark" },
                       },
                       "&:hover": { bgcolor: "action.hover" },
@@ -187,7 +198,12 @@ export default function AppSidebar() {
                     <ListItemIcon sx={{ minWidth: 36 }}>
                       {item.icon}
                     </ListItemIcon>
-                    <ListItemText primary={item.label} />
+                    <ListItemText 
+                      primary={item.label}
+                      primaryTypographyProps={{
+                        sx: { color: isActive ? "primary.contrastText" : "text.primary" }
+                      }}
+                    />
                   </ListItemButton>
                 )}
               </NavLink>
@@ -208,7 +224,12 @@ export default function AppSidebar() {
               <ListItemIcon sx={{ minWidth: 36 }}>
                 <LogoutOutlinedIcon />
               </ListItemIcon>
-              <ListItemText primary="Uitloggen" />
+              <ListItemText 
+                primary="Uitloggen"
+                primaryTypographyProps={{
+                  sx: { color: "text.primary" }
+                }}
+              />
             </ListItemButton>
           </ListItem>
         </List>

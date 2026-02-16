@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -252,6 +253,8 @@ export default function NetworkPage() {
   const updateContactMutation = useUpdateContact();
 
   // Dialog state
+  const location = useLocation();
+  const navigate = useNavigate();
   const addContact = useDisclosure();
   const editContact = useDisclosure();
   const bulkImport = useDisclosure();
@@ -314,7 +317,7 @@ export default function NetworkPage() {
 
   const error = contactsError
     ? (contactsError as any)?.response?.data?.message ||
-      "Fout bij laden van contacten"
+    "Fout bij laden van contacten"
     : null;
 
   const {
@@ -324,6 +327,7 @@ export default function NetworkPage() {
     reset,
     control,
     watch,
+    setValue,
   } = useForm<ContactForm>({
     resolver: zodResolver(ContactSchema),
     mode: "onBlur",
@@ -358,6 +362,30 @@ export default function NetworkPage() {
     resolver: zodResolver(ContactSchema),
     mode: "onBlur",
   });
+
+  // Handle navigation state from account detail page (prefill add contact form)
+  useEffect(() => {
+    const state = location.state as {
+      openAddContact?: boolean;
+      prefill?: { is_company_contact?: boolean; account_uid?: string };
+    } | null;
+
+    if (state?.openAddContact) {
+      // Open the dialog and set the checkbox immediately
+      addContact.open();
+
+      if (state.prefill?.is_company_contact) {
+        setValue("is_company_contact", true);
+      }
+
+      // Only set account_uid once accounts are loaded
+      if (state.prefill?.account_uid && accounts.length > 0) {
+        setValue("account_uid", state.prefill.account_uid);
+        // Clear the state only after we've fully consumed it
+        navigate(location.pathname, { replace: true, state: null });
+      }
+    }
+  }, [location.state, accounts]);
 
   // Reset edit form when editing contact changes
   React.useEffect(() => {
@@ -714,8 +742,8 @@ export default function NetworkPage() {
       const response = await fetch(cvUrl, {
         headers: token
           ? {
-              Authorization: `Bearer ${token}`,
-            }
+            Authorization: `Bearer ${token}`,
+          }
           : {},
       });
 
@@ -739,7 +767,7 @@ export default function NetworkPage() {
       else if (
         fileType === "application/msword" ||
         fileType ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
         contact.cv_url.toLowerCase().endsWith(".doc") ||
         contact.cv_url.toLowerCase().endsWith(".docx")
       ) {
@@ -794,7 +822,7 @@ export default function NetworkPage() {
   // Delete a notes image
   const handleDeleteNotesImage = async (documentId: number) => {
     if (!notesViewingContact) return;
-    
+
     if (!window.confirm("Weet je zeker dat je deze notitie-afbeelding wilt verwijderen?")) {
       return;
     }
@@ -938,7 +966,7 @@ export default function NetworkPage() {
       getActions: (params) => {
         const contact = params.row as Contact;
         const actions = [];
-        
+
         if (contact.linkedin_url) {
           actions.push(
             <GridActionsCellItem
@@ -960,7 +988,7 @@ export default function NetworkPage() {
             showInMenu={false}
           />,
         );
-        
+
         actions.push(
           <GridActionsCellItem
             key="edit"
@@ -977,7 +1005,7 @@ export default function NetworkPage() {
             showInMenu={false}
           />
         );
-        
+
         return actions;
       },
     },
@@ -1090,7 +1118,7 @@ export default function NetworkPage() {
               {loading
                 ? "-"
                 : contacts.filter((c) => c.network_roles?.includes("candidate"))
-                    .length}
+                  .length}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Kandidaten
@@ -1228,7 +1256,7 @@ export default function NetworkPage() {
               value={minAgeInput}
               onChange={(e) => setMinAgeInput(e.target.value)}
               inputProps={{ min: 0, max: 100 }}
-              sx={{ width: 120 }}
+              sx={{ width: 150 }}
             />
             <Typography>-</Typography>
             <TextField
@@ -1238,7 +1266,7 @@ export default function NetworkPage() {
               value={maxAgeInput}
               onChange={(e) => setMaxAgeInput(e.target.value)}
               inputProps={{ min: 0, max: 100 }}
-              sx={{ width: 120 }}
+              sx={{ width: 150 }}
             />
             <Button
               variant="contained"
@@ -1275,8 +1303,8 @@ export default function NetworkPage() {
               {ageFilter.minAge && ageFilter.maxAge
                 ? `tussen ${ageFilter.minAge} en ${ageFilter.maxAge} jaar`
                 : ageFilter.minAge
-                ? `van ${ageFilter.minAge} jaar of ouder`
-                : `tot ${ageFilter.maxAge} jaar`}
+                  ? `van ${ageFilter.minAge} jaar of ouder`
+                  : `tot ${ageFilter.maxAge} jaar`}
             </Alert>
           )}
         </Paper>
@@ -1461,8 +1489,8 @@ export default function NetworkPage() {
                     value={
                       field.value
                         ? educationOptions.find(
-                            (opt) => opt.value === field.value
-                          ) || null
+                          (opt) => opt.value === field.value
+                        ) || null
                         : null
                     }
                     onChange={(_, newValue) => {
@@ -1890,8 +1918,8 @@ export default function NetworkPage() {
                     value={
                       field.value
                         ? educationOptions.find(
-                            (opt) => opt.value === field.value
-                          ) || null
+                          (opt) => opt.value === field.value
+                        ) || null
                         : null
                     }
                     onChange={(_, newValue) => {
@@ -1993,7 +2021,7 @@ export default function NetworkPage() {
               }}
             >
               {cvContent.startsWith("blob:") ||
-              viewingContact?.cv_url?.toLowerCase().endsWith(".pdf") ? (
+                viewingContact?.cv_url?.toLowerCase().endsWith(".pdf") ? (
                 // PDF viewer
                 <iframe
                   src={cvContent}

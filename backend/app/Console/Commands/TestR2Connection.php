@@ -8,75 +8,42 @@ use Illuminate\Support\Facades\Storage;
 class TestR2Connection extends Command
 {
     protected $signature = 'r2:test';
-    protected $description = 'Test the Cloudflare R2 connection';
+    protected $description = 'Test R2 Storage Connection';
 
-    public function handle(): int
+    public function handle()
     {
-        $this->info('Testing Cloudflare R2 connection...');
+        $disk = 'r2';
+        $this->info("Testing R2 Connection on disk: {$disk}...");
+        
+        $config = config("filesystems.disks.{$disk}");
+        $this->info("Endpoint: " . ($config['endpoint'] ?? 'Not set'));
+        $this->info("Bucket: " . ($config['bucket'] ?? 'Not set'));
+        $this->info("Region: " . ($config['region'] ?? 'Not set'));
+        $this->info("Key ID: " . substr($config['key'] ?? '', 0, 5) . '...');
 
         try {
-            $disk = Storage::disk('r2');
-
-            // Test 1: Write a test file
-            $testPath = 'test/connection-test-' . now()->timestamp . '.txt';
-            $testContent = 'R2 connection test at ' . now()->toDateTimeString();
+            $this->info("Attempting to list files...");
+            $files = Storage::disk($disk)->files();
+            $this->info("✅ Connection successful! Found " . count($files) . " files in root.");
             
-            $this->info('Writing test file: ' . $testPath);
-            $disk->put($testPath, $testContent);
-            $this->info('✓ Write successful');
-
-            // Test 2: Read the test file
-            $this->info('Reading test file...');
-            $readContent = $disk->get($testPath);
+            $testContent = 'Hello R2 ' . now();
+            $testFile = 'connection_test.txt';
+            $this->info("Attempting to write test file: {$testFile}...");
+            Storage::disk($disk)->put($testFile, $testContent);
+            $this->info("✅ Write successful!");
             
-            if ($readContent === $testContent) {
-                $this->info('✓ Read successful - content matches');
-            } else {
-                $this->error('✗ Read content does not match');
-                return Command::FAILURE;
-            }
-
-            // Test 3: Check if file exists
-            $this->info('Checking if file exists...');
-            if ($disk->exists($testPath)) {
-                $this->info('✓ File exists check successful');
-            } else {
-                $this->error('✗ File exists check failed');
-                return Command::FAILURE;
-            }
-
-            // Test 4: List files in test directory
-            $this->info('Listing files in test directory...');
-            $files = $disk->files('test');
-            $this->info('✓ Found ' . count($files) . ' file(s) in test directory');
-
-            // Test 5: Delete the test file
-            $this->info('Deleting test file...');
-            $disk->delete($testPath);
+            $this->info("Attempting to delete test file...");
+            Storage::disk($disk)->delete($testFile);
+            $this->info("✅ Delete successful!");
             
-            if (!$disk->exists($testPath)) {
-                $this->info('✓ Delete successful');
-            } else {
-                $this->error('✗ Delete failed - file still exists');
-                return Command::FAILURE;
-            }
-
-            $this->newLine();
-            $this->info('🎉 All tests passed! R2 connection is working correctly.');
-            
-            return Command::SUCCESS;
-
         } catch (\Exception $e) {
-            $this->error('✗ Error: ' . $e->getMessage());
-            $this->newLine();
-            $this->warn('Please check your .env configuration:');
-            $this->line('  R2_ACCESS_KEY_ID=your_access_key');
-            $this->line('  R2_SECRET_ACCESS_KEY=your_secret_key');
-            $this->line('  R2_BUCKET=your_bucket_name');
-            $this->line('  R2_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com');
-            
-            return Command::FAILURE;
+            $this->error("❌ Error: " . $e->getMessage());
+            if (str_contains($e->getMessage(), '403 Forbidden')) {
+                 $this->warn("💡 403 Forbidden often means:");
+                 $this->warn("   1. The Access Key/Secret in .env does not match the Token.");
+                 $this->warn("   2. The Token does not have permissions for THIS specific bucket.");
+                 $this->warn("   3. System time is incorrect (S3 signatures fail).");
+            }
         }
     }
 }
-

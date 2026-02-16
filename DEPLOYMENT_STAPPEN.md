@@ -75,7 +75,7 @@ git push origin main
 1. In Forge: **Create Server**
 2. Provider: **DigitalOcean**
 3. Server Settings:
-   - Name: `sparxsoftware-production`
+   - Name: `avecrm-production`
    - Region: **Amsterdam** (AMS3)
    - Server Size: **4GB RAM / 2 CPU** ($24/month)
    - PHP Version: **8.3**
@@ -93,12 +93,31 @@ git push origin main
 ### 3.3 Site Toevoegen
 
 1. Ga naar server → **Sites** → **New Site**
-   - Domain: `sparxsoftware.nl`
+   - Domain: `avecrm.nl`
    - Project Type: **General PHP / Laravel**
-   - Web Directory: `/backend/public`
+   - **Advanced Settings**:
+     - Root Directory: `/backend`
+     - Web Directory: `/public`
 2. Klik **Add Site**
 
-### 3.4 Repository Koppelen
+### 3.4 Shared paths (zero-downtime)
+
+Zorg dat **storage** in de shared paths staat. Voeg eventueel expliciet toe:
+- **From:** `storage`
+- **To:** `backend/storage`
+
+Dit zorgt dat temp-bestanden voor CV-import (`storage/app/temp/imports/`) beschikbaar zijn voor workers.
+
+### 3.5 poppler-utils (voor PDF-extractie)
+
+CV-parsing gebruikt `pdftotext` voor betere PDF-extractie. Installeer op de server:
+
+```bash
+ssh forge@SERVER_IP
+sudo apt-get update && sudo apt-get install -y poppler-utils
+```
+
+### 3.6 Repository Koppelen
 
 1. Ga naar site → **Git Repository**
 2. Provider: **GitHub**
@@ -119,10 +138,10 @@ APP_NAME="AVE CRM"
 APP_ENV=production
 APP_KEY=base64:LAAT_FORGE_DIT_GENEREREN
 APP_DEBUG=false
-APP_URL=https://sparxsoftware.nl
-APP_FEED_URL=https://sparxsoftware.nl
+APP_URL=https://avecrm.nl
+APP_FEED_URL=https://avecrm.nl
 
-TENANT_DOMAIN_SUFFIX=sparxsoftware.nl
+TENANT_DOMAIN_SUFFIX=avecrm.nl
 
 # Database (Forge vult wachtwoord in)
 DB_CONNECTION=pgsql
@@ -132,37 +151,48 @@ DB_DATABASE=avecrm
 DB_USERNAME=forge
 DB_PASSWORD=_KIJK_BOVENAAN_ENV_FILE_
 
-# Cache & Queue
+# Cache & Queue & Session
 CACHE_STORE=redis
 SESSION_DRIVER=redis
-QUEUE_CONNECTION=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=.avecrm.nl
+QUEUE_CONNECTION=redis
 REDIS_HOST=127.0.0.1
 
 # CORS
-CORS_ALLOWED_ORIGIN=https://sparxsoftware.nl
-CORS_PATTERN=https?://.*\.sparxsoftware\.nl
+CORS_ALLOWED_ORIGIN=https://avecrm.nl
+CORS_PATTERN=https?://.*\.avecrm\.nl
+SANCTUM_STATEFUL_DOMAINS=avecrm.nl,*.avecrm.nl
 
 #------------------------------------------------------------------------------
-# JOUW BESTAANDE KEYS (later te vervangen)
+# KEYS & SERVICES
 #------------------------------------------------------------------------------
 
-# Cloudflare R2 - jouw bestaande bucket
+# Mail (Log for now, configure SMTP later)
+MAIL_MAILER=log
+MAIL_FROM_ADDRESS="hello@avecrm.nl"
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Cloudflare R2
 FILESYSTEM_DISK=r2
-R2_ACCESS_KEY_ID=<jouw_huidige_r2_key>
-R2_SECRET_ACCESS_KEY=<jouw_huidige_r2_secret>
-R2_BUCKET=<jouw_bucket_naam>
-R2_ENDPOINT=https://<jouw_account_id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=f43cd12871b8f33b259bc2e7b49ed084
+R2_SECRET_ACCESS_KEY=648bc807b7a5566a5f554a732858f893a6804faab29d60d8a33fb779a48969ed
+R2_BUCKET=ave-crm-files
+R2_ENDPOINT=https://91f0cf05c483e12f43ff9dd3a258e3d7.eu.r2.cloudflarestorage.com
 R2_REGION=auto
 
-# Google AI Studio - jouw bestaande key
-GEMINI_API_KEY=<jouw_huidige_gemini_key>
-GEMINI_MODEL=gemini-2.5-flash
-
-# Google Cloud / Vertex AI - jouw bestaande project
-GOOGLE_CLOUD_PROJECT=<jouw_project_id>
-GOOGLE_CLOUD_BUCKET=<jouw_gcs_bucket>
-GOOGLE_APPLICATION_CREDENTIALS=gcp-credentials.json
+# Google Cloud / Vertex AI (gebruikt voor zowel Smart Import als Bulk)
+GOOGLE_CLOUD_PROJECT=ave-crm
+GOOGLE_CLOUD_BUCKET=ave-crm-cv-import
+# Upload dit bestand naar /home/forge/avecrm.nl/ (naast de .env)
+GOOGLE_APPLICATION_CREDENTIALS=/home/forge/avecrm.nl/gcp-credentials.json
 VERTEX_AI_LOCATION=europe-west4
+VERTEX_AI_MODEL=gemini-2.0-flash-001
+
+# Maps
+GOOGLE_GEOCODING_API_KEY=AIzaSyACEOHJT1d7TzUdS0A5HP9V1SjjJs1g3f4
 ```
 
 ### 4.2 GCP Credentials Uploaden
@@ -171,7 +201,7 @@ SSH naar de server:
 
 ```bash
 ssh forge@JOUW_SERVER_IP
-cd /home/forge/sparxsoftware.nl/backend
+cd /home/forge/avecrm.nl
 nano gcp-credentials.json
 # Plak je bestaande GCP service account JSON
 # Ctrl+X, Y, Enter
@@ -180,51 +210,55 @@ chmod 600 gcp-credentials.json
 
 ### 4.3 Deploy Script
 
-Ga naar site → **Deployment** en vervang met:
+Ga naar site → **Deployment** en vervang met dit script. **Belangrijk:** `$ACTIVATE_RELEASE()` zorgt dat de nieuwe release live gaat; zonder dit blijft de oude versie actief.
 
 ```bash
-cd /home/forge/sparxsoftware.nl
+$CREATE_RELEASE()
+
+cd $FORGE_RELEASE_DIRECTORY
 
 # Backend
 cd backend
-composer install --no-dev --optimize-autoloader
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan migrate --force
+$FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+$FORGE_PHP artisan config:cache
+$FORGE_PHP artisan route:cache
+$FORGE_PHP artisan view:cache
+$FORGE_PHP artisan storage:link
 
-# Frontend
-cd ../frontend
+# Migrations (landlord eerst!)
+$FORGE_PHP artisan migrate --path=database/migrations/landlord --force
+$FORGE_PHP artisan migrate --force
+
+# Frontend – absolute paden (voorkomt pad-problemen bij zero-downtime)
+cd $FORGE_RELEASE_DIRECTORY/frontend
 npm ci
 npm run build
 
-# Copy build to backend
-rm -rf ../backend/public/app
-cp -r dist ../backend/public/app
+# Copy frontend naar public (expliciet met absolute paden)
+rm -rf $FORGE_RELEASE_DIRECTORY/backend/public/assets
+cp -r $FORGE_RELEASE_DIRECTORY/frontend/dist/* $FORGE_RELEASE_DIRECTORY/backend/public/
 
-# Restart queue
-cd ../backend
-php artisan queue:restart
+# Activeer nieuwe release VÓÓR queue restart
+$ACTIVATE_RELEASE()
 
-echo "Deployed at $(date)"
+$RESTART_QUEUES()
 ```
 
 ### 4.4 Nginx Configuratie
 
-Ga naar site → **Nginx Configuration** en voeg toe in de server block:
+Ga naar site → **Nginx Configuration**.
+Zoek het block `location / { ... }` en vervang dit (en voeg `/app` toe) zodat React Routing werkt:
 
 ```nginx
-location / {
-    try_files $uri $uri/ /app/index.html /index.php?$query_string;
-}
-
+# API requests altijd naar Laravel
 location /api {
     try_files $uri $uri/ /index.php?$query_string;
 }
 
-location /app {
-    alias /home/forge/sparxsoftware.nl/backend/public/app;
-    try_files $uri $uri/ /app/index.html;
+# Frontend requests (SPA handling)
+location / {
+    # Probeer bestand, dan map, dan index.html (React), dan pas Laravel (404)
+    try_files $uri $uri/ /index.html /index.php?$query_string;
 }
 ```
 
@@ -241,7 +275,7 @@ location /app {
 
 1. Ga naar server → **Daemons** → **New Daemon**
    - Command: `php artisan queue:work --sleep=3 --tries=3`
-   - Directory: `/home/forge/sparxsoftware.nl/backend`
+   - Directory: `/home/forge/avecrm.nl/backend`
    - User: `forge`
 2. Klik **Create**
 
@@ -250,7 +284,7 @@ location /app {
 1. Ga naar server → **Scheduler** → **New Scheduled Job**
    - Command: `php artisan schedule:run`
    - Frequency: **Every Minute**
-   - Directory: `/home/forge/sparxsoftware.nl/backend`
+   - Directory: `/home/forge/avecrm.nl/backend`
 
 ---
 
@@ -270,23 +304,23 @@ Zodra de server klaar is, noteer het IP en stel in bij Cloudflare:
 ### 6.2 SSL Certificaat
 
 1. Ga naar site → **SSL** → **LetsEncrypt**
-2. Domain: `sparxsoftware.nl`
+2. Domain: `avecrm.nl`
 3. Klik **Obtain Certificate**
 
 ### 6.3 Wildcard SSL (voor tenants)
 
 1. Nog in SSL → nieuwe certificate
-2. Domain: `*.sparxsoftware.nl`
+2. Domain: `*.avecrm.nl`
 3. Volg DNS challenge instructies
 
 ---
 
 ## 7. Testen
 
-- [ ] Homepage laadt (`https://sparxsoftware.nl`)
+- [ ] Homepage laadt (`https://avecrm.nl`)
 - [ ] Login werkt
 - [ ] Tenant registratie werkt
-- [ ] Tenant subdomain werkt (`https://test.sparxsoftware.nl`)
+- [ ] Tenant subdomain werkt (`https://test.avecrm.nl`)
 - [ ] CV Smart Import werkt
 - [ ] Bestanden uploaden naar R2 werkt
 
@@ -322,17 +356,25 @@ Wanneer de opdrachtgever zijn eigen accounts heeft:
 
 ## 🆘 Troubleshooting
 
+### Smart CV Import faalt (3/4 mislukt)
+
+1. **Check de foutreden** – Klik "Bekijk mislukte imports" in de UI; de `reason` per bestand is de foutmelding.
+2. **Laravel logs** – `tail -f /home/forge/avecrm.nl/current/backend/storage/logs/laravel.log` (zoek op ProcessCvImport, Vertex AI).
+3. **pdftotext** – Installeer `poppler-utils`: `sudo apt-get install -y poppler-utils`
+4. **Workers** – Controleer of workers draaien: Forge → Daemons, connection: `redis`, directory: `.../current/backend`
+5. **GCP credentials** – Zorg dat `GOOGLE_APPLICATION_CREDENTIALS` naar een bestaand, leesbaar bestand wijst.
+
 ### 500 errors
 
 ```bash
 ssh forge@SERVER_IP
-tail -f /home/forge/sparxsoftware.nl/backend/storage/logs/laravel.log
+tail -f /home/forge/avecrm.nl/current/backend/storage/logs/laravel.log
 ```
 
 ### Deployment mislukt
 
 ```bash
-cd /home/forge/sparxsoftware.nl/backend
+cd /home/forge/avecrm.nl/current/backend
 php artisan config:clear
 php artisan cache:clear
 composer install
@@ -341,7 +383,7 @@ composer install
 ### Frontend laadt niet
 
 ```bash
-ls -la /home/forge/sparxsoftware.nl/backend/public/app/
+ls -la /home/forge/avecrm.nl/current/backend/public/
 ```
 
 ---

@@ -28,6 +28,11 @@ Route::prefix('/v1')->group(function () {
     Route::middleware(['throttle:20,1'])->group(function () {
         Route::post('/auth/register-tenant', RegisterTenantController::class);
         Route::post('/auth/find-tenant', TenantListController::class); // Find tenant domain by email
+
+    Route::middleware(['throttle:20,1', NeedsTenant::class])->group(function () {
+        Route::post('/auth/forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'store']);
+        Route::post('/auth/reset-password', [App\Http\Controllers\Auth\ResetPasswordController::class, 'store']);
+    });
     });
 
     Route::middleware(['throttle:login', NeedsTenant::class])->post('/auth/login', [LoginController::class, 'store']);

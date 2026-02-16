@@ -33,6 +33,7 @@ import {
   DialogContent,
   DialogActions,
   Alert,
+  MenuItem,
 } from "@mui/material";
 
 const AccountSchema = z.object({
@@ -41,12 +42,19 @@ const AccountSchema = z.object({
   location: z.string().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
   industry: z.string().optional().or(z.literal("")),
+  category: z.string().optional().or(z.literal("")),
   fte_count: z.number().optional(),
-  revenue_euros: z.number().optional(),
   notes: z.string().optional().or(z.literal("")),
 });
 
 type AccountForm = z.infer<typeof AccountSchema>;
+
+// Helper function to format number with thousand separators (Dutch format)
+const formatNumberInput = (value: string): string => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return parseInt(digits, 10).toLocaleString("nl-NL");
+};
 
 // Helper function to format revenue (stored in cents, display in euros)
 const formatRevenue = (revenueCents?: number): string => {
@@ -74,6 +82,8 @@ export default function AccountsPage() {
   const addAccount = useDisclosure();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [revenueInput, setRevenueInput] = useState("");
+  const [revenueValue, setRevenueValue] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     refresh();
@@ -93,8 +103,8 @@ export default function AccountsPage() {
       location: "",
       website: "",
       industry: "",
+      category: "",
       fte_count: undefined,
-      revenue_euros: undefined,
       notes: "",
     },
   });
@@ -104,12 +114,13 @@ export default function AccountsPage() {
     try {
       const submitData = {
         ...data,
-        revenue_cents: data.revenue_euros ? Math.round(data.revenue_euros * 100) : undefined,
+        revenue_cents: revenueValue ? revenueValue * 100 : undefined,
       };
-      delete (submitData as any).revenue_euros;
       await API.post("/accounts", submitData);
       addAccount.close();
       reset();
+      setRevenueInput("");
+      setRevenueValue(undefined);
       await refresh();
     } catch (err: any) {
       console.error(err);
@@ -230,6 +241,23 @@ export default function AccountsPage() {
                 fullWidth
               />
               <TextField
+                select
+                label="Categorie"
+                error={!!errors.category}
+                helperText={errors.category?.message ?? " "}
+                {...register("category")}
+                defaultValue=""
+                fullWidth
+              >
+                <MenuItem value="">Selecteer categorie...</MenuItem>
+                <MenuItem value="FMCG">FMCG</MenuItem>
+                <MenuItem value="Foodservice">Foodservice</MenuItem>
+                <MenuItem value="Overig">Overig</MenuItem>
+              </TextField>
+            </Stack>
+
+            <Stack direction="row" spacing={2}>
+              <TextField
                 label="Aantal FTE"
                 type="number"
                 error={!!errors.fte_count}
@@ -238,19 +266,23 @@ export default function AccountsPage() {
                 fullWidth
                 InputProps={{ inputProps: { min: 0 } }}
               />
-            </Stack>
 
-            <TextField
-              label="Jaaromzet"
-              type="number"
-              error={!!errors.revenue_euros}
-              helperText={errors.revenue_euros?.message || "Voer het bedrag in euro's in"}
-              {...register("revenue_euros", { valueAsNumber: true })}
-              fullWidth
-              InputProps={{
-                startAdornment: <InputAdornment position="start">€</InputAdornment>,
-              }}
-            />
+              <TextField
+                label="Jaaromzet"
+                value={revenueInput}
+                onChange={(e) => {
+                  const formatted = formatNumberInput(e.target.value);
+                  setRevenueInput(formatted);
+                  const digits = e.target.value.replace(/\D/g, "");
+                  setRevenueValue(digits ? parseInt(digits, 10) : undefined);
+                }}
+                fullWidth
+                helperText="Voer het bedrag in euro's in"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                }}
+              />
+            </Stack>
 
             <TextField
               label="Notities"

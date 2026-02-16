@@ -129,6 +129,13 @@ class RegisterTenantController extends Controller
             $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $pdo->exec("CREATE DATABASE \"{$databaseName}\"");
         } catch (\PDOException $e) {
+            // 42P04 = duplicate_database (PostgreSQL) - orphan DB from failed prior registration
+            if ($e->getCode() === '42P04' || str_contains($e->getMessage(), 'already exists')) {
+                Log::warning("Dropping orphaned database {$databaseName} from failed prior registration");
+                $pdo->exec("DROP DATABASE IF EXISTS \"{$databaseName}\"");
+                $pdo->exec("CREATE DATABASE \"{$databaseName}\"");
+                return;
+            }
             throw new \Exception("Failed to create database: " . $e->getMessage());
         }
     }
