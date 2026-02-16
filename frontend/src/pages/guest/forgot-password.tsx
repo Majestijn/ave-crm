@@ -39,11 +39,11 @@ export default function ForgotPassword() {
     setLoading(true);
     setStatus(null);
     try {
-      const response = await API.post("/auth/forgot-password", {
-        email: data.email,
-      });
-      // Laravel returns { status: "We have emailed your password reset link." }
-      setStatus(response.status || "We hebben de herstellink verstuurd.");
+      const response = await API.post<{ status?: string }>(
+        "/auth/forgot-password",
+        { email: data.email }
+      );
+      setStatus(response.status ?? "We hebben de herstellink verstuurd.");
     } catch (error: any) {
       if (error.response?.status === 422) {
         // Validation error (e.g. email not found, though often throttled/hidden for security)
