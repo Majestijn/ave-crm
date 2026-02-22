@@ -1,5 +1,6 @@
 import React from "react";
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import { Box, IconButton, Paper, Stack, Tooltip, Typography } from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import type { Account } from "../../types/accounts";
 import { formatRevenue } from "../../utils/formatters";
 
@@ -7,12 +8,16 @@ type Props = {
   account: Account;
   totalAssignments: number;
   activeAssignments: number;
+  onDelete?: () => void;
+  isDeleting?: boolean;
 };
 
 export default function AccountHeader({
   account,
   totalAssignments,
   activeAssignments,
+  onDelete,
+  isDeleting = false,
 }: Props) {
   return (
     <Paper
@@ -66,6 +71,24 @@ export default function AccountHeader({
           </Typography>
         </Box>
       </Stack>
+
+      {onDelete && (
+        <Tooltip title="Klant verwijderen">
+          <span>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              disabled={isDeleting}
+              color="error"
+              aria-label="Klant verwijderen"
+            >
+              <DeleteOutlineIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
     </Paper>
   );
 }

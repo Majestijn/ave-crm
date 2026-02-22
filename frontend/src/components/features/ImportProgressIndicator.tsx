@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Paper,
@@ -6,6 +6,7 @@ import {
   LinearProgress,
   IconButton,
   Collapse,
+  Fade,
   Stack,
   Chip,
   List,
@@ -28,24 +29,46 @@ import { useImportProgress } from "../../contexts/ImportProgressContext";
 export default function ImportProgressIndicator() {
   const { progress, dismissProgress, minimizeProgress, maximizeProgress } = useImportProgress();
   const [showDetails, setShowDetails] = useState<"success" | "skipped" | "failed" | null>(null);
+  const [isExiting, setIsExiting] = useState(false);
+  const cachedStatusRef = useRef(progress.status);
 
-  if (!progress.isActive || !progress.status) {
+  // Cache status when active so we can animate out with it
+  if (progress.isActive && progress.status) {
+    cachedStatusRef.current = progress.status;
+  }
+
+  const handleDismiss = () => {
+    setIsExiting(true);
+  };
+
+  const handleExited = () => {
+    cachedStatusRef.current = null as any;
+    dismissProgress();
+    setIsExiting(false);
+  };
+
+  // During exit animation, keep showing cached content; otherwise hide when inactive
+  const isVisible = (progress.isActive || isExiting) && (progress.status || cachedStatusRef.current);
+
+  if (!isVisible) {
     return null;
   }
 
   const { status, isMinimized } = progress;
-  const progressPercent = status.total > 0 
-    ? Math.round((status.processed / status.total) * 100) 
+  const displayStatus = status ?? cachedStatusRef.current;
+  const progressPercent = displayStatus && displayStatus.total > 0 
+    ? Math.round((displayStatus.processed / displayStatus.total) * 100) 
     : 0;
   
   // Determine header color: only error if there are actual failures
   const getHeaderColor = () => {
-    if (!status.is_complete) return "primary.main";
-    if (status.failed_count > 0) return "error.main";
+    if (!displayStatus?.is_complete) return "primary.main";
+    if (displayStatus.failed_count > 0) return "error.main";
     return "success.main";
   };
 
   return (
+    <Fade in={!isExiting} onExited={handleExited}>
     <Paper
       elevation={6}
       sx={{
@@ -76,7 +99,7 @@ export default function ImportProgressIndicator() {
         <Stack direction="row" spacing={1} alignItems="center">
           <CloudUploadIcon fontSize="small" />
           <Typography variant="subtitle2">
-            {status.is_complete ? "Import Voltooid" : (progress.label || "CV Import...")}
+            {displayStatus?.is_complete ? "Import Voltooid" : (progress.label || "CV Import...")}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={0.5}>
@@ -90,13 +113,13 @@ export default function ImportProgressIndicator() {
           >
             {isMinimized ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </IconButton>
-          {status.is_complete && (
+          {displayStatus?.is_complete && (
             <IconButton
               size="small"
               sx={{ color: "white" }}
               onClick={(e) => {
                 e.stopPropagation();
-                dismissProgress();
+                handleDismiss();
               }}
             >
               <CloseIcon fontSize="small" />
@@ -106,7 +129,7 @@ export default function ImportProgressIndicator() {
       </Box>
 
       {/* Minimized view - just progress bar */}
-      {isMinimized && !status.is_complete && (
+      {isMinimized && !displayStatus?.is_complete && (
         <LinearProgress 
           variant="determinate" 
           value={progressPercent} 
@@ -117,7 +140,7 @@ export default function ImportProgressIndicator() {
       {/* Expanded view */}
       <Collapse in={!isMinimized}>
         <Box sx={{ p: 2 }}>
-          {!status.is_complete && (
+          {!displayStatus?.is_complete && (
             <>
               <LinearProgress 
                 variant="determinate" 
@@ -125,7 +148,7 @@ export default function ImportProgressIndicator() {
                 sx={{ mb: 1, height: 6, borderRadius: 1 }}
               />
               <Typography variant="body2" color="text.secondary" textAlign="center">
-                {status.processed} van {status.total} verwerkt ({progressPercent}%)
+                {displayStatus.processed} van {displayStatus.total} verwerkt ({progressPercent}%)
               </Typography>
             </>
           )}
@@ -134,42 +157,42 @@ export default function ImportProgressIndicator() {
           <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ mt: 1.5, gap: 0.5 }}>
             <Chip
               icon={<CheckCircleIcon />}
-              label={status.success_count}
+              label={displayStatus.success_count}
               color="success"
               size="small"
               variant={showDetails === "success" ? "filled" : "outlined"}
-              onClick={status.is_complete && status.success_count > 0 ? () => setShowDetails(showDetails === "success" ? null : "success") : undefined}
-              sx={status.is_complete && status.success_count > 0 ? { cursor: "pointer" } : {}}
+              onClick={displayStatus.is_complete && displayStatus.success_count > 0 ? () => setShowDetails(showDetails === "success" ? null : "success") : undefined}
+              sx={displayStatus.is_complete && displayStatus.success_count > 0 ? { cursor: "pointer" } : {}}
             />
-            {(status.skipped_count ?? 0) > 0 && (
+            {(displayStatus.skipped_count ?? 0) > 0 && (
               <Chip
                 icon={<WarningIcon />}
-                label={status.skipped_count}
+                label={displayStatus.skipped_count}
                 color="warning"
                 size="small"
                 variant={showDetails === "skipped" ? "filled" : "outlined"}
-                onClick={status.is_complete ? () => setShowDetails(showDetails === "skipped" ? null : "skipped") : undefined}
-                sx={status.is_complete ? { cursor: "pointer" } : {}}
+                onClick={displayStatus.is_complete ? () => setShowDetails(showDetails === "skipped" ? null : "skipped") : undefined}
+                sx={displayStatus.is_complete ? { cursor: "pointer" } : {}}
               />
             )}
-            {status.failed_count > 0 && (
+            {(displayStatus.failed_count ?? 0) > 0 && (
               <Chip
                 icon={<ErrorIcon />}
-                label={status.failed_count}
+                label={displayStatus.failed_count}
                 color="error"
                 size="small"
                 variant={showDetails === "failed" ? "filled" : "outlined"}
-                onClick={status.is_complete ? () => setShowDetails(showDetails === "failed" ? null : "failed") : undefined}
-                sx={status.is_complete ? { cursor: "pointer" } : {}}
+                onClick={displayStatus.is_complete ? () => setShowDetails(showDetails === "failed" ? null : "failed") : undefined}
+                sx={displayStatus.is_complete ? { cursor: "pointer" } : {}}
               />
             )}
           </Stack>
 
           {/* Detail lists - shown when chip is clicked */}
-          {status.is_complete && showDetails === "success" && status.success.length > 0 && (
+          {displayStatus?.is_complete && showDetails === "success" && (displayStatus.success?.length ?? 0) > 0 && (
             <Box sx={{ mt: 1.5, maxHeight: 150, overflow: "auto", border: 1, borderColor: "success.light", borderRadius: 1 }}>
               <List dense disablePadding>
-                {status.success.map((item, index) => (
+                {(displayStatus.success ?? []).map((item, index) => (
                   <ListItem key={index} sx={{ py: 0.5 }}>
                     <ListItemIcon sx={{ minWidth: 28 }}>
                       <CheckCircleIcon color="success" sx={{ fontSize: 16 }} />
@@ -186,10 +209,10 @@ export default function ImportProgressIndicator() {
             </Box>
           )}
 
-          {status.is_complete && showDetails === "skipped" && (status.skipped?.length ?? 0) > 0 && (
+          {displayStatus?.is_complete && showDetails === "skipped" && (displayStatus.skipped?.length ?? 0) > 0 && (
             <Box sx={{ mt: 1.5, maxHeight: 150, overflow: "auto", border: 1, borderColor: "warning.light", borderRadius: 1 }}>
               <List dense disablePadding>
-                {status.skipped?.map((item, index) => (
+                {(displayStatus.skipped ?? []).map((item, index) => (
                   <ListItem key={index} sx={{ py: 0.5 }}>
                     <ListItemIcon sx={{ minWidth: 28 }}>
                       <WarningIcon color="warning" sx={{ fontSize: 16 }} />
@@ -206,10 +229,10 @@ export default function ImportProgressIndicator() {
             </Box>
           )}
 
-          {status.is_complete && showDetails === "failed" && status.failed.length > 0 && (
+          {displayStatus?.is_complete && showDetails === "failed" && (displayStatus.failed?.length ?? 0) > 0 && (
             <Box sx={{ mt: 1.5, maxHeight: 150, overflow: "auto", border: 1, borderColor: "error.light", borderRadius: 1 }}>
               <List dense disablePadding>
-                {status.failed.map((item, index) => (
+                {(displayStatus.failed ?? []).map((item, index) => (
                   <ListItem key={index} sx={{ py: 0.5 }}>
                     <ListItemIcon sx={{ minWidth: 28 }}>
                       <ErrorIcon color="error" sx={{ fontSize: 16 }} />
@@ -227,7 +250,7 @@ export default function ImportProgressIndicator() {
           )}
 
           {/* Hint text when complete */}
-          {status.is_complete && !showDetails && (
+          {displayStatus?.is_complete && !showDetails && (
             <Typography 
               variant="caption" 
               color="text.secondary" 
@@ -241,5 +264,6 @@ export default function ImportProgressIndicator() {
         </Box>
       </Collapse>
     </Paper>
+    </Fade>
   );
 }

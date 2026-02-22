@@ -15,6 +15,7 @@ export type CreateContactData = {
   current_company?: string;
   current_salary_cents?: number;
   education?: "MBO" | "HBO" | "UNI";
+  availability_date?: string;
   email?: string;
   phone?: string;
   linkedin_url?: string;

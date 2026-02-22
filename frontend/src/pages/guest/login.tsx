@@ -141,8 +141,8 @@ export default function LoginPage() {
           // Clear hash from URL
           window.history.replaceState(null, "", window.location.pathname + window.location.search);
           
-          // Redirect to dashboard (auto-login)
-          navigate("/dashboard", { replace: true });
+          // Redirect to opdrachten (auto-login)
+          navigate("/assignments", { replace: true });
           return;
         } catch (error) {
           console.error("Error processing auth from hash:", error);
@@ -279,7 +279,7 @@ export default function LoginPage() {
       <Fade
         in={!transitioning}
         timeout={250}
-        onExited={() => navigate("/dashboard", { replace: true })}
+        onExited={() => navigate("/assignments", { replace: true })}
       >
         <Card variant="outlined" sx={{ width: "100%", maxWidth: 420 }}>
           <CardContent sx={{ p: 3 }}>

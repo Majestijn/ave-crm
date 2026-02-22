@@ -36,6 +36,7 @@ class StoreContactRequest extends FormRequest
             'network_roles.*' => ['string', 'in:invoice_contact,candidate,interim,ambassador,potential_management,co_decision_maker,potential_directie,candidate_reference,hr_employment,hr_recruiters,directie,owner,expert,coach,former_owner,former_director,commissioner,investor,network_group'],
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
             'education' => ['nullable', 'in:MBO,HBO,UNI'],
+            'availability_date' => ['nullable', 'date'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
             'notes' => ['nullable', 'string'],
         ];

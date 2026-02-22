@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 
 const GuestLayout = () => {
   const authed = Boolean(localStorage.getItem("auth_token"));
-  if (authed) return <Navigate to="/dashboard" replace />;
+  if (authed) return <Navigate to="/assignments" replace />;
   return (
     <Box
       component="main"

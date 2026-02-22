@@ -137,6 +137,7 @@ const ContactSchema = z.object({
   current_company: z.string().optional(),
   current_salary_cents: z.number().optional(),
   education: z.enum(["MBO", "HBO", "UNI"]).optional(),
+  availability_date: z.string().optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
   linkedin_url: z.string().url().optional().or(z.literal("")),
@@ -255,6 +256,25 @@ export default function NetworkPage() {
   // Dialog state
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Sync kandidaten filter met URL bij mount en bij wijziging
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const isKandidaten = params.get("kandidaten") === "1";
+    setCandidatesOnlyFilter(isKandidaten);
+  }, [location.search]);
+
+  const handleCandidatesFilterToggle = () => {
+    const params = new URLSearchParams(location.search);
+    const newValue = !candidatesOnlyFilter;
+    if (newValue) {
+      params.set("kandidaten", "1");
+    } else {
+      params.delete("kandidaten");
+    }
+    const search = params.toString();
+    navigate({ pathname: "/network", search: search ? `?${search}` : "" }, { replace: true });
+  };
   const addContact = useDisclosure();
   const editContact = useDisclosure();
   const bulkImport = useDisclosure();
@@ -268,6 +288,7 @@ export default function NetworkPage() {
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [candidatesOnlyFilter, setCandidatesOnlyFilter] = useState(false);
 
   // Debounce location search
   React.useEffect(() => {
@@ -342,6 +363,7 @@ export default function NetworkPage() {
       current_company: "",
       current_salary_cents: undefined,
       education: undefined,
+      availability_date: "",
       email: "",
       phone: "",
       linkedin_url: "",
@@ -406,6 +428,9 @@ export default function NetworkPage() {
         current_company: editingContact.current_company || "",
         current_salary_cents: editingContact.current_salary_cents || undefined,
         education: (editingContact.education as any) || undefined,
+        availability_date: editingContact.availability_date
+          ? editingContact.availability_date.split("T")[0]
+          : "",
         email: editingContact.email || "",
         phone: editingContact.phone || "",
         linkedin_url: editingContact.linkedin_url || "",
@@ -414,12 +439,19 @@ export default function NetworkPage() {
     }
   }, [editingContact, editReset]);
 
-  // Filter contacts based on search query
+  // Filter contacts based on search query and kandidaten filter
   const filteredContacts = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
+    let result = contacts;
+
+    // Filter op alleen kandidaten (netwerkrol "candidate")
+    if (candidatesOnlyFilter) {
+      result = result.filter((c) => c.network_roles?.includes("candidate"));
+    }
+
+    if (!searchQuery.trim()) return result;
 
     const query = searchQuery.toLowerCase();
-    return contacts.filter((contact) => {
+    return result.filter((contact) => {
       const fullName = formatContactName(contact).toLowerCase();
       const email = (contact.email || "").toLowerCase();
       const company = (contact.current_company || "").toLowerCase();
@@ -434,7 +466,7 @@ export default function NetworkPage() {
         location.includes(query)
       );
     });
-  }, [contacts, searchQuery]);
+  }, [contacts, searchQuery, candidatesOnlyFilter]);
 
   const onSubmit = async (data: ContactForm) => {
     setSubmitError(null);
@@ -929,6 +961,15 @@ export default function NetworkPage() {
       },
     },
     {
+      field: "availability_date",
+      headerName: "Beschikbaar",
+      width: 130,
+      valueGetter: (value) => {
+        if (!value) return "-";
+        return new Date(value).toLocaleDateString("nl-NL");
+      },
+    },
+    {
       field: "network_roles",
       headerName: "Netwerk rollen",
       width: 250,
@@ -1161,6 +1202,15 @@ export default function NetworkPage() {
             {ageFilter
               ? `${ageFilter.minAge || ""}${ageFilter.minAge && ageFilter.maxAge ? "-" : ""}${ageFilter.maxAge || ""} jaar`
               : "Leeftijd"}
+          </Button>
+          <Button
+            variant={candidatesOnlyFilter ? "contained" : "outlined"}
+            size="small"
+            startIcon={<PeopleOutlineIcon />}
+            onClick={handleCandidatesFilterToggle}
+            color={candidatesOnlyFilter ? "primary" : "inherit"}
+          >
+            Kandidaten
           </Button>
         </Stack>
       </Paper>
@@ -1396,6 +1446,15 @@ export default function NetworkPage() {
                     <MenuItem value="vrouw">Vrouw</MenuItem>
                   </TextField>
                 )}
+              />
+              <TextField
+                label="Beschikbaarheidsdatum"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                error={!!errors.availability_date}
+                helperText={errors.availability_date?.message ?? " "}
+                {...register("availability_date")}
+                sx={{ width: 200 }}
               />
             </Stack>
 
@@ -1823,6 +1882,15 @@ export default function NetworkPage() {
                     <MenuItem value="vrouw">Vrouw</MenuItem>
                   </TextField>
                 )}
+              />
+              <TextField
+                label="Beschikbaarheidsdatum"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                error={!!editErrors.availability_date}
+                helperText={editErrors.availability_date?.message ?? " "}
+                {...editRegister("availability_date")}
+                sx={{ width: 200 }}
               />
             </Stack>
 
@@ -2296,7 +2364,7 @@ export default function NetworkPage() {
                 paginationModel: { page: 0, pageSize: 10 },
               },
             }}
-            pageSizeOptions={[5, 10, 25, 50]}
+            pageSizeOptions={[5, 10, 25, 50, 100, 250]}
             sx={{
               border: 0,
               "& .MuiDataGrid-row:hover": {

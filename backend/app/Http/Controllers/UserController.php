@@ -23,8 +23,12 @@ class UserController extends Controller
         $auth = $request->user();
 
         // We are already in the tenant context, so we just query the users table
-        $query = User::where('id', '!=', $auth->id)
-            ->orderBy('name');
+        $query = User::query()->orderBy('name');
+
+        // By default exclude current user (e.g. for user management); use ?all=1 for dropdowns
+        if (!$request->boolean('all')) {
+            $query->where('id', '!=', $auth->id);
+        }
 
         $users = $query->paginate(perPage: (int) $request->query('per_page', 15));
 

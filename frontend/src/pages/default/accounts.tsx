@@ -1,17 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Alert,
   Box,
-  Typography,
-  Paper,
-  Grid,
+  Button,
   Card,
   CardContent,
-  Stack,
-  Button,
-  TextField,
+  Checkbox,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   InputAdornment,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -19,30 +30,101 @@ import {
   FilterList as FilterIcon,
   Add as AddIcon,
   ArrowForward as ArrowForwardIcon,
+  DeleteOutline as DeleteOutlineIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAccounts } from "../../hooks/useAccounts";
+import { useDeleteAccount } from "../../api/mutations/accounts";
+import { queryKeys } from "../../api/queries/keys";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import API from "../../../axios-client";
 import type { Account } from "../../types/accounts";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Alert,
-  MenuItem,
-} from "@mui/material";
+function AccountCardLogo({
+  logoUrl,
+  name,
+}: {
+  logoUrl: string | null | undefined;
+  name: string;
+}) {
+  const [imgError, setImgError] = React.useState(false);
+  const showFallback = !logoUrl || imgError;
+
+  return (
+    <Box
+      sx={{
+        width: { xs: 60, sm: 80 },
+        height: { xs: 60, sm: 80 },
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 1,
+        bgcolor: showFallback ? "grey.100" : "transparent",
+        overflow: "hidden",
+        flexShrink: 0,
+      }}
+    >
+      {showFallback && (
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 600, color: "grey.500", fontSize: "1.5rem" }}
+        >
+          {name.charAt(0).toUpperCase()}
+        </Typography>
+      )}
+      {logoUrl && !imgError && (
+        <img
+          src={logoUrl}
+          alt={name}
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+          }}
+          loading="lazy"
+          onError={() => setImgError(true)}
+        />
+      )}
+    </Box>
+  );
+}
+
+const SECONDARY_CATEGORY_OPTIONS = [
+  "Retailer",
+  "Groothandel",
+  "Leverancier",
+  "Industrie",
+  "Andere",
+] as const;
+
+const TERTIARY_CATEGORY_OPTIONS = ["Non-food", "Food"] as const;
+
+const MERKEN_OPTIONS = ["Merk", "Private label"] as const;
+
+const LABELS_OPTIONS = [
+  "Vers",
+  "Zuivel & eieren",
+  "Diepvries",
+  "DKW (houdbaar voedsel)",
+  "Dranken",
+  "Snacks & snoep",
+  "Non-food",
+  "Verpakkingen",
+  "Convenience & ready-to-use",
+] as const;
 
 const AccountSchema = z.object({
   name: z.string().min(1, "Bedrijfsnaam is verplicht"),
   logo_url: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
   industry: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),
+  secondary_category: z.string().optional().or(z.literal("")),
   fte_count: z.number().optional(),
   notes: z.string().optional().or(z.literal("")),
 });
@@ -78,12 +160,25 @@ const formatRevenue = (revenueCents?: number): string => {
 
 export default function AccountsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { accounts, loading, error, refresh } = useAccounts();
   const addAccount = useDisclosure();
+  const deleteAccount = useDisclosure();
+  const deleteAccountMutation = useDeleteAccount();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [revenueInput, setRevenueInput] = useState("");
   const [revenueValue, setRevenueValue] = useState<number | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<"name_asc" | "name_desc" | "revenue_desc" | "revenue_asc" | "assignments_desc" | "assignments_asc">("name_asc");
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
+  const [tertiaryCategory, setTertiaryCategory] = useState<string[]>([]);
+  const [merken, setMerken] = useState<string[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+  const [activeOnlyFilter, setActiveOnlyFilter] = useState(false);
+  const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
+  const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     refresh();
@@ -102,8 +197,10 @@ export default function AccountsPage() {
       logo_url: "",
       location: "",
       website: "",
+      phone: "",
       industry: "",
       category: "",
+      secondary_category: "",
       fte_count: undefined,
       notes: "",
     },
@@ -114,6 +211,10 @@ export default function AccountsPage() {
     try {
       const submitData = {
         ...data,
+        secondary_category: data.secondary_category || undefined,
+        tertiary_category: tertiaryCategory.length ? tertiaryCategory : undefined,
+        merken: merken.length ? merken : undefined,
+        labels: labels.length ? labels : undefined,
         revenue_cents: revenueValue ? revenueValue * 100 : undefined,
       };
       await API.post("/accounts", submitData);
@@ -121,7 +222,11 @@ export default function AccountsPage() {
       reset();
       setRevenueInput("");
       setRevenueValue(undefined);
+      setTertiaryCategory([]);
+      setMerken([]);
+      setLabels([]);
       await refresh();
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
     } catch (err: any) {
       console.error(err);
       if (err?.response?.data?.message) {
@@ -135,9 +240,82 @@ export default function AccountsPage() {
     }
   };
 
-  const filteredAccounts = accounts.filter((account) =>
-    account.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredAccounts = React.useMemo(() => {
+    let result = accounts.filter((account) =>
+      account.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (categoryFilters.length > 0) {
+      result = result.filter((a) => a.category && categoryFilters.includes(a.category));
+    }
+    if (activeOnlyFilter) {
+      result = result.filter((a) => a.has_active_assignments);
+    }
+
+    const sorted = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case "name_asc":
+          return (a.name || "").localeCompare(b.name || "");
+        case "name_desc":
+          return (b.name || "").localeCompare(a.name || "");
+        case "revenue_desc":
+          return (b.revenue_cents ?? 0) - (a.revenue_cents ?? 0);
+        case "revenue_asc":
+          return (a.revenue_cents ?? 0) - (b.revenue_cents ?? 0);
+        case "assignments_desc":
+          return (b.assignments_count ?? 0) - (a.assignments_count ?? 0);
+        case "assignments_asc":
+          return (a.assignments_count ?? 0) - (b.assignments_count ?? 0);
+        default:
+          return 0;
+      }
+    });
+    return sorted;
+  }, [accounts, searchQuery, categoryFilters, activeOnlyFilter, sortBy]);
+
+  const sortLabels: Record<typeof sortBy, string> = {
+    name_asc: "Naam A–Z",
+    name_desc: "Naam Z–A",
+    revenue_desc: "Omzet hoog → laag",
+    revenue_asc: "Omzet laag → hoog",
+    assignments_desc: "Meeste opdrachten eerst",
+    assignments_asc: "Minste opdrachten eerst",
+  };
+
+  const toggleCategory = (cat: string) => {
+    setCategoryFilters((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, account: Account) => {
+    e.stopPropagation();
+    setAccountToDelete(account);
+    setDeleteError(null);
+    deleteAccount.open();
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!accountToDelete) return;
+    setDeleteError(null);
+    try {
+      await deleteAccountMutation.mutateAsync(accountToDelete.uid);
+      deleteAccount.close();
+      setAccountToDelete(null);
+      await refresh();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Fout bij verwijderen van klant";
+      setDeleteError(msg);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    deleteAccount.close();
+    setAccountToDelete(null);
+    setDeleteError(null);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -173,15 +351,120 @@ export default function AccountsPage() {
         <Button
           variant="outlined"
           startIcon={<SortIcon />}
+          onClick={(e) => setSortAnchor(e.currentTarget)}
+          color={sortBy !== "name_asc" ? "primary" : "inherit"}
         >
           Sorteren
         </Button>
+        <Menu
+          anchorEl={sortAnchor}
+          open={Boolean(sortAnchor)}
+          onClose={() => setSortAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        >
+          <MenuItem onClick={() => { setSortBy("name_asc"); setSortAnchor(null); }}>
+            Naam A–Z
+          </MenuItem>
+          <MenuItem onClick={() => { setSortBy("name_desc"); setSortAnchor(null); }}>
+            Naam Z–A
+          </MenuItem>
+          <MenuItem onClick={() => { setSortBy("revenue_desc"); setSortAnchor(null); }}>
+            Omzet hoog → laag
+          </MenuItem>
+          <MenuItem onClick={() => { setSortBy("revenue_asc"); setSortAnchor(null); }}>
+            Omzet laag → hoog
+          </MenuItem>
+          <MenuItem onClick={() => { setSortBy("assignments_desc"); setSortAnchor(null); }}>
+            Meeste opdrachten eerst
+          </MenuItem>
+          <MenuItem onClick={() => { setSortBy("assignments_asc"); setSortAnchor(null); }}>
+            Minste opdrachten eerst
+          </MenuItem>
+        </Menu>
         <Button
           variant="outlined"
           startIcon={<FilterIcon />}
+          onClick={(e) => setFilterAnchor(e.currentTarget)}
+          color={categoryFilters.length > 0 || activeOnlyFilter ? "primary" : "inherit"}
         >
           Filteren
         </Button>
+        <Menu
+          anchorEl={filterAnchor}
+          open={Boolean(filterAnchor)}
+          onClose={() => setFilterAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        >
+          <MenuItem onClick={() => toggleCategory("FMCG")}>
+            <Checkbox checked={categoryFilters.includes("FMCG")} size="small" sx={{ mr: 1 }} disableRipple />
+            FMCG
+          </MenuItem>
+          <MenuItem onClick={() => toggleCategory("Foodservice")}>
+            <Checkbox checked={categoryFilters.includes("Foodservice")} size="small" sx={{ mr: 1 }} disableRipple />
+            Foodservice
+          </MenuItem>
+          <MenuItem onClick={() => toggleCategory("Overig")}>
+            <Checkbox checked={categoryFilters.includes("Overig")} size="small" sx={{ mr: 1 }} disableRipple />
+            Overig
+          </MenuItem>
+          <Box sx={{ borderTop: 1, borderColor: "divider", my: 0.5 }} />
+          <MenuItem
+            onClick={() => setActiveOnlyFilter((prev) => !prev)}
+            sx={{ bgcolor: activeOnlyFilter ? "action.selected" : undefined }}
+          >
+            <Checkbox checked={activeOnlyFilter} size="small" sx={{ mr: 1 }} disableRipple />
+            Alleen met actieve opdrachten
+          </MenuItem>
+        </Menu>
+      </Box>
+
+      {/* Active filters & sort chips */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", mb: 2 }}>
+        <Chip
+          size="small"
+          label={`Sorteren: ${sortLabels[sortBy]}`}
+          onDelete={sortBy !== "name_asc" ? () => setSortBy("name_asc") : undefined}
+          deleteIcon={sortBy !== "name_asc" ? <CloseIcon /> : undefined}
+          variant="outlined"
+        />
+        {categoryFilters.map((cat) => (
+          <Chip
+            key={cat}
+            size="small"
+            label={`Categorie: ${cat}`}
+            onDelete={() => toggleCategory(cat)}
+            deleteIcon={<CloseIcon />}
+          />
+        ))}
+        {activeOnlyFilter && (
+          <Chip
+            size="small"
+            label="Alleen actieve opdrachten"
+            onDelete={() => setActiveOnlyFilter(false)}
+            deleteIcon={<CloseIcon />}
+          />
+        )}
+        {searchQuery && (
+          <Chip
+            size="small"
+            label={`Zoeken: "${searchQuery.length > 20 ? searchQuery.slice(0, 20) + "…" : searchQuery}"`}
+            onDelete={() => setSearchQuery("")}
+            deleteIcon={<CloseIcon />}
+          />
+        )}
+        {(categoryFilters.length > 0 || activeOnlyFilter || searchQuery) && (
+          <Button
+            size="small"
+            onClick={() => {
+              setSortBy("name_asc");
+              setCategoryFilters([]);
+              setActiveOnlyFilter(false);
+              setSearchQuery("");
+            }}
+          >
+            Alles wissen
+          </Button>
+        )}
       </Box>
 
       {/* Add Client Dialog */}
@@ -193,6 +476,9 @@ export default function AccountsPage() {
           addAccount.close();
           setSubmitError(null);
           reset();
+          setTertiaryCategory([]);
+          setMerken([]);
+          setLabels([]);
         }}
       >
         <DialogTitle>Nieuw account</DialogTitle>
@@ -230,6 +516,13 @@ export default function AccountsPage() {
                 {...register("website")}
                 fullWidth
               />
+              <TextField
+                label="Telefoon"
+                error={!!errors.phone}
+                helperText={errors.phone?.message ?? " "}
+                {...register("phone")}
+                fullWidth
+              />
             </Stack>
 
             <Stack direction="row" spacing={2}>
@@ -254,7 +547,116 @@ export default function AccountsPage() {
                 <MenuItem value="Foodservice">Foodservice</MenuItem>
                 <MenuItem value="Overig">Overig</MenuItem>
               </TextField>
+              <TextField
+                select
+                label="Secundaire categorie"
+                error={!!errors.secondary_category}
+                helperText={errors.secondary_category?.message ?? " "}
+                {...register("secondary_category")}
+                defaultValue=""
+                fullWidth
+              >
+                <MenuItem value="">Selecteer secundaire categorie...</MenuItem>
+                {SECONDARY_CATEGORY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Stack>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                Tertiaire categorie
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {TERTIARY_CATEGORY_OPTIONS.map((opt) => {
+                  const isSelected = tertiaryCategory.includes(opt);
+                  return (
+                    <Chip
+                      key={opt}
+                      label={opt}
+                      size="small"
+                      variant={isSelected ? "filled" : "outlined"}
+                      color={isSelected ? "primary" : "default"}
+                      onClick={() => {
+                        setTertiaryCategory((prev) =>
+                          prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+                        );
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.dark" : "action.hover",
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                Merken
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {MERKEN_OPTIONS.map((opt) => {
+                  const isSelected = merken.includes(opt);
+                  return (
+                    <Chip
+                      key={opt}
+                      label={opt}
+                      size="small"
+                      variant={isSelected ? "filled" : "outlined"}
+                      color={isSelected ? "primary" : "default"}
+                      onClick={() => {
+                        setMerken((prev) =>
+                          prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+                        );
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.dark" : "action.hover",
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                Labels
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {LABELS_OPTIONS.map((opt) => {
+                  const isSelected = labels.includes(opt);
+                  return (
+                    <Chip
+                      key={opt}
+                      label={opt}
+                      size="small"
+                      variant={isSelected ? "filled" : "outlined"}
+                      color={isSelected ? "primary" : "default"}
+                      onClick={() => {
+                        setLabels((prev) =>
+                          prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+                        );
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.dark" : "action.hover",
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
 
             <Stack direction="row" spacing={2}>
               <TextField
@@ -321,6 +723,43 @@ export default function AccountsPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={deleteAccount.isOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Klant verwijderen</DialogTitle>
+        <Box sx={{ px: 3, pb: 1 }}>
+          <Typography>
+            Weet je zeker dat je {accountToDelete?.name} wilt verwijderen? Dit
+            kan niet ongedaan worden gemaakt.
+          </Typography>
+          {deleteError && (
+            <Alert
+              severity="error"
+              onClose={() => setDeleteError(null)}
+              sx={{ mt: 2 }}
+            >
+              {deleteError}
+            </Alert>
+          )}
+        </Box>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={handleDeleteCancel}
+            disabled={deleteAccountMutation.isPending}
+          >
+            Annuleren
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={handleDeleteConfirm}
+            disabled={deleteAccountMutation.isPending}
+          >
+            {deleteAccountMutation.isPending ? "Bezig..." : "Verwijderen"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Clients Grid */}
       {loading && <Typography variant="body2">Laden…</Typography>}
       {error && <Alert severity="error">{error}</Alert>}
@@ -360,46 +799,44 @@ export default function AccountsPage() {
                 }}
               />
 
-              <CardContent sx={{ display: "flex", flexDirection: "row", alignItems: "center", width: "100%", gap: 3, justifyContent: "space-between" }}>
-                {/* Logo */}
-                {account.logo_url && (
-                  <Box
-                    sx={{
-                      width: 120,
-                      height: 120,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: 1,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <img
-                      src={account.logo_url}
-                      alt={account.name}
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "100%",
-                        objectFit: "contain",
-                      }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </Box>
-                )}
-                {/* Company Info */}
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
+              <CardContent
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "60px 1fr 70px 80px auto",
+                    sm: "80px 1fr 90px 100px auto",
+                  },
+                  gap: { xs: 2, sm: 3 },
+                  alignItems: "center",
+                  width: "100%",
+                  minHeight: 72,
+                }}
+              >
+                {/* Logo – altijd ruimte gereserveerd voor consistente uitlijning */}
+                <AccountCardLogo logoUrl={account.logo_url} name={account.name} />
+
+                {/* Bedrijfsnaam */}
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" component="div">
                     Bedrijf
                   </Typography>
-                  <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+                  <Typography
+                    variant="h6"
+                    component="div"
+                    sx={{
+                      fontWeight: 600,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {account.name}
                   </Typography>
                 </Box>
 
+                {/* Omzet */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" component="div">
                     Omzet
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
@@ -407,17 +844,31 @@ export default function AccountsPage() {
                   </Typography>
                 </Box>
 
+                {/* Opdrachten */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" component="div">
                     Opdrachten
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {account.assignments_count || 0} ({account.assignments_count || 0})
+                    {account.assignments_count ?? 0} ({account.active_assignments_count ?? 0})
                   </Typography>
                 </Box>
 
-                {/* Arrow */}
-                <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                {/* Actions */}
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5, justifySelf: "end" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Tooltip title="Klant verwijderen">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={(e) => handleDeleteClick(e, account)}
+                      aria-label={`${account.name} verwijderen`}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   <ArrowForwardIcon color="action" />
                 </Box>
               </CardContent>

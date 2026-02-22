@@ -225,9 +225,9 @@ $FORGE_PHP artisan route:cache
 $FORGE_PHP artisan view:cache
 $FORGE_PHP artisan storage:link
 
-# Migrations (landlord eerst!)
+# Migrations (landlord eerst, daarna per-tenant)
 $FORGE_PHP artisan migrate --path=database/migrations/landlord --force
-$FORGE_PHP artisan migrate --force
+$FORGE_PHP artisan tenants:migrate --force
 
 # Frontend – absolute paden (voorkomt pad-problemen bij zero-downtime)
 cd $FORGE_RELEASE_DIRECTORY/frontend

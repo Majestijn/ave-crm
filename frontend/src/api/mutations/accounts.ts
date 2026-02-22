@@ -12,8 +12,13 @@ export type UpdateAccountData = {
   logo_url?: string | null;
   location?: string | null;
   website?: string | null;
+  phone?: string | null;
   industry?: string | null;
   category?: string | null;
+  secondary_category?: string | null;
+  tertiary_category?: string[] | null;
+  merken?: string[] | null;
+  labels?: string[] | null;
   fte_count?: number | null;
   revenue_cents?: number | null;
   notes?: string | null;
@@ -52,6 +57,24 @@ export const useUpdateAccount = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.accounts.detail(variables.uid),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.accounts.all,
+      });
+    },
+  });
+};
+
+export const useDeleteAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (uid: string) => {
+      return await API.delete(`/accounts/${uid}`);
+    },
+    onSuccess: (_, uid) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.accounts.detail(uid),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.accounts.all,

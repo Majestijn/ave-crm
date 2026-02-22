@@ -17,6 +17,7 @@ export type Contact = {
   network_roles?: string[];
   current_salary_cents?: number;
   education?: string;
+  availability_date?: string; // ISO date (YYYY-MM-DD) – beschikbaarheidsdatum
   linkedin_url?: string;
   cv_url?: string;
   notes?: string;

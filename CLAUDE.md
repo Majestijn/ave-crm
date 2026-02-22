@@ -19,8 +19,19 @@ AVE CRM is a multi-tenant SaaS CRM system for the recruitment industry. It uses 
 docker-compose up -d                                    # Start all services
 docker-compose exec backend-php composer install        # Install PHP dependencies
 docker-compose exec backend-php php artisan test        # Run tests
-docker-compose exec backend-php php artisan migrate     # Run migrations
 docker-compose logs -f backend-php                      # View logs
+```
+
+### Migrations (multi-tenant)
+
+Migrations staan in `database/migrations/landlord/` en `database/migrations/tenant/`. Laravel kijkt standaard alleen in `database/migrations/` (geen subdirs), dus `migrate` zonder path vindt niets.
+
+```bash
+# Landlord (tenant-metadata)
+docker-compose exec backend-php php artisan migrate --path=database/migrations/landlord
+
+# Tenant-databases (per tenant, alleen nieuwe migraties)
+docker-compose exec backend-php php artisan tenants:migrate
 ```
 
 ### Frontend
@@ -44,7 +55,7 @@ npm run lint        # ESLint
 
 - **Tenant resolution:** Domain-based (`DomainTenantFinder`)
 - **Database strategy:** Separate PostgreSQL database per tenant
-- **Migrations:** Split into `database/migrations/landlord/` (tenant metadata) and `database/migrations/tenant/` (per-tenant schema)
+- **Migrations:** Split into `database/migrations/landlord/` (tenant metadata) and `database/migrations/tenant/` (per-tenant schema). Gebruik `tenants:migrate` voor tenant-migraties (niet `tenants:artisan migrate`).
 - **Models:** Use `UsesTenantConnection` trait for tenant-scoped data
 - **Middleware:** `NeedsTenant` enforces tenant context on protected routes
 

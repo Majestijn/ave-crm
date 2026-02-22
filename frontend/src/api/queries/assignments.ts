@@ -6,10 +6,15 @@ export type AssignmentFromAPI = {
   id: number;
   uid: string;
   account_id: number;
+  recruiter_id?: number | null;
   account?: {
     uid: string;
     name: string;
   };
+  recruiter?: {
+    uid: string;
+    name: string;
+  } | null;
   title: string;
   description?: string;
   status: string;

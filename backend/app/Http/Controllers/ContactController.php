@@ -136,6 +136,7 @@ class ContactController extends Controller
             'current_company' => ['nullable', 'string', 'max:255'],
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
             'education' => ['nullable', 'in:MBO,HBO,UNI'],
+            'availability_date' => ['nullable', 'date'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
@@ -211,11 +212,27 @@ class ContactController extends Controller
             $radius = (float) $request->input('radius');
 
             $query->withinRadius($lat, $lng, $radius);
-        } else {
-            $query->orderBy('last_name')->orderBy('first_name');
         }
 
-        $candidates = $query->get()->toArray();
+        // Search in name, email, company, role, location
+        if ($request->filled('search')) {
+            $search = '%' . $request->input('search') . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'ilike', $search)
+                    ->orWhere('last_name', 'ilike', $search)
+                    ->orWhere('email', 'ilike', $search)
+                    ->orWhere('current_company', 'ilike', $search)
+                    ->orWhere('company_role', 'ilike', $search)
+                    ->orWhere('location', 'ilike', $search)
+                    ->orWhereRaw("(COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')) ilike ?", [$search])
+                    ->orWhereRaw("(COALESCE(last_name,'') || ' ' || COALESCE(first_name,'')) ilike ?", [$search]);
+            });
+        }
+
+        $query->orderBy('last_name')->orderBy('first_name');
+
+        $perPage = min(max((int) $request->query('per_page', 50), 1), 100);
+        $candidates = $query->limit($perPage)->get()->toArray();
 
         return response()->json($candidates);
     }

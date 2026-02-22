@@ -90,6 +90,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Assignments where this user is the assigned recruiter.
+     */
+    public function assignedAssignments()
+    {
+        return $this->hasMany(Assignment::class, 'recruiter_id');
+    }
+
+    /**
      * Generate or regenerate the calendar token for iCal feed access.
      */
     public function generateCalendarToken(): string

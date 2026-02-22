@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\Account;
+use App\Models\User;
 use App\Services\FileStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -34,9 +35,14 @@ class AssignmentController extends Controller
             'id' => $assignment->id,
             'uid' => $assignment->uid,
             'account_id' => $assignment->account_id,
+            'recruiter_id' => $assignment->recruiter_id,
             'account' => $assignment->account ? [
                 'uid' => $assignment->account->uid,
                 'name' => $assignment->account->name,
+            ] : null,
+            'recruiter' => $assignment->recruiter ? [
+                'uid' => $assignment->recruiter->uid,
+                'name' => $assignment->recruiter->name,
             ] : null,
             'title' => $assignment->title,
             'description' => $assignment->description,
@@ -58,7 +64,7 @@ class AssignmentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $assignments = Assignment::with('account:id,uid,name')
+        $assignments = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($assignment) => $this->formatAssignment($assignment));
@@ -73,6 +79,7 @@ class AssignmentController extends Controller
     {
         $validated = $request->validate([
             'account_uid' => 'required|string',
+            'recruiter_uid' => 'nullable|string',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'nullable|string|in:active,proposed,hired,completed,cancelled,shadow_management',
@@ -96,8 +103,17 @@ class AssignmentController extends Controller
             ], 422);
         }
 
+        $recruiterId = null;
+        if (!empty($validated['recruiter_uid'])) {
+            $recruiter = User::where('uid', $validated['recruiter_uid'])->first();
+            if ($recruiter) {
+                $recruiterId = $recruiter->id;
+            }
+        }
+
         $assignment = Assignment::create([
             'account_id' => $account->id,
+            'recruiter_id' => $recruiterId,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'status' => $validated['status'] ?? 'active',
@@ -122,7 +138,7 @@ class AssignmentController extends Controller
         }
 
         // Load relationship for response
-        $assignment->load('account:id,uid,name');
+        $assignment->load(['account:id,uid,name', 'recruiter:id,uid,name']);
 
         return response()->json($this->formatAssignment($assignment), 201);
     }
@@ -132,7 +148,7 @@ class AssignmentController extends Controller
      */
     public function show(string $uid): JsonResponse
     {
-        $assignment = Assignment::with('account:id,uid,name')
+        $assignment = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name'])
             ->where('uid', $uid)
             ->firstOrFail();
 
@@ -148,6 +164,7 @@ class AssignmentController extends Controller
 
         $validated = $request->validate([
             'account_uid' => 'sometimes|string',
+            'recruiter_uid' => 'nullable|string',
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'status' => 'sometimes|string|in:active,proposed,hired,completed,cancelled,shadow_management',
@@ -174,6 +191,17 @@ class AssignmentController extends Controller
             unset($validated['account_uid']);
         }
 
+        // If recruiter_uid is provided, resolve to user
+        if (array_key_exists('recruiter_uid', $validated)) {
+            if (empty($validated['recruiter_uid'])) {
+                $assignment->recruiter_id = null;
+            } else {
+                $recruiter = User::where('uid', $validated['recruiter_uid'])->first();
+                $assignment->recruiter_id = $recruiter?->id;
+            }
+            unset($validated['recruiter_uid']);
+        }
+
         // Handle notes image upload
         if ($request->hasFile('notes_image')) {
             // Delete old image if exists
@@ -195,7 +223,7 @@ class AssignmentController extends Controller
         $assignment->save();
 
         // Load relationship for response
-        $assignment->load('account:id,uid,name');
+        $assignment->load(['account:id,uid,name', 'recruiter:id,uid,name']);
 
         return response()->json($this->formatAssignment($assignment));
     }
@@ -236,7 +264,7 @@ class AssignmentController extends Controller
     {
         $account = Account::where('uid', $accountUid)->firstOrFail();
 
-        $assignments = Assignment::with('account:id,uid,name')
+        $assignments = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name'])
             ->where('account_id', $account->id)
             ->orderBy('created_at', 'desc')
             ->get()

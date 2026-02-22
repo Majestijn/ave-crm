@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -26,6 +26,7 @@ import {
 import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
+  Sort as SortIcon,
   SwapVert as SwapVertIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
@@ -33,11 +34,12 @@ import {
   DeleteOutline as DeleteOutlineIcon,
   Edit as EditIcon,
   LinkedIn as LinkedInIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { Assignment } from "../../types/accounts";
 import type { Contact } from "../../types/contacts";
-import { useCandidates } from "../../api/queries/contacts";
+import { useSearchCandidates } from "../../api/queries/contacts";
 import {
   useAssignments,
   type AssignmentFromAPI,
@@ -45,6 +47,7 @@ import {
   type CandidateAssignment,
 } from "../../api/queries/assignments";
 import { useAccounts } from "../../api/queries/accounts";
+import { useUsersForDropdown } from "../../api/queries/users";
 import {
   useCreateAssignment,
   useUpdateAssignment,
@@ -80,6 +83,10 @@ type AssignmentWithDetails = Assignment & {
     uid: string;
     name: string;
   };
+  recruiter?: {
+    uid: string;
+    name: string;
+  } | null;
   location?: string;
   employment_type?: string; // "Fulltime", "Parttime", etc.
   salary_min?: number; // Minimum salary in EUR
@@ -466,14 +473,16 @@ const AssignmentCandidatesLoader = React.memo(
 
 export default function AssignmentsPage() {
   const navigate = useNavigate();
-  const { data: candidates = [], isLoading: candidatesLoading } =
-    useCandidates();
+  const location = useLocation();
+  const [candidateSearchInput, setCandidateSearchInput] = useState("");
+  const [candidateSearchQuery, setCandidateSearchQuery] = useState("");
   const {
     data: apiAssignments = [],
     isLoading: assignmentsLoading,
     error: assignmentsError,
   } = useAssignments();
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+  const { data: users = [] } = useUsersForDropdown();
 
   // Mutations
   const createAssignmentMutation = useCreateAssignment();
@@ -482,10 +491,30 @@ export default function AssignmentsPage() {
   const updateCandidateStatusMutation = useUpdateAssignmentCandidateStatus();
   const removeCandidateMutation = useRemoveAssignmentCandidate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<
+    | "title_asc"
+    | "title_desc"
+    | "account_asc"
+    | "account_desc"
+    | "status"
+    | "salary_desc"
+    | "salary_asc"
+    | "candidates_desc"
+    | "candidates_asc"
+  >("title_asc");
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [employmentTypeFilters, setEmploymentTypeFilters] = useState<string[]>(
+    []
+  );
+  const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
+  const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [expandedAssignments, setExpandedAssignments] = useState<Set<number>>(
     new Set()
   );
+
+  // Expand assignment when navigated from account detail with assignmentUid in state
+  const assignmentUidFromState = (location.state as { assignmentUid?: string })
+    ?.assignmentUid;
   const [expandedNotesImages, setExpandedNotesImages] = useState<Set<number>>(
     new Set()
   );
@@ -496,14 +525,22 @@ export default function AssignmentsPage() {
     [key: number]: string;
   }>({});
   const [addCandidateDialogOpen, setAddCandidateDialogOpen] = useState(false);
+  const { data: searchCandidates = [], isLoading: candidatesLoading } =
+    useSearchCandidates(candidateSearchQuery, addCandidateDialogOpen);
+
+  // Debounce candidate search input
+  React.useEffect(() => {
+    if (!addCandidateDialogOpen) return;
+    const timer = setTimeout(() => setCandidateSearchQuery(candidateSearchInput.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [candidateSearchInput, addCandidateDialogOpen]);
+
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<
     number | null
   >(null);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(
     new Set()
   );
-  const [companyRoleFilter, setCompanyRoleFilter] = useState<string>("");
-  const [locationFilter, setLocationFilter] = useState<string>("");
   const [candidateStatusMenuAnchor, setCandidateStatusMenuAnchor] = useState<{
     [key: string]: HTMLElement | null;
   }>({});
@@ -513,6 +550,7 @@ export default function AssignmentsPage() {
   const [newAssignmentTitle, setNewAssignmentTitle] = useState("");
   const [newAssignmentDescription, setNewAssignmentDescription] = useState("");
   const [newAssignmentAccountUid, setNewAssignmentAccountUid] = useState("");
+  const [newAssignmentRecruiterUid, setNewAssignmentRecruiterUid] = useState("");
   const [newAssignmentSalaryMin, setNewAssignmentSalaryMin] = useState("");
   const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState("");
   const [newAssignmentVacationDays, setNewAssignmentVacationDays] = useState<
@@ -539,6 +577,7 @@ export default function AssignmentsPage() {
   const [editAssignmentTitle, setEditAssignmentTitle] = useState("");
   const [editAssignmentDescription, setEditAssignmentDescription] = useState("");
   const [editAssignmentAccountUid, setEditAssignmentAccountUid] = useState("");
+  const [editAssignmentRecruiterUid, setEditAssignmentRecruiterUid] = useState("");
   const [editAssignmentSalaryMin, setEditAssignmentSalaryMin] = useState("");
   const [editAssignmentSalaryMax, setEditAssignmentSalaryMax] = useState("");
   const [editAssignmentVacationDays, setEditAssignmentVacationDays] = useState<
@@ -617,6 +656,7 @@ export default function AssignmentsPage() {
       description: a.description,
       status: a.status,
       account: a.account,
+      recruiter: a.recruiter,
       salary_min: a.salary_min,
       salary_max: a.salary_max,
       vacation_days: a.vacation_days,
@@ -627,6 +667,17 @@ export default function AssignmentsPage() {
       candidates: [], // Will be populated by AssignmentCandidatesLoader component
     }));
   }, [apiAssignments]);
+
+  // Expand assignment when navigated from account detail with assignmentUid
+  useEffect(() => {
+    if (!assignmentUidFromState || apiAssignments.length === 0) return;
+    const match = apiAssignments.find((a) => a.uid === assignmentUidFromState);
+    if (match) {
+      setExpandedAssignments((prev) => new Set(prev).add(match.id));
+      // Clear state so we don't re-expand on later visits
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [assignmentUidFromState, apiAssignments, navigate, location.pathname]);
 
   const handleCreateAssignment = async () => {
     if (!newAssignmentAccountUid) {
@@ -643,6 +694,7 @@ export default function AssignmentsPage() {
     try {
       await createAssignmentMutation.mutateAsync({
         account_uid: newAssignmentAccountUid,
+        recruiter_uid: newAssignmentRecruiterUid || null,
         title: newAssignmentTitle.trim(),
         description: newAssignmentDescription.trim() || null,
         salary_min: parseFormattedNumber(newAssignmentSalaryMin) || null,
@@ -659,6 +711,7 @@ export default function AssignmentsPage() {
       setNewAssignmentTitle("");
       setNewAssignmentDescription("");
       setNewAssignmentAccountUid("");
+      setNewAssignmentRecruiterUid("");
       setNewAssignmentSalaryMin("");
       setNewAssignmentSalaryMax("");
       setNewAssignmentVacationDays("");
@@ -681,6 +734,7 @@ export default function AssignmentsPage() {
     setEditAssignmentTitle(assignment.title || "");
     setEditAssignmentDescription(assignment.description || "");
     setEditAssignmentAccountUid(assignment.account?.uid || "");
+    setEditAssignmentRecruiterUid(assignment.recruiter?.uid || "");
     setEditAssignmentSalaryMin(assignment.salary_min ? assignment.salary_min.toLocaleString("nl-NL") : "");
     setEditAssignmentSalaryMax(assignment.salary_max ? assignment.salary_max.toLocaleString("nl-NL") : "");
     setEditAssignmentVacationDays(assignment.vacation_days || "");
@@ -711,6 +765,7 @@ export default function AssignmentsPage() {
       await updateAssignmentMutation.mutateAsync({
         uid: editingAssignment.uid,
         data: {
+          recruiter_uid: editAssignmentRecruiterUid || null,
           title: editAssignmentTitle.trim(),
           description: editAssignmentDescription.trim() || null,
           salary_min: parseFormattedNumber(editAssignmentSalaryMin) || null,
@@ -860,8 +915,8 @@ export default function AssignmentsPage() {
     );
     setSelectedCandidateIds(existingCandidateUids);
 
-    setCompanyRoleFilter("");
-    setLocationFilter("");
+    setCandidateSearchInput("");
+    setCandidateSearchQuery("");
     setAddCandidateDialogOpen(true);
   };
 
@@ -869,8 +924,8 @@ export default function AssignmentsPage() {
     setAddCandidateDialogOpen(false);
     setSelectedAssignmentId(null);
     setSelectedCandidateIds(new Set());
-    setCompanyRoleFilter("");
-    setLocationFilter("");
+    setCandidateSearchInput("");
+    setCandidateSearchQuery("");
   };
 
   const handleToggleCandidateSelection = (candidateUid: string) => {
@@ -891,30 +946,21 @@ export default function AssignmentsPage() {
     const assignment = assignments.find((a) => a.id === selectedAssignmentId);
     if (!assignment || !assignment.uid) return;
 
-    // Get selected candidates
-    const selectedCandidates = candidates.filter((c) =>
-      selectedCandidateIds.has(c.uid)
-    );
-
-    // Check which candidates are already in the assignment
     const existingCandidates =
       localCandidateAssignments[selectedAssignmentId] || [];
     const existingCandidateUids = new Set(
       existingCandidates.map((c) => c.contact.uid)
     );
 
-    // Filter out already added candidates
-    const newCandidates = selectedCandidates.filter(
-      (c) => !existingCandidateUids.has(c.uid)
+    // Filter to only NEW candidates (not already in assignment)
+    const contactUids = [...selectedCandidateIds].filter(
+      (uid) => !existingCandidateUids.has(uid)
     );
 
-    if (newCandidates.length === 0) {
+    if (contactUids.length === 0) {
       handleCloseAddCandidateDialog();
       return;
     }
-
-    // Get UIDs of new candidates to add
-    const contactUids = newCandidates.map((c) => c.uid);
 
     try {
       await addCandidatesMutation.mutateAsync({
@@ -953,35 +999,19 @@ export default function AssignmentsPage() {
     }
   };
 
-  // Get available candidates for the selected assignment (includes already linked candidates)
-  const getAvailableCandidates = () => {
+  // Merge search results with already-linked (so they always show as selected)
+  const getAvailableCandidates = (): Array<{ uid: string; first_name?: string; last_name?: string; company_role?: string; current_company?: string }> => {
     if (!selectedAssignmentId) return [];
 
-    return candidates.filter((c) => {
-      // Filter by company_role (case-insensitive partial match)
-      if (companyRoleFilter && c.company_role) {
-        if (
-          !c.company_role
-            .toLowerCase()
-            .includes(companyRoleFilter.toLowerCase())
-        ) {
-          return false;
-        }
-      } else if (companyRoleFilter && !c.company_role) {
-        return false; // If filter is set but candidate has no role, exclude
-      }
+    const existing = localCandidateAssignments[selectedAssignmentId] || [];
+    const existingMap = new Map(existing.map((c) => [c.contact.uid, c.contact]));
+    const searchIds = new Set(searchCandidates.map((c) => c.uid));
 
-      // Filter by location (case-insensitive partial match)
-      if (locationFilter && c.location) {
-        if (!c.location.toLowerCase().includes(locationFilter.toLowerCase())) {
-          return false;
-        }
-      } else if (locationFilter && !c.location) {
-        return false; // If filter is set but candidate has no location, exclude
-      }
-
-      return true;
-    });
+    // Already-linked that aren't in search results - include them so user sees who's added
+    const fromExisting = existing
+      .filter((c) => !searchIds.has(c.contact.uid))
+      .map((c) => c.contact);
+    return [...fromExisting, ...searchCandidates];
   };
 
   // Get UIDs of candidates already linked to the selected assignment
@@ -992,17 +1022,97 @@ export default function AssignmentsPage() {
     return new Set(existingCandidates.map((c) => c.contact.uid));
   };
 
-  const filteredAssignments = assignments.filter((assignment) => {
-    const matchesSearch =
-      assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      assignment.account?.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" ||
-      assignmentStatuses[assignment.id] === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const getCurrentStatus = (a: AssignmentWithDetails) =>
+    assignmentStatuses[a.id] || a.status || "active";
+
+  const toggleStatusFilter = (status: string) => {
+    setStatusFilters((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
+    );
+  };
+
+  const toggleEmploymentType = (type: string) => {
+    setEmploymentTypeFilters((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
+  const sortLabels: Record<typeof sortBy, string> = {
+    title_asc: "Titel A–Z",
+    title_desc: "Titel Z–A",
+    account_asc: "Klant A–Z",
+    account_desc: "Klant Z–A",
+    status: "Status",
+    salary_desc: "Salaris hoog → laag",
+    salary_asc: "Salaris laag → hoog",
+    candidates_desc: "Meeste kandidaten eerst",
+    candidates_asc: "Minste kandidaten eerst",
+  };
+
+  const filteredAssignments = React.useMemo(() => {
+    let result = assignments.filter((assignment) => {
+      const matchesSearch =
+        !searchQuery.trim() ||
+        assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        assignment.account?.name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
+      const currentStatus = getCurrentStatus(assignment);
+      const matchesStatus =
+        statusFilters.length === 0 || statusFilters.includes(currentStatus);
+      const matchesEmploymentType =
+        employmentTypeFilters.length === 0 ||
+        (assignment.employment_type &&
+          employmentTypeFilters.includes(assignment.employment_type));
+      return matchesSearch && matchesStatus && matchesEmploymentType;
+    });
+
+    const sorted = [...result].sort((a, b) => {
+      const aStatus = getCurrentStatus(a);
+      const bStatus = getCurrentStatus(b);
+      const statusOrder = ["active", "proposed", "hired", "shadow_management", "completed", "cancelled"];
+      const aStatusIdx = statusOrder.indexOf(aStatus);
+      const bStatusIdx = statusOrder.indexOf(bStatus);
+
+      switch (sortBy) {
+        case "title_asc":
+          return (a.title || "").localeCompare(b.title || "");
+        case "title_desc":
+          return (b.title || "").localeCompare(a.title || "");
+        case "account_asc":
+          return (a.account?.name || "").localeCompare(b.account?.name || "");
+        case "account_desc":
+          return (b.account?.name || "").localeCompare(a.account?.name || "");
+        case "status":
+          return (aStatusIdx - bStatusIdx) || (a.title || "").localeCompare(b.title || "");
+        case "salary_desc":
+          return (b.salary_max ?? b.salary_min ?? 0) - (a.salary_max ?? a.salary_min ?? 0);
+        case "salary_asc":
+          return (a.salary_min ?? a.salary_max ?? 0) - (b.salary_min ?? b.salary_max ?? 0);
+        case "candidates_desc": {
+          const aCands = localCandidateAssignments[a.id]?.length ?? 0;
+          const bCands = localCandidateAssignments[b.id]?.length ?? 0;
+          return bCands - aCands;
+        }
+        case "candidates_asc": {
+          const aCands = localCandidateAssignments[a.id]?.length ?? 0;
+          const bCands = localCandidateAssignments[b.id]?.length ?? 0;
+          return aCands - bCands;
+        }
+        default:
+          return 0;
+      }
+    });
+    return sorted;
+  }, [
+    assignments,
+    searchQuery,
+    statusFilters,
+    employmentTypeFilters,
+    sortBy,
+    assignmentStatuses,
+    localCandidateAssignments,
+  ]);
 
   return (
     <Box>
@@ -1010,7 +1120,7 @@ export default function AssignmentsPage() {
         {/* Header with Search, Sort, Filter, and Add Button */}
         <Stack direction="row" spacing={2} alignItems="center">
           <TextField
-            placeholder="Zoeken..."
+            placeholder="Zoeken op titel of klant..."
             size="small"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -1025,18 +1135,86 @@ export default function AssignmentsPage() {
           />
           <Button
             variant="outlined"
-            startIcon={<SwapVertIcon />}
+            startIcon={<SortIcon />}
+            onClick={(e) => setSortAnchor(e.currentTarget)}
+            color={sortBy !== "title_asc" ? "primary" : "inherit"}
             sx={{ minWidth: 120 }}
           >
             Sorteren
           </Button>
+          <Menu
+            anchorEl={sortAnchor}
+            open={Boolean(sortAnchor)}
+            onClose={() => setSortAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          >
+            <MenuItem onClick={() => { setSortBy("title_asc"); setSortAnchor(null); }}>
+              Titel A–Z
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("title_desc"); setSortAnchor(null); }}>
+              Titel Z–A
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("account_asc"); setSortAnchor(null); }}>
+              Klant A–Z
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("account_desc"); setSortAnchor(null); }}>
+              Klant Z–A
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("status"); setSortAnchor(null); }}>
+              Status
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("salary_desc"); setSortAnchor(null); }}>
+              Salaris hoog → laag
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("salary_asc"); setSortAnchor(null); }}>
+              Salaris laag → hoog
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("candidates_desc"); setSortAnchor(null); }}>
+              Meeste kandidaten eerst
+            </MenuItem>
+            <MenuItem onClick={() => { setSortBy("candidates_asc"); setSortAnchor(null); }}>
+              Minste kandidaten eerst
+            </MenuItem>
+          </Menu>
           <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
+            onClick={(e) => setFilterAnchor(e.currentTarget)}
+            color={statusFilters.length > 0 || employmentTypeFilters.length > 0 ? "primary" : "inherit"}
             sx={{ minWidth: 120 }}
           >
             Filteren
           </Button>
+          <Menu
+            anchorEl={filterAnchor}
+            open={Boolean(filterAnchor)}
+            onClose={() => setFilterAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          >
+            {statusOptions.map((opt) => (
+              <MenuItem key={opt.value} onClick={() => toggleStatusFilter(opt.value)}>
+                <Checkbox checked={statusFilters.includes(opt.value)} size="small" sx={{ mr: 1 }} disableRipple />
+                {opt.label}
+              </MenuItem>
+            ))}
+            <Box sx={{ borderTop: 1, borderColor: "divider", my: 0.5 }} />
+            <MenuItem onClick={() => toggleEmploymentType("Fulltime")}>
+              <Checkbox checked={employmentTypeFilters.includes("Fulltime")} size="small" sx={{ mr: 1 }} disableRipple />
+              Fulltime
+            </MenuItem>
+            <MenuItem onClick={() => toggleEmploymentType("Parttime")}>
+              <Checkbox checked={employmentTypeFilters.includes("Parttime")} size="small" sx={{ mr: 1 }} disableRipple />
+              Parttime
+            </MenuItem>
+            <MenuItem onClick={() => toggleEmploymentType("Freelance")}>
+              <Checkbox checked={employmentTypeFilters.includes("Freelance")} size="small" sx={{ mr: 1 }} disableRipple />
+              Freelance
+            </MenuItem>
+            <MenuItem onClick={() => toggleEmploymentType("ZZP")}>
+              <Checkbox checked={employmentTypeFilters.includes("ZZP")} size="small" sx={{ mr: 1 }} disableRipple />
+              ZZP
+            </MenuItem>
+          </Menu>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -1046,6 +1224,59 @@ export default function AssignmentsPage() {
             Opdracht toevoegen
           </Button>
         </Stack>
+
+        {/* Active filters & sort chips */}
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+          <Chip
+            size="small"
+            label={`Sorteren: ${sortLabels[sortBy]}`}
+            onDelete={sortBy !== "title_asc" ? () => setSortBy("title_asc") : undefined}
+            deleteIcon={sortBy !== "title_asc" ? <CloseIcon /> : undefined}
+            variant="outlined"
+          />
+          {statusFilters.map((s) => {
+            const label = statusOptions.find((o) => o.value === s)?.label ?? s;
+            return (
+              <Chip
+                key={s}
+                size="small"
+                label={`Status: ${label}`}
+                onDelete={() => toggleStatusFilter(s)}
+                deleteIcon={<CloseIcon />}
+              />
+            );
+          })}
+          {employmentTypeFilters.map((t) => (
+            <Chip
+              key={t}
+              size="small"
+              label={`Type: ${t}`}
+              onDelete={() => toggleEmploymentType(t)}
+              deleteIcon={<CloseIcon />}
+            />
+          ))}
+          {searchQuery && (
+            <Chip
+              size="small"
+              label={`Zoeken: "${searchQuery.length > 20 ? searchQuery.slice(0, 20) + "…" : searchQuery}"`}
+              onDelete={() => setSearchQuery("")}
+              deleteIcon={<CloseIcon />}
+            />
+          )}
+          {(statusFilters.length > 0 || employmentTypeFilters.length > 0 || searchQuery) && (
+            <Button
+              size="small"
+              onClick={() => {
+                setSortBy("title_asc");
+                setStatusFilters([]);
+                setEmploymentTypeFilters([]);
+                setSearchQuery("");
+              }}
+            >
+              Alles wissen
+            </Button>
+          )}
+        </Box>
 
         {/* Warning if no accounts */}
         {!accountsLoading && accounts.length === 0 && (
@@ -1125,6 +1356,11 @@ export default function AssignmentsPage() {
                     >
                       {assignment.account?.name}
                     </Link>
+                    {assignment.recruiter?.name && (
+                      <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Recruiter: {assignment.recruiter.name}
+                      </Typography>
+                    )}
                   </Box>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Tooltip title="Bewerk opdracht">
@@ -1427,7 +1663,7 @@ export default function AssignmentsPage() {
                                           component="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            navigate(`/candidates`, {
+                                            navigate(`/network?kandidaten=1`, {
                                               state: {
                                                 contactUid:
                                                   candidate.contact.uid,
@@ -1690,95 +1926,23 @@ export default function AssignmentsPage() {
             </Typography>
           ) : (
             <>
-              {/* Filter Section */}
-              <Stack spacing={2} sx={{ mb: 2, mt: 1 }}>
-                <Stack direction="row" spacing={2}>
-                  <TextField
-                    label="Functie filteren"
-                    placeholder="Bijv. Developer, Manager..."
-                    value={companyRoleFilter}
-                    onChange={(e) => setCompanyRoleFilter(e.target.value)}
-                    size="small"
-                    sx={{ flex: 1 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="Locatie filteren"
-                    placeholder="Bijv. Amsterdam, Rotterdam..."
-                    value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                    size="small"
-                    sx={{ flex: 1 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Stack>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    // Random company roles
-                    const roles = [
-                      "Developer",
-                      "Manager",
-                      "Designer",
-                      "Engineer",
-                      "Consultant",
-                      "Analyst",
-                      "Specialist",
-                      "Coordinator",
-                    ];
-                    // Random locations
-                    const locations = [
-                      "Amsterdam",
-                      "Rotterdam",
-                      "Utrecht",
-                      "Den Haag",
-                      "Eindhoven",
-                      "Groningen",
-                      "Maastricht",
-                      "Nijmegen",
-                    ];
-
-                    // Randomly select or clear filters
-                    const randomRole =
-                      Math.random() > 0.5
-                        ? roles[Math.floor(Math.random() * roles.length)]
-                        : "";
-                    const randomLocation =
-                      Math.random() > 0.5
-                        ? locations[
-                        Math.floor(Math.random() * locations.length)
-                        ]
-                        : "";
-
-                    setCompanyRoleFilter(randomRole);
-                    setLocationFilter(randomLocation);
-                  }}
-                  sx={{
-                    alignSelf: "flex-start",
-                    borderColor: "warning.main",
-                    color: "warning.main",
-                    "&:hover": {
-                      borderColor: "warning.dark",
-                      backgroundColor: "warning.light",
-                    },
-                  }}
-                >
-                  🐛 Debug: Vul filters in
-                </Button>
-              </Stack>
+              {/* Search - server-side, max 50 results */}
+              <TextField
+                label="Zoeken op naam, e-mail, bedrijf of functie"
+                placeholder="Typ om te zoeken..."
+                value={candidateSearchInput}
+                onChange={(e) => setCandidateSearchInput(e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ mb: 2, mt: 1 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
               {/* Select All / Deselect All */}
               {getAvailableCandidates().length > 0 && (
@@ -1825,9 +1989,9 @@ export default function AssignmentsPage() {
                   color="text.secondary"
                   sx={{ py: 2, textAlign: "center" }}
                 >
-                  {companyRoleFilter || locationFilter
-                    ? "Geen kandidaten gevonden met de geselecteerde filters."
-                    : "Geen kandidaten beschikbaar."}
+                  {candidateSearchInput.trim()
+                    ? "Geen kandidaten gevonden. Probeer een andere zoekterm."
+                    : "Typ in het zoekveld om kandidaten te vinden."}
                 </Typography>
               ) : (
                 <List sx={{ maxHeight: 400, overflow: "auto" }}>
@@ -1955,6 +2119,7 @@ export default function AssignmentsPage() {
           setNewAssignmentTitle("");
           setNewAssignmentDescription("");
           setNewAssignmentAccountUid("");
+          setNewAssignmentRecruiterUid("");
           setNewAssignmentSalaryMin("");
           setNewAssignmentSalaryMax("");
           setNewAssignmentVacationDays("");
@@ -1983,6 +2148,22 @@ export default function AssignmentsPage() {
                 {accounts.map((account) => (
                   <MenuItem key={account.uid} value={account.uid}>
                     {account.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Recruiter</InputLabel>
+              <Select
+                value={newAssignmentRecruiterUid}
+                onChange={(e) => setNewAssignmentRecruiterUid(e.target.value)}
+                label="Recruiter"
+              >
+                <MenuItem value="">Geen recruiter toegewezen</MenuItem>
+                {users.map((user) => (
+                  <MenuItem key={user.uid} value={user.uid}>
+                    {user.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -2235,6 +2416,22 @@ export default function AssignmentsPage() {
               value={editAssignmentDescription}
               onChange={(e) => setEditAssignmentDescription(e.target.value)}
             />
+
+            <FormControl fullWidth>
+              <InputLabel>Recruiter</InputLabel>
+              <Select
+                value={editAssignmentRecruiterUid}
+                onChange={(e) => setEditAssignmentRecruiterUid(e.target.value)}
+                label="Recruiter"
+              >
+                <MenuItem value="">Geen recruiter toegewezen</MenuItem>
+                {users.map((user) => (
+                  <MenuItem key={user.uid} value={user.uid}>
+                    {user.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <Stack direction="row" spacing={2}>
               <TextField

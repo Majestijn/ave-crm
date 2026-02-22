@@ -5,6 +5,7 @@ import type { AssignmentFromAPI } from "../queries/assignments";
 
 export type CreateAssignmentData = {
   account_uid: string;
+  recruiter_uid?: string | null;
   title: string;
   description?: string | null;
   status?: string | null;
@@ -26,6 +27,7 @@ export const useCreateAssignment = () => {
         const formData = new FormData();
         formData.append("account_uid", data.account_uid);
         formData.append("title", data.title);
+        if (data.recruiter_uid) formData.append("recruiter_uid", data.recruiter_uid);
         if (data.description) formData.append("description", data.description);
         if (data.salary_min !== null && data.salary_min !== undefined) {
           formData.append("salary_min", String(data.salary_min));
@@ -49,7 +51,10 @@ export const useCreateAssignment = () => {
       }
 
       const { notes_image, ...jsonData } = data;
-      return await API.post<AssignmentFromAPI>("/assignments", jsonData);
+      return await API.post<AssignmentFromAPI>("/assignments", {
+        ...jsonData,
+        recruiter_uid: data.recruiter_uid ?? undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.assignments.all });
@@ -59,6 +64,7 @@ export const useCreateAssignment = () => {
 
 export type UpdateAssignmentData = {
   account_uid?: string;
+  recruiter_uid?: string | null;
   title?: string;
   description?: string | null;
   status?: string | null;

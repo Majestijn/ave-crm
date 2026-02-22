@@ -1,11 +1,10 @@
 import React from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "./pages/guest/login";
 import DefaultLayout from "./components/layout/DefaultLayout";
 import Dashboard from "./pages/default/dashboard";
 import GuestLayout from "./components/layout/GuestLayout";
 import Register from "./pages/guest/register";
-import Candidates from "./pages/default/candidates";
 import Accounts from "./pages/default/accounts";
 import AccountDetail from "./pages/default/account-detail";
 import Assignments from "./pages/default/assignments";
@@ -31,7 +30,7 @@ const router = createBrowserRouter([
     element: <DefaultLayout />,
     children: [
       { path: "/dashboard", element: <Dashboard /> },
-      { path: "/candidates", element: <Candidates /> },
+      { path: "/candidates", element: <Navigate to="/network?kandidaten=1" replace /> },
       { path: "/accounts", element: <Accounts /> },
       { path: "/accounts/:uid", element: <AccountDetail /> },
       { path: "/assignments", element: <Assignments /> },

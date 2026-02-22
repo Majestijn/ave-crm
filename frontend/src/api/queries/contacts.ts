@@ -28,13 +28,13 @@ export const useContacts = (locationFilter?: LocationFilter, ageFilter?: AgeFilt
     ].filter(Boolean),
     queryFn: async () => {
       const params = new URLSearchParams();
-      
+
       if (locationFilter) {
         params.append("lat", locationFilter.lat.toString());
         params.append("lng", locationFilter.lng.toString());
         params.append("radius", locationFilter.radius.toString());
       }
-      
+
       if (ageFilter) {
         if (ageFilter.minAge !== undefined) {
           params.append("min_age", ageFilter.minAge.toString());
@@ -43,13 +43,14 @@ export const useContacts = (locationFilter?: LocationFilter, ageFilter?: AgeFilt
           params.append("max_age", ageFilter.maxAge.toString());
         }
       }
-      
+
       const url = params.toString() ? `/contacts?${params.toString()}` : "/contacts";
       const responseData = await API.get<Contact[] | { data: Contact[] }>(url);
 
       if (Array.isArray(responseData)) {
         return responseData;
-      } else if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
+      }
+      if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
         return responseData.data;
       }
 
@@ -84,6 +85,29 @@ export const useCandidates = (locationFilter?: LocationFilter) => {
 
       return [] as Contact[];
     },
+  });
+};
+
+/**
+ * Search candidates for assignment dialog - fetches max 50, server-side search.
+ * Use when dialog is open to avoid loading thousands of contacts.
+ */
+export const useSearchCandidates = (search: string, enabled: boolean) => {
+  return useQuery({
+    queryKey: [...queryKeys.contacts.candidates, "search", search],
+    queryFn: async () => {
+      const params = new URLSearchParams({ per_page: "50" });
+      if (search.trim()) params.set("search", search.trim());
+      const responseData = await API.get<Contact[] | { data: Contact[] }>(
+        `/contacts/candidates?${params.toString()}`
+      );
+      if (Array.isArray(responseData)) return responseData;
+      if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
+        return responseData.data;
+      }
+      return [] as Contact[];
+    },
+    enabled,
   });
 };
 

@@ -19,8 +19,13 @@ class Account extends Model
         'logo_url',
         'location',
         'website',
+        'phone',
         'industry',
         'category',
+        'secondary_category',
+        'tertiary_category',
+        'merken',
+        'labels',
         'fte_count',
         'revenue_cents',
         'notes',
@@ -30,6 +35,9 @@ class Account extends Model
         'uid' => 'string',
         'fte_count' => 'integer',
         'revenue_cents' => 'integer',
+        'tertiary_category' => 'array',
+        'merken' => 'array',
+        'labels' => 'array',
     ];
 
     public function getRouteKeyName(): string

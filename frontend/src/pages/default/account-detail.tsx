@@ -1,24 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
+  Alert,
   Box,
-  Grid,
-  Stack,
   Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogTitle,
+  Grid,
+  IconButton,
+  Link,
   Paper,
-  Typography,
-  Tabs,
-  Tab,
+  Tooltip,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Link,
-  Chip,
+  Tabs,
+  Tab,
+  Typography,
 } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import { Add as AddIcon, OpenInNew as OpenInNewIcon } from "@mui/icons-material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useAccount } from "../../api/queries/accounts";
 import { useContacts } from "../../api/queries/contacts";
 import {
@@ -41,6 +48,8 @@ import {
   AddContactDialog,
   disabledButtonSx,
 } from "../../components/account";
+import { useDeleteAccount } from "../../api/mutations/accounts";
+import { useDisclosure } from "../../hooks/useDisclosure";
 
 // Helper function for candidate status colors
 const getCandidateStatusColor = (
@@ -94,6 +103,9 @@ export default function AccountDetailPage() {
   // Activity mutations
   const updateActivityMutation = useUpdateAssignmentActivity(selectedAssignment);
   const deleteActivityMutation = useDeleteAssignmentActivity(selectedAssignment);
+  const deleteAccountMutation = useDeleteAccount();
+  const deleteAccountConfirm = useDisclosure();
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
 
   // Candidates query (depends on selectedAssignment)
   const { data: candidatesData = [], isLoading: candidatesLoading } =
@@ -121,10 +133,31 @@ export default function AccountDetailPage() {
     return <Box sx={{ p: 3 }}>{error || "Account niet gevonden"}</Box>;
 
   const activeAssignments = assignments.filter((a) => a.status === "active");
+  const selectedAssignmentData = assignments.find((a) => a.uid === selectedAssignment);
   const existingContactUids =
     (account.contacts
       ?.map((ac) => ac.contact?.uid)
       .filter(Boolean) as string[]) || [];
+
+  const handleDeleteAccountClick = () => {
+    setDeleteAccountError(null);
+    deleteAccountConfirm.open();
+  };
+
+  const handleDeleteAccountConfirm = async () => {
+    if (!uid) return;
+    setDeleteAccountError(null);
+    try {
+      await deleteAccountMutation.mutateAsync(uid);
+      deleteAccountConfirm.close();
+      navigate("/accounts");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Fout bij verwijderen van klant";
+      setDeleteAccountError(msg);
+    }
+  };
 
   return (
     <Box
@@ -140,6 +173,8 @@ export default function AccountDetailPage() {
         account={account}
         totalAssignments={assignments.length}
         activeAssignments={activeAssignments.length}
+        onDelete={handleDeleteAccountClick}
+        isDeleting={deleteAccountMutation.isPending}
       />
 
       <Grid container spacing={4}>
@@ -162,11 +197,36 @@ export default function AccountDetailPage() {
             alignItems="center"
             mb={2}
           >
-            <AssignmentSelector
-              assignments={assignments}
-              selectedAssignment={selectedAssignment}
-              onSelect={setSelectedAssignment}
-            />
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+              <AssignmentSelector
+                assignments={assignments}
+                selectedAssignment={selectedAssignment}
+                onSelect={setSelectedAssignment}
+              />
+              {selectedAssignmentData?.recruiter?.name && (
+                <Chip
+                  size="small"
+                  label={`Recruiter: ${selectedAssignmentData.recruiter.name}`}
+                  variant="outlined"
+                  sx={{ fontWeight: 500 }}
+                />
+              )}
+              {selectedAssignment && (
+                <Tooltip title="Ga naar opdracht">
+                  <IconButton
+                    color="primary"
+                    onClick={() =>
+                      navigate("/assignments", {
+                        state: { assignmentUid: selectedAssignment },
+                      })
+                    }
+                    aria-label="Ga naar opdracht"
+                  >
+                    <OpenInNewIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
 
             {activeTab === "events" && (
               <Button
@@ -362,7 +422,7 @@ export default function AccountDetailPage() {
                             <Link
                               component="button"
                               onClick={() =>
-                                navigate(`/candidates`, {
+                                navigate(`/network?kandidaten=1`, {
                                   state: { contactUid: candidate.contact.uid },
                                 })
                               }
@@ -437,6 +497,52 @@ export default function AccountDetailPage() {
             contacts={contacts}
             existingContactUids={existingContactUids}
           />
+
+          {/* Delete Account Confirmation Dialog */}
+          <Dialog
+            open={deleteAccountConfirm.isOpen}
+            onClose={() => {
+              deleteAccountConfirm.close();
+              setDeleteAccountError(null);
+            }}
+          >
+            <DialogTitle>Klant verwijderen</DialogTitle>
+            <Box sx={{ px: 3, pb: 1 }}>
+              <Typography>
+                Weet je zeker dat je {account.name} wilt verwijderen? Dit kan
+                niet ongedaan worden gemaakt.
+              </Typography>
+              {deleteAccountError && (
+                <Alert
+                  severity="error"
+                  onClose={() => setDeleteAccountError(null)}
+                  sx={{ mt: 2 }}
+                >
+                  {deleteAccountError}
+                </Alert>
+              )}
+            </Box>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button
+                onClick={() => {
+                  deleteAccountConfirm.close();
+                  setDeleteAccountError(null);
+                }}
+                disabled={deleteAccountMutation.isPending}
+              >
+                Annuleren
+              </Button>
+              <Button
+                color="error"
+                variant="contained"
+                startIcon={<DeleteOutlineIcon />}
+                onClick={handleDeleteAccountConfirm}
+                disabled={deleteAccountMutation.isPending}
+              >
+                {deleteAccountMutation.isPending ? "Bezig..." : "Verwijderen"}
+              </Button>
+            </DialogActions>
+          </Dialog>
         </>
       )}
     </Box>

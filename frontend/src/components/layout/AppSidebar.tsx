@@ -12,7 +12,6 @@ import {
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
@@ -25,7 +24,6 @@ const drawerWidth = 260;
 
 const navItems = [
   { label: "Home", to: "/dashboard", icon: <HomeOutlinedIcon /> },
-  { label: "Kandidaten", to: "/candidates", icon: <PeopleOutlineIcon /> },
   {
     label: "Opdrachten",
     to: "/assignments",

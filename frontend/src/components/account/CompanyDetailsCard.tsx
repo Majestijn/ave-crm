@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Alert,
   MenuItem,
+  Chip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import type { Account } from "../../types/accounts";
@@ -28,6 +29,30 @@ const formatNumberInput = (value: string): string => {
 };
 import { useUpdateAccount, type UpdateAccountData } from "../../api/mutations/accounts";
 
+const SECONDARY_CATEGORY_OPTIONS = [
+  "Retailer",
+  "Groothandel",
+  "Leverancier",
+  "Industrie",
+  "Andere",
+] as const;
+
+const TERTIARY_CATEGORY_OPTIONS = ["Non-food", "Food"] as const;
+
+const MERKEN_OPTIONS = ["Merk", "Private label"] as const;
+
+const LABELS_OPTIONS = [
+  "Vers",
+  "Zuivel & eieren",
+  "Diepvries",
+  "DKW (houdbaar voedsel)",
+  "Dranken",
+  "Snacks & snoep",
+  "Non-food",
+  "Verpakkingen",
+  "Convenience & ready-to-use",
+] as const;
+
 type Props = {
   account: Account;
 };
@@ -39,8 +64,13 @@ export default function CompanyDetailsCard({ account }: Props) {
     logo_url: account.logo_url || "",
     location: account.location || "",
     website: account.website || "",
+    phone: account.phone || "",
     industry: account.industry || "",
     category: account.category || "",
+    secondary_category: account.secondary_category || "",
+    tertiary_category: account.tertiary_category || null,
+    merken: account.merken || null,
+    labels: account.labels || null,
     fte_count: account.fte_count || null,
     revenue_cents: account.revenue_cents || null,
     notes: account.notes || "",
@@ -60,8 +90,13 @@ export default function CompanyDetailsCard({ account }: Props) {
       logo_url: account.logo_url || "",
       location: account.location || "",
       website: account.website || "",
+      phone: account.phone || "",
       industry: account.industry || "",
       category: account.category || "",
+      secondary_category: account.secondary_category || "",
+      tertiary_category: account.tertiary_category || null,
+      merken: account.merken || null,
+      labels: account.labels || null,
       fte_count: account.fte_count || null,
       revenue_cents: account.revenue_cents || null,
       notes: account.notes || "",
@@ -107,8 +142,13 @@ export default function CompanyDetailsCard({ account }: Props) {
       logo_url: formData.logo_url || null,
       location: formData.location || null,
       website: formData.website || null,
+      phone: formData.phone || null,
       industry: formData.industry || null,
       category: formData.category || null,
+      secondary_category: formData.secondary_category || null,
+      tertiary_category: formData.tertiary_category,
+      merken: formData.merken,
+      labels: formData.labels,
       fte_count: formData.fte_count,
       revenue_cents: formData.revenue_cents,
       notes: formData.notes || null,
@@ -168,6 +208,10 @@ export default function CompanyDetailsCard({ account }: Props) {
             </Typography>
           </Box>
           <Box display="flex" justifyContent="space-between">
+            <Typography color="text.secondary">Telefoon</Typography>
+            <Typography fontWeight="bold">{account.phone || "-"}</Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between">
             <Typography color="text.secondary">Branche</Typography>
             <Typography fontWeight="bold">{account.industry || "-"}</Typography>
           </Box>
@@ -175,6 +219,46 @@ export default function CompanyDetailsCard({ account }: Props) {
             <Typography color="text.secondary">Categorie</Typography>
             <Typography fontWeight="bold">{account.category || "-"}</Typography>
           </Box>
+          <Box display="flex" justifyContent="space-between">
+            <Typography color="text.secondary">Secundaire categorie</Typography>
+            <Typography fontWeight="bold">{account.secondary_category || "-"}</Typography>
+          </Box>
+          {account.tertiary_category && account.tertiary_category.length > 0 && (
+            <Box>
+              <Typography color="text.secondary" sx={{ mb: 0.5 }}>
+                Tertiaire categorie
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                {account.tertiary_category.map((c) => (
+                  <Chip key={c} label={c} size="small" variant="outlined" />
+                ))}
+              </Box>
+            </Box>
+          )}
+          {account.merken && account.merken.length > 0 && (
+            <Box>
+              <Typography color="text.secondary" sx={{ mb: 0.5 }}>
+                Merken
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                {account.merken.map((m) => (
+                  <Chip key={m} label={m} size="small" variant="outlined" />
+                ))}
+              </Box>
+            </Box>
+          )}
+          {account.labels && account.labels.length > 0 && (
+            <Box>
+              <Typography color="text.secondary" sx={{ mb: 0.5 }}>
+                Labels
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                {account.labels.map((l) => (
+                  <Chip key={l} label={l} size="small" variant="outlined" />
+                ))}
+              </Box>
+            </Box>
+          )}
           <Box display="flex" justifyContent="space-between">
             <Typography color="text.secondary">Aantal FTE</Typography>
             <Typography fontWeight="bold">
@@ -254,6 +338,14 @@ export default function CompanyDetailsCard({ account }: Props) {
               />
 
               <TextField
+                label="Telefoon"
+                value={formData.phone || ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                fullWidth
+                placeholder="bijv. +31 20 123 4567"
+              />
+
+              <TextField
                 label="Branche"
                 value={formData.industry || ""}
                 onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
@@ -273,6 +365,128 @@ export default function CompanyDetailsCard({ account }: Props) {
                 <MenuItem value="Foodservice">Foodservice</MenuItem>
                 <MenuItem value="Overig">Overig</MenuItem>
               </TextField>
+
+              <TextField
+                select
+                label="Secundaire categorie"
+                value={formData.secondary_category || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, secondary_category: e.target.value }))
+                }
+                fullWidth
+              >
+                <MenuItem value="">Geen secundaire categorie</MenuItem>
+                {SECONDARY_CATEGORY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Tertiaire categorie
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {TERTIARY_CATEGORY_OPTIONS.map((opt) => {
+                    const isSelected = (formData.tertiary_category || []).includes(opt);
+                    return (
+                      <Chip
+                        key={opt}
+                        label={opt}
+                        size="small"
+                        variant={isSelected ? "filled" : "outlined"}
+                        color={isSelected ? "primary" : "default"}
+                        onClick={() => {
+                          setFormData((prev) => {
+                            const current = prev.tertiary_category || [];
+                            const next = current.includes(opt)
+                              ? current.filter((o) => o !== opt)
+                              : [...current, opt];
+                            return { ...prev, tertiary_category: next };
+                          });
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": {
+                            bgcolor: isSelected ? "primary.dark" : "action.hover",
+                          },
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Merken
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {MERKEN_OPTIONS.map((opt) => {
+                    const isSelected = (formData.merken || []).includes(opt);
+                    return (
+                      <Chip
+                        key={opt}
+                        label={opt}
+                        size="small"
+                        variant={isSelected ? "filled" : "outlined"}
+                        color={isSelected ? "primary" : "default"}
+                        onClick={() => {
+                          setFormData((prev) => {
+                            const current = prev.merken || [];
+                            const next = current.includes(opt)
+                              ? current.filter((o) => o !== opt)
+                              : [...current, opt];
+                            return { ...prev, merken: next };
+                          });
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": {
+                            bgcolor: isSelected ? "primary.dark" : "action.hover",
+                          },
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Labels
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {LABELS_OPTIONS.map((opt) => {
+                    const isSelected = (formData.labels || []).includes(opt);
+                    return (
+                      <Chip
+                        key={opt}
+                        label={opt}
+                        size="small"
+                        variant={isSelected ? "filled" : "outlined"}
+                        color={isSelected ? "primary" : "default"}
+                        onClick={() => {
+                          setFormData((prev) => {
+                            const current = prev.labels || [];
+                            const next = current.includes(opt)
+                              ? current.filter((o) => o !== opt)
+                              : [...current, opt];
+                            return { ...prev, labels: next };
+                          });
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": {
+                            bgcolor: isSelected ? "primary.dark" : "action.hover",
+                          },
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
 
               <TextField
                 label="Aantal FTE"

@@ -15,6 +15,7 @@ class Assignment extends Model
     protected $fillable = [
         'uid',
         'account_id',
+        'recruiter_id',
         'title',
         'description',
         'status',
@@ -52,6 +53,11 @@ class Assignment extends Model
     public function account()
     {
         return $this->belongsTo(Account::class);
+    }
+
+    public function recruiter()
+    {
+        return $this->belongsTo(User::class, 'recruiter_id');
     }
 
     public function candidates()

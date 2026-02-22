@@ -32,6 +32,7 @@ class Contact extends Model
         'network_roles',
         'current_salary_cents',
         'education',
+        'availability_date',
         'linkedin_url',
         'notes',
     ];
@@ -39,6 +40,7 @@ class Contact extends Model
     protected $casts = [
         'uid' => 'string',
         'date_of_birth' => 'date',
+        'availability_date' => 'date',
         'current_salary_cents' => 'integer',
         'network_roles' => 'array',
         'latitude' => 'float',
