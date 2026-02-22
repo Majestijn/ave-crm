@@ -1000,7 +1000,7 @@ export default function AssignmentsPage() {
   };
 
   // Merge search results with already-linked (so they always show as selected)
-  const getAvailableCandidates = (): Array<{ uid: string; first_name?: string; last_name?: string; company_role?: string; current_company?: string }> => {
+  const getAvailableCandidates = (): Array<{ uid: string; first_name?: string; last_name?: string; company_role?: string; current_company?: string; location?: string }> => {
     if (!selectedAssignmentId) return [];
 
     const existing = localCandidateAssignments[selectedAssignmentId] || [];
