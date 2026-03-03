@@ -29,6 +29,11 @@ $devPatterns = [
     '#https?://[a-z0-9-]+\.lvh\.me(:\d+)?#',
 ];
 
+// Chrome extension (LinkedIn import) - allow in both dev and prod
+$extensionPatterns = [
+    '#^chrome-extension://[a-z]+$#',  // LinkedIn extension
+];
+
 // Production origins from .env
 $prodOrigins = array_filter([
     env('CORS_ALLOWED_ORIGIN'),
@@ -43,7 +48,9 @@ return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
     'allowed_origins' => $isProduction ? $prodOrigins : array_merge($devOrigins, $prodOrigins),
-    'allowed_origins_patterns' => $isProduction ? $prodPatterns : array_merge($devPatterns, $prodPatterns),
+    'allowed_origins_patterns' => $isProduction
+        ? array_merge($prodPatterns, $extensionPatterns)
+        : array_merge($devPatterns, $prodPatterns, $extensionPatterns),
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
     'max_age' => 0,

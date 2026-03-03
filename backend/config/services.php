@@ -38,7 +38,11 @@ return [
     'google_cloud' => [
         'project_id' => env('GOOGLE_CLOUD_PROJECT'),
         'bucket' => env('GOOGLE_CLOUD_BUCKET'),
-        'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+        'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS')
+            ? (str_starts_with(env('GOOGLE_APPLICATION_CREDENTIALS'), '/')
+                ? env('GOOGLE_APPLICATION_CREDENTIALS')
+                : base_path(env('GOOGLE_APPLICATION_CREDENTIALS')))
+            : null,
         'location' => env('VERTEX_AI_LOCATION', 'europe-west4'),
         'model' => env('VERTEX_AI_MODEL', 'gemini-2.0-flash-001'),
     ],

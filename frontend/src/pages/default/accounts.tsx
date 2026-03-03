@@ -170,8 +170,17 @@ export default function AccountsPage() {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [revenueInput, setRevenueInput] = useState("");
-  const [revenueValue, setRevenueValue] = useState<number | undefined>(undefined);
-  const [sortBy, setSortBy] = useState<"name_asc" | "name_desc" | "revenue_desc" | "revenue_asc" | "assignments_desc" | "assignments_asc">("name_asc");
+  const [revenueValue, setRevenueValue] = useState<number | undefined>(
+    undefined,
+  );
+  const [sortBy, setSortBy] = useState<
+    | "name_asc"
+    | "name_desc"
+    | "revenue_desc"
+    | "revenue_asc"
+    | "assignments_desc"
+    | "assignments_asc"
+  >("name_asc");
   const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
   const [tertiaryCategory, setTertiaryCategory] = useState<string[]>([]);
   const [merken, setMerken] = useState<string[]>([]);
@@ -212,7 +221,9 @@ export default function AccountsPage() {
       const submitData = {
         ...data,
         secondary_category: data.secondary_category || undefined,
-        tertiary_category: tertiaryCategory.length ? tertiaryCategory : undefined,
+        tertiary_category: tertiaryCategory.length
+          ? tertiaryCategory
+          : undefined,
         merken: merken.length ? merken : undefined,
         labels: labels.length ? labels : undefined,
         revenue_cents: revenueValue ? revenueValue * 100 : undefined,
@@ -242,11 +253,13 @@ export default function AccountsPage() {
 
   const filteredAccounts = React.useMemo(() => {
     let result = accounts.filter((account) =>
-      account.name.toLowerCase().includes(searchQuery.toLowerCase())
+      account.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     if (categoryFilters.length > 0) {
-      result = result.filter((a) => a.category && categoryFilters.includes(a.category));
+      result = result.filter(
+        (a) => a.category && categoryFilters.includes(a.category),
+      );
     }
     if (activeOnlyFilter) {
       result = result.filter((a) => a.has_active_assignments);
@@ -284,7 +297,7 @@ export default function AccountsPage() {
 
   const toggleCategory = (cat: string) => {
     setCategoryFilters((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     );
   };
 
@@ -320,7 +333,14 @@ export default function AccountsPage() {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header with search and filters */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography variant="h5" component="h1">
           Accounts
         </Typography>
@@ -362,22 +382,52 @@ export default function AccountsPage() {
           onClose={() => setSortAnchor(null)}
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         >
-          <MenuItem onClick={() => { setSortBy("name_asc"); setSortAnchor(null); }}>
+          <MenuItem
+            onClick={() => {
+              setSortBy("name_asc");
+              setSortAnchor(null);
+            }}
+          >
             Naam A–Z
           </MenuItem>
-          <MenuItem onClick={() => { setSortBy("name_desc"); setSortAnchor(null); }}>
+          <MenuItem
+            onClick={() => {
+              setSortBy("name_desc");
+              setSortAnchor(null);
+            }}
+          >
             Naam Z–A
           </MenuItem>
-          <MenuItem onClick={() => { setSortBy("revenue_desc"); setSortAnchor(null); }}>
+          <MenuItem
+            onClick={() => {
+              setSortBy("revenue_desc");
+              setSortAnchor(null);
+            }}
+          >
             Omzet hoog → laag
           </MenuItem>
-          <MenuItem onClick={() => { setSortBy("revenue_asc"); setSortAnchor(null); }}>
+          <MenuItem
+            onClick={() => {
+              setSortBy("revenue_asc");
+              setSortAnchor(null);
+            }}
+          >
             Omzet laag → hoog
           </MenuItem>
-          <MenuItem onClick={() => { setSortBy("assignments_desc"); setSortAnchor(null); }}>
+          <MenuItem
+            onClick={() => {
+              setSortBy("assignments_desc");
+              setSortAnchor(null);
+            }}
+          >
             Meeste opdrachten eerst
           </MenuItem>
-          <MenuItem onClick={() => { setSortBy("assignments_asc"); setSortAnchor(null); }}>
+          <MenuItem
+            onClick={() => {
+              setSortBy("assignments_asc");
+              setSortAnchor(null);
+            }}
+          >
             Minste opdrachten eerst
           </MenuItem>
         </Menu>
@@ -385,7 +435,11 @@ export default function AccountsPage() {
           variant="outlined"
           startIcon={<FilterIcon />}
           onClick={(e) => setFilterAnchor(e.currentTarget)}
-          color={categoryFilters.length > 0 || activeOnlyFilter ? "primary" : "inherit"}
+          color={
+            categoryFilters.length > 0 || activeOnlyFilter
+              ? "primary"
+              : "inherit"
+          }
         >
           Filteren
         </Button>
@@ -396,15 +450,30 @@ export default function AccountsPage() {
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         >
           <MenuItem onClick={() => toggleCategory("FMCG")}>
-            <Checkbox checked={categoryFilters.includes("FMCG")} size="small" sx={{ mr: 1 }} disableRipple />
+            <Checkbox
+              checked={categoryFilters.includes("FMCG")}
+              size="small"
+              sx={{ mr: 1 }}
+              disableRipple
+            />
             FMCG
           </MenuItem>
           <MenuItem onClick={() => toggleCategory("Foodservice")}>
-            <Checkbox checked={categoryFilters.includes("Foodservice")} size="small" sx={{ mr: 1 }} disableRipple />
+            <Checkbox
+              checked={categoryFilters.includes("Foodservice")}
+              size="small"
+              sx={{ mr: 1 }}
+              disableRipple
+            />
             Foodservice
           </MenuItem>
           <MenuItem onClick={() => toggleCategory("Overig")}>
-            <Checkbox checked={categoryFilters.includes("Overig")} size="small" sx={{ mr: 1 }} disableRipple />
+            <Checkbox
+              checked={categoryFilters.includes("Overig")}
+              size="small"
+              sx={{ mr: 1 }}
+              disableRipple
+            />
             Overig
           </MenuItem>
           <Box sx={{ borderTop: 1, borderColor: "divider", my: 0.5 }} />
@@ -412,18 +481,33 @@ export default function AccountsPage() {
             onClick={() => setActiveOnlyFilter((prev) => !prev)}
             sx={{ bgcolor: activeOnlyFilter ? "action.selected" : undefined }}
           >
-            <Checkbox checked={activeOnlyFilter} size="small" sx={{ mr: 1 }} disableRipple />
+            <Checkbox
+              checked={activeOnlyFilter}
+              size="small"
+              sx={{ mr: 1 }}
+              disableRipple
+            />
             Alleen met actieve opdrachten
           </MenuItem>
         </Menu>
       </Box>
 
       {/* Active filters & sort chips */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 1,
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Chip
           size="small"
           label={`Sorteren: ${sortLabels[sortBy]}`}
-          onDelete={sortBy !== "name_asc" ? () => setSortBy("name_asc") : undefined}
+          onDelete={
+            sortBy !== "name_asc" ? () => setSortBy("name_asc") : undefined
+          }
           deleteIcon={sortBy !== "name_asc" ? <CloseIcon /> : undefined}
           variant="outlined"
         />
@@ -581,7 +665,9 @@ export default function AccountsPage() {
                       color={isSelected ? "primary" : "default"}
                       onClick={() => {
                         setTertiaryCategory((prev) =>
-                          prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+                          prev.includes(opt)
+                            ? prev.filter((o) => o !== opt)
+                            : [...prev, opt],
                         );
                       }}
                       sx={{
@@ -612,7 +698,9 @@ export default function AccountsPage() {
                       color={isSelected ? "primary" : "default"}
                       onClick={() => {
                         setMerken((prev) =>
-                          prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+                          prev.includes(opt)
+                            ? prev.filter((o) => o !== opt)
+                            : [...prev, opt],
                         );
                       }}
                       sx={{
@@ -643,7 +731,9 @@ export default function AccountsPage() {
                       color={isSelected ? "primary" : "default"}
                       onClick={() => {
                         setLabels((prev) =>
-                          prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+                          prev.includes(opt)
+                            ? prev.filter((o) => o !== opt)
+                            : [...prev, opt],
                         );
                       }}
                       sx={{
@@ -681,7 +771,9 @@ export default function AccountsPage() {
                 fullWidth
                 helperText="Voer het bedrag in euro's in"
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                  startAdornment: (
+                    <InputAdornment position="start">€</InputAdornment>
+                  ),
                 }}
               />
             </Stack>
@@ -767,7 +859,9 @@ export default function AccountsPage() {
       {!loading && !error && filteredAccounts.length === 0 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary" align="center">
-            {searchQuery ? "Geen accounts gevonden voor deze zoekopdracht." : "Geen accounts gevonden. Voeg een account toe om te beginnen."}
+            {searchQuery
+              ? "Geen accounts gevonden voor deze zoekopdracht."
+              : "Geen accounts gevonden. Voeg een account toe om te beginnen."}
           </Typography>
         </Paper>
       )}
@@ -793,8 +887,10 @@ export default function AccountsPage() {
               {/* Left indicator bar */}
               <Box
                 sx={{
-                  width: 4,
-                  bgcolor: account.has_active_assignments ? "green" : "grey.400",
+                  width: "30px",
+                  bgcolor: account.has_active_assignments
+                    ? "green"
+                    : "grey.400",
                   flexShrink: 0,
                 }}
               />
@@ -813,11 +909,18 @@ export default function AccountsPage() {
                 }}
               >
                 {/* Logo – altijd ruimte gereserveerd voor consistente uitlijning */}
-                <AccountCardLogo logoUrl={account.logo_url} name={account.name} />
+                <AccountCardLogo
+                  logoUrl={account.logo_url}
+                  name={account.name}
+                />
 
                 {/* Bedrijfsnaam */}
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="caption" color="text.secondary" component="div">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    component="div"
+                  >
                     Bedrijf
                   </Typography>
                   <Typography
@@ -836,7 +939,11 @@ export default function AccountsPage() {
 
                 {/* Omzet */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary" component="div">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    component="div"
+                  >
                     Omzet
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
@@ -846,17 +953,27 @@ export default function AccountsPage() {
 
                 {/* Opdrachten */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary" component="div">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    component="div"
+                  >
                     Opdrachten
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {account.assignments_count ?? 0} ({account.active_assignments_count ?? 0})
+                    {account.assignments_count ?? 0} (
+                    {account.active_assignments_count ?? 0})
                   </Typography>
                 </Box>
 
                 {/* Actions */}
                 <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 0.5, justifySelf: "end" }}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    justifySelf: "end",
+                  }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Tooltip title="Klant verwijderen">

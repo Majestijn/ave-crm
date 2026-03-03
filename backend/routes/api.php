@@ -17,6 +17,7 @@ use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\CalendarFeedController;
 use App\Http\Controllers\ContactDocumentController;
 use App\Http\Controllers\BatchCvImportController;
+use App\Http\Controllers\LinkedInImportController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -118,6 +119,9 @@ Route::prefix('/v1')->group(function () {
         // Calendar feed URL management (authenticated)
         Route::get('/calendar-feed/url', [CalendarFeedController::class, 'getUrl']);
         Route::post('/calendar-feed/regenerate', [CalendarFeedController::class, 'regenerateToken']);
+
+        // LinkedIn import (browser extension)
+        Route::post('/linkedin-import', [LinkedInImportController::class, 'store']);
 
         // Batch CV import (Vertex AI)
         Route::post('/cv-import/batch', [BatchCvImportController::class, 'upload']);
