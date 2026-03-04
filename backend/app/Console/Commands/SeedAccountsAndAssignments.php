@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Assignment;
 use App\Models\Contact;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -39,7 +40,7 @@ class SeedAccountsAndAssignments extends Command
 
     private array $categories = ['FMCG', 'Foodservice', 'Overig'];
 
-    private array $secondaryCategories = ['Retailer', 'Groothandel', 'Leverancier', 'Industrie', 'Andere'];
+    private array $secondaryCategories = ['Retailer', 'Supermarkten', 'Groothandel', 'Leverancier', 'Industrie', 'Andere'];
 
     private array $tertiaryCategories = ['Non-food', 'Food'];
 
@@ -79,7 +80,9 @@ class SeedAccountsAndAssignments extends Command
 
     private array $employmentTypes = ['Fulltime', 'Parttime', 'Freelance', 'ZZP'];
 
-    private array $networkRoles = ['candidate', 'ambassador', 'client_decision'];
+    private array $networkRoles = ['candidate', 'ambassador', 'client_decision', 'interim', 'potential_management', 'co_decision_maker', 'potential_directie', 'candidate_reference', 'hr_employment', 'hr_recruiters', 'directie', 'owner', 'expert', 'coach', 'former_owner', 'former_director', 'commissioner', 'investor', 'network_group', 'budget_holder', 'candidate_placed', 'client_principal', 'signing_authority', 'final_decision_maker'];
+
+    private array $clientStatuses = ['potential', 'potential_first_assignment', 'new_client', 'active_client', 'active_client', 'active_client', 'inactive', 'lost'];
 
     private array $prefixes = ['van', 'de', 'van de', 'van den', 'van der', null, null, null];
 
@@ -103,11 +106,12 @@ class SeedAccountsAndAssignments extends Command
             $this->info("Seeding tenant: {$tenant->name} (id: {$tenant->id})");
             $tenant->makeCurrent();
 
+            $users = $this->seedUsers();
             $accounts = $this->seedAccounts($numAccounts);
-            $this->seedAssignments($accounts, $numAssignments);
+            $this->seedAssignments($accounts, $numAssignments, $users);
             $this->seedContacts($numContacts);
 
-            $this->info("  ✓ {$numAccounts} klanten, {$numAssignments} opdrachten en {$numContacts} contacten aangemaakt.");
+            $this->info("  ✓ " . count($users) . " gebruikers, {$numAccounts} klanten, {$numAssignments} opdrachten en {$numContacts} contacten aangemaakt.");
         }
 
         return 0;
@@ -136,19 +140,55 @@ class SeedAccountsAndAssignments extends Command
                 'fte_count' => rand(50, 5000),
                 'revenue_cents' => rand(1_000_000, 500_000_000) * 100, // 1M - 500M euro
                 'notes' => null,
+                'client_status' => $this->clientStatuses[array_rand($this->clientStatuses)],
+                'sales_target' => ['Marketing', 'Sales', 'Inkoop', 'Supply Chain', 'Finance', 'Directie'][array_rand(['Marketing', 'Sales', 'Inkoop', 'Supply Chain', 'Finance', 'Directie'])],
             ]);
         }
 
         return $accounts;
     }
 
-    private function seedAssignments(array $accounts, int $count): void
+    private function seedUsers(): array
     {
+        $seedUsers = [
+            ['name' => 'Pieter de Vries',    'email' => 'pieter@demo.nl',    'role' => 'admin'],
+            ['name' => 'Sophie Bakker',       'email' => 'sophie@demo.nl',    'role' => 'management'],
+            ['name' => 'Jan Jansen',          'email' => 'jan@demo.nl',       'role' => 'recruiter'],
+            ['name' => 'Lisa van Dijk',       'email' => 'lisa@demo.nl',      'role' => 'recruiter'],
+            ['name' => 'Tom Hendriks',        'email' => 'tom@demo.nl',       'role' => 'recruiter'],
+            ['name' => 'Emma Visser',         'email' => 'emma@demo.nl',      'role' => 'recruiter'],
+            ['name' => 'Mark de Boer',        'email' => 'mark@demo.nl',      'role' => 'viewer'],
+        ];
+
+        $users = [];
+        foreach ($seedUsers as $u) {
+            if ($existing = User::where('email', $u['email'])->first()) {
+                $users[] = $existing;
+                continue;
+            }
+            $users[] = User::create([
+                'name' => $u['name'],
+                'email' => $u['email'],
+                'password' => bcrypt('password'),
+                'role' => $u['role'],
+            ]);
+        }
+
+        return $users;
+    }
+
+    private function seedAssignments(array $accounts, int $count, array $users): void
+    {
+        $recruiterUsers = array_values(array_filter($users, fn($u) => in_array($u->role, ['recruiter', 'admin', 'management'])));
+
         for ($i = 0; $i < $count; $i++) {
             $account = $accounts[array_rand($accounts)];
 
-            Assignment::create([
+            $leadRecruiter = !empty($recruiterUsers) ? $recruiterUsers[array_rand($recruiterUsers)] : null;
+
+            $assignment = Assignment::create([
                 'account_id' => $account->id,
+                'recruiter_id' => $leadRecruiter?->id,
                 'title' => $this->assignmentTitles[array_rand($this->assignmentTitles)],
                 'description' => "Opdracht voor {$account->name}. Verantwoordelijk voor de dagelijkse operatie en groei.",
                 'status' => $this->statuses[array_rand($this->statuses)],
@@ -158,6 +198,17 @@ class SeedAccountsAndAssignments extends Command
                 'location' => $this->randomLocation(),
                 'employment_type' => $this->employmentTypes[array_rand($this->employmentTypes)],
             ]);
+
+            if (count($recruiterUsers) > 1 && rand(1, 3) <= 2) {
+                $availableSecondary = array_filter($recruiterUsers, fn($u) => !$leadRecruiter || $u->id !== $leadRecruiter->id);
+                if (!empty($availableSecondary)) {
+                    $numSecondary = rand(1, min(3, count($availableSecondary)));
+                    $shuffled = $availableSecondary;
+                    shuffle($shuffled);
+                    $secondaryIds = array_map(fn($u) => $u->id, array_slice($shuffled, 0, $numSecondary));
+                    $assignment->secondaryRecruiters()->attach($secondaryIds);
+                }
+            }
         }
     }
 

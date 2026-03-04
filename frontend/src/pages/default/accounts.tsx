@@ -94,6 +94,7 @@ function AccountCardLogo({
 
 const SECONDARY_CATEGORY_OPTIONS = [
   "Retailer",
+  "Supermarkten",
   "Groothandel",
   "Leverancier",
   "Industrie",
@@ -116,6 +117,15 @@ const LABELS_OPTIONS = [
   "Convenience & ready-to-use",
 ] as const;
 
+const SALES_DOEL_OPTIONS = [
+  "Marketing",
+  "Sales",
+  "Inkoop",
+  "Supply Chain",
+  "Finance",
+  "Directie",
+] as const;
+
 const AccountSchema = z.object({
   name: z.string().min(1, "Bedrijfsnaam is verplicht"),
   logo_url: z.string().optional().or(z.literal("")),
@@ -125,6 +135,7 @@ const AccountSchema = z.object({
   industry: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),
   secondary_category: z.string().optional().or(z.literal("")),
+  sales_target: z.string().optional().or(z.literal("")),
   fte_count: z.number().optional(),
   notes: z.string().optional().or(z.literal("")),
 });
@@ -210,6 +221,7 @@ export default function AccountsPage() {
       industry: "",
       category: "",
       secondary_category: "",
+      sales_target: "",
       fte_count: undefined,
       notes: "",
     },
@@ -647,6 +659,22 @@ export default function AccountsPage() {
                   </MenuItem>
                 ))}
               </TextField>
+              <TextField
+                select
+                label="Sales doel"
+                error={!!errors.sales_target}
+                helperText={errors.sales_target?.message ?? " "}
+                {...register("sales_target")}
+                defaultValue=""
+                fullWidth
+              >
+                <MenuItem value="">Selecteer sales doel...</MenuItem>
+                {SALES_DOEL_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Stack>
 
             <Box>
@@ -884,16 +912,34 @@ export default function AccountsPage() {
               }}
               onClick={() => navigate(`/accounts/${account.uid}`)}
             >
-              {/* Left indicator bar */}
-              <Box
-                sx={{
-                  width: "30px",
-                  bgcolor: account.has_active_assignments
-                    ? "green"
-                    : "grey.400",
-                  flexShrink: 0,
-                }}
-              />
+              {/* Left indicator bar - colored by client_status */}
+              <Tooltip
+                title={({
+                  potential: "Potentieel",
+                  potential_first_assignment: "Potentieel (1e opdracht)",
+                  new_client: "Nieuwe klant",
+                  active_client: "Actieve klant",
+                  inactive: "Niet-actief",
+                  lost: "Verloren",
+                } as Record<string, string>)[account.client_status || ""] || "Geen status"}
+                placement="left"
+                arrow
+              >
+                <Box
+                  sx={{
+                    width: "30px",
+                    bgcolor: ({
+                      potential: "#FFA726",
+                      potential_first_assignment: "#FFB74D",
+                      new_client: "#81C784",
+                      active_client: "#388E3C",
+                      inactive: "#BDBDBD",
+                      lost: "#E53935",
+                    } as Record<string, string>)[account.client_status || ""] || "grey.400",
+                    flexShrink: 0,
+                  }}
+                />
+              </Tooltip>
 
               <CardContent
                 sx={{

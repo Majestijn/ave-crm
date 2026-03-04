@@ -64,6 +64,11 @@ export const networkRoleLabels: Record<string, string> = {
   commissioner: "Commissaris",
   investor: "Investeerder",
   network_group: "Netwerkgroep",
+  budget_holder: "Budgethouder",
+  candidate_placed: "Geplaatste kandidaat",
+  client_principal: "Opdrachtgever",
+  signing_authority: "Tekenbevoegdheid",
+  final_decision_maker: "Eindbeslisser",
 };
 
 /**
@@ -89,6 +94,11 @@ export const networkRoleLabelsShort: Record<string, string> = {
   commissioner: "Commissaris",
   investor: "Investeerder",
   network_group: "Netwerkgroep",
+  budget_holder: "Budgethouder",
+  candidate_placed: "Geplaatst",
+  client_principal: "Opdrachtgever",
+  signing_authority: "Tekenbevoegd",
+  final_decision_maker: "Eindbeslisser",
 };
 
 /**

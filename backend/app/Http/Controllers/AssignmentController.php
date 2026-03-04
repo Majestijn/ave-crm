@@ -44,6 +44,10 @@ class AssignmentController extends Controller
                 'uid' => $assignment->recruiter->uid,
                 'name' => $assignment->recruiter->name,
             ] : null,
+            'secondary_recruiters' => $assignment->secondaryRecruiters->map(fn($u) => [
+                'uid' => $u->uid,
+                'name' => $u->name,
+            ])->values()->toArray(),
             'title' => $assignment->title,
             'description' => $assignment->description,
             'status' => $assignment->status,
@@ -53,6 +57,7 @@ class AssignmentController extends Controller
             'location' => $assignment->location,
             'employment_type' => $assignment->employment_type,
             'benefits' => $assignment->benefits,
+            'start_date' => $assignment->start_date?->format('Y-m-d'),
             'notes_image_url' => $notesImageUrl,
             'created_at' => $assignment->created_at,
             'updated_at' => $assignment->updated_at,
@@ -64,7 +69,7 @@ class AssignmentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $assignments = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name'])
+        $assignments = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name', 'secondaryRecruiters:users.id,uid,name'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($assignment) => $this->formatAssignment($assignment));
@@ -90,6 +95,9 @@ class AssignmentController extends Controller
             'employment_type' => 'nullable|string|max:255',
             'benefits' => 'nullable|array',
             'benefits.*' => 'string|max:100',
+            'start_date' => 'nullable|date',
+            'secondary_recruiter_uids' => 'nullable|array',
+            'secondary_recruiter_uids.*' => 'string',
             'notes_image' => 'nullable|file|image|max:5120', // max 5MB
         ]);
 
@@ -123,7 +131,14 @@ class AssignmentController extends Controller
             'location' => $validated['location'] ?? null,
             'employment_type' => $validated['employment_type'] ?? null,
             'benefits' => $validated['benefits'] ?? null,
+            'start_date' => $validated['start_date'] ?? null,
         ]);
+
+        // Sync secondary recruiters
+        if (!empty($validated['secondary_recruiter_uids'])) {
+            $secondaryIds = User::whereIn('uid', $validated['secondary_recruiter_uids'])->pluck('id')->toArray();
+            $assignment->secondaryRecruiters()->sync($secondaryIds);
+        }
 
         // Handle notes image upload
         if ($request->hasFile('notes_image')) {
@@ -138,7 +153,7 @@ class AssignmentController extends Controller
         }
 
         // Load relationship for response
-        $assignment->load(['account:id,uid,name', 'recruiter:id,uid,name']);
+        $assignment->load(['account:id,uid,name', 'recruiter:id,uid,name', 'secondaryRecruiters:users.id,uid,name']);
 
         return response()->json($this->formatAssignment($assignment), 201);
     }
@@ -148,7 +163,7 @@ class AssignmentController extends Controller
      */
     public function show(string $uid): JsonResponse
     {
-        $assignment = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name'])
+        $assignment = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name', 'secondaryRecruiters:users.id,uid,name'])
             ->where('uid', $uid)
             ->firstOrFail();
 
@@ -175,6 +190,9 @@ class AssignmentController extends Controller
             'employment_type' => 'nullable|string|max:255',
             'benefits' => 'nullable|array',
             'benefits.*' => 'string|max:100',
+            'start_date' => 'nullable|date',
+            'secondary_recruiter_uids' => 'nullable|array',
+            'secondary_recruiter_uids.*' => 'string',
             'notes_image' => 'nullable|file|image|max:5120', // max 5MB
         ]);
 
@@ -218,12 +236,21 @@ class AssignmentController extends Controller
             $validated['notes_image_path'] = $imagePath;
         }
 
+        // Sync secondary recruiters
+        if (array_key_exists('secondary_recruiter_uids', $validated)) {
+            $secondaryIds = !empty($validated['secondary_recruiter_uids'])
+                ? User::whereIn('uid', $validated['secondary_recruiter_uids'])->pluck('id')->toArray()
+                : [];
+            $assignment->secondaryRecruiters()->sync($secondaryIds);
+            unset($validated['secondary_recruiter_uids']);
+        }
+
         unset($validated['notes_image']);
         $assignment->fill($validated);
         $assignment->save();
 
         // Load relationship for response
-        $assignment->load(['account:id,uid,name', 'recruiter:id,uid,name']);
+        $assignment->load(['account:id,uid,name', 'recruiter:id,uid,name', 'secondaryRecruiters:users.id,uid,name']);
 
         return response()->json($this->formatAssignment($assignment));
     }
@@ -264,7 +291,7 @@ class AssignmentController extends Controller
     {
         $account = Account::where('uid', $accountUid)->firstOrFail();
 
-        $assignments = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name'])
+        $assignments = Assignment::with(['account:id,uid,name', 'recruiter:id,uid,name', 'secondaryRecruiters:users.id,uid,name'])
             ->where('account_id', $account->id)
             ->orderBy('created_at', 'desc')
             ->get()

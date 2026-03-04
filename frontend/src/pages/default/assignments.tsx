@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -12,17 +12,16 @@ import {
   Chip,
   FormControl,
   InputLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Pagination,
   Link,
   Menu,
   Collapse,
 } from "@mui/material";
+import {
+  DataGrid,
+  type GridColDef,
+  GridToolbarContainer,
+  GridToolbarFilterButton,
+} from "@mui/x-data-grid";
 import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
@@ -35,6 +34,8 @@ import {
   Edit as EditIcon,
   LinkedIn as LinkedInIcon,
   Close as CloseIcon,
+  Description as DescriptionIcon,
+  ViewColumn as ViewColumnIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { Assignment } from "../../types/accounts";
@@ -59,6 +60,8 @@ import {
 } from "../../api/mutations/assignmentCandidates";
 import API from "../../api/client";
 import { useDisclosure } from "../../hooks/useDisclosure";
+import { ColumnOrderDialog } from "../../components/ColumnOrderDialog";
+import { networkRoleLabels } from "../../utils/formatters";
 import { Alert } from "@mui/material";
 import {
   Dialog,
@@ -87,11 +90,16 @@ type AssignmentWithDetails = Assignment & {
     uid: string;
     name: string;
   } | null;
+  secondary_recruiters?: {
+    uid: string;
+    name: string;
+  }[];
   location?: string;
-  employment_type?: string; // "Fulltime", "Parttime", etc.
-  salary_min?: number; // Minimum salary in EUR
-  salary_max?: number; // Maximum salary in EUR
+  employment_type?: string;
+  salary_min?: number;
+  salary_max?: number;
   vacation_days?: number;
+  start_date?: string;
   notes_image_url?: string | null;
   benefits?: string[];
   candidates?: CandidateAssignment[];
@@ -149,241 +157,6 @@ const benefitsOptions = [
   "Huisvestingsvergoeding",
 ];
 
-// Mock data - will be replaced with API calls
-const mockAssignments: AssignmentWithDetails[] = [
-  {
-    id: 1,
-    uid: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-    account_id: 1,
-    title: "Accountmanager",
-    description: "Zoeken naar een ervaren Accountmanager",
-    status: "active",
-    account: {
-      uid: "01ARZ3NDEKTSV4RRFFQ69G5FAW",
-      name: "Dayes",
-    },
-    location: "Zevenaar",
-    employment_type: "Fulltime",
-    salary_min: 4000,
-    salary_max: 5000,
-    benefits: ["Auto van de zaak", "Bonus", "Pensioen"],
-    candidates: [
-      {
-        id: 1,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FAX",
-          first_name: "Sophie",
-          last_name: "de Vries",
-          company_role: "Accountmanager",
-          current_company: "Unilever",
-        },
-        status: "first_interview",
-        status_label: "1e gesprek",
-      },
-      {
-        id: 2,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FAY",
-          first_name: "Mark",
-          last_name: "Jansen",
-          company_role: "Key Accountmanager",
-          current_company: "Heineken",
-        },
-        status: "called",
-        status_label: "Gebeld",
-      },
-      {
-        id: 3,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FAZ",
-          first_name: "Laura",
-          last_name: "Bakker",
-          company_role: "Accountmanager",
-          current_company: "FrieslandCampina",
-        },
-        status: "called",
-        status_label: "Gebeld",
-      },
-      {
-        id: 4,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FB0",
-          first_name: "Tom",
-          last_name: "Willems",
-          company_role: "Accountmanager",
-          current_company: "Procter & Gamble",
-        },
-        status: "proposed",
-        status_label: "Voorgesteld",
-      },
-      {
-        id: 5,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FB1",
-          first_name: "Eva",
-          last_name: "Smit",
-          company_role: "Accountmanager",
-          current_company: "Nestlé",
-        },
-        status: "rejected",
-        status_label: "Afgewezen",
-      },
-      {
-        id: 6,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FB2",
-          first_name: "Daan",
-          last_name: "van Leeuwen",
-          company_role: "Key Accountmanager",
-          current_company: "Coca-Cola",
-        },
-        status: "called",
-        status_label: "Gebeld",
-      },
-      {
-        id: 7,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FB3",
-          first_name: "Lotte",
-          last_name: "Meijer",
-          company_role: "Accountmanager",
-          current_company: "PepsiCo",
-        },
-        status: "second_interview",
-        status_label: "2e gesprek",
-      },
-    ],
-  },
-  {
-    id: 2,
-    uid: "01ARZ3NDEKTSV4RRFFQ69G5FB4",
-    account_id: 2,
-    title: "Software Developer",
-    description: "Zoeken naar een senior Software Developer",
-    status: "active",
-    account: {
-      uid: "01ARZ3NDEKTSV4RRFFQ69G5FB5",
-      name: "TechCorp",
-    },
-    location: "Amsterdam",
-    employment_type: "Fulltime",
-    salary_min: 5000,
-    salary_max: 6000,
-    benefits: ["Bonus", "Flexibele werkuren", "Werk vanuit huis"],
-    candidates: [
-      {
-        id: 8,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FB6",
-          first_name: "Jan",
-          last_name: "de Vries",
-          company_role: "Senior Developer",
-          current_company: "Google",
-        },
-        status: "second_interview",
-        status_label: "2e gesprek",
-      },
-      {
-        id: 9,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FB7",
-          first_name: "Lisa",
-          last_name: "van der Berg",
-          company_role: "Full Stack Developer",
-          current_company: "Microsoft",
-        },
-        status: "proposed",
-        status_label: "Voorgesteld",
-      },
-    ],
-  },
-  {
-    id: 3,
-    uid: "01ARZ3NDEKTSV4RRFFQ69G5FB8",
-    account_id: 3,
-    title: "Marketing Manager",
-    description: "Zoeken naar een ervaren Marketing Manager",
-    status: "active",
-    account: {
-      uid: "01ARZ3NDEKTSV4RRFFQ69G5FB9",
-      name: "Innovate BV",
-    },
-    location: "Rotterdam",
-    employment_type: "Parttime",
-    salary_min: 3500,
-    salary_max: 4500,
-    benefits: ["Auto van de zaak", "Reiskostenvergoeding"],
-    candidates: [
-      {
-        id: 10,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FBA",
-          first_name: "Emma",
-          last_name: "Jansen",
-          company_role: "Marketing Manager",
-          current_company: "Philips",
-        },
-        status: "called",
-        status_label: "Gebeld",
-      },
-      {
-        id: 11,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FBB",
-          first_name: "Noah",
-          last_name: "Bakker",
-          company_role: "Digital Marketing Manager",
-          current_company: "ASML",
-        },
-        status: "first_interview",
-        status_label: "1e gesprek",
-      },
-    ],
-  },
-  {
-    id: 4,
-    uid: "01ARZ3NDEKTSV4RRFFQ69G5FBC",
-    account_id: 4,
-    title: "HR Business Partner",
-    description: "Zoeken naar een HR Business Partner",
-    status: "active",
-    account: {
-      uid: "01ARZ3NDEKTSV4RRFFQ69G5FBD",
-      name: "Global Inc",
-    },
-    location: "Utrecht",
-    employment_type: "Fulltime",
-    salary_min: 4500,
-    salary_max: 5500,
-    benefits: ["Bonus", "Pensioen", "Zorgverzekering"],
-    candidates: [
-      {
-        id: 12,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FBE",
-          first_name: "Anna",
-          last_name: "Mulder",
-          company_role: "HR Business Partner",
-          current_company: "Shell",
-        },
-        status: "hired",
-        status_label: "Aangenomen",
-      },
-      {
-        id: 13,
-        contact: {
-          uid: "01ARZ3NDEKTSV4RRFFQ69G5FBF",
-          first_name: "Lucas",
-          last_name: "Smit",
-          company_role: "HR Manager",
-          current_company: "ING",
-        },
-        status: "rejected",
-        status_label: "Afgewezen",
-      },
-    ],
-  },
-];
 
 const statusOptions = [
   { value: "active", label: "Actief" },
@@ -441,6 +214,366 @@ const getCandidateStatusColor = (
       return "#2e7d32"; // Green (for "Gebeld")
   }
 };
+
+const CANDIDATES_COLUMN_ORDER_KEY = "ave-crm-assignment-candidates-column-order";
+
+const CANDIDATES_COLUMN_META = [
+  { field: "name", headerName: "Naam" },
+  { field: "email", headerName: "E-mail" },
+  { field: "phone", headerName: "Telefoon" },
+  { field: "company_role", headerName: "Functie" },
+  { field: "current_company", headerName: "Bedrijf" },
+  { field: "location", headerName: "Locatie" },
+  { field: "date_of_birth", headerName: "Geboortedatum" },
+  { field: "availability_date", headerName: "Beschikbaar" },
+  { field: "network_roles", headerName: "Netwerk rollen" },
+  { field: "status", headerName: "Status" },
+  { field: "cv", headerName: "CV" },
+  { field: "actions", headerName: "Acties" },
+];
+
+function AssignmentCandidatesDataGrid({
+  assignmentId,
+  candidates,
+  columnOrder,
+  onColumnOrderChange,
+  onStatusMenuOpen,
+  onStatusMenuClose,
+  onStatusChange,
+  onRemove,
+  onNavigateToContact,
+  candidateStatusMenuAnchor,
+  candidateStatusOptions,
+  getCandidateStatusColor,
+}: {
+  assignmentId: number;
+  candidates: CandidateAssignment[];
+  columnOrder: string[];
+  onColumnOrderChange: (order: string[]) => void;
+  onStatusMenuOpen: (
+    assignmentId: number,
+    candidateId: number,
+    e: React.MouseEvent<HTMLElement>
+  ) => void;
+  onStatusMenuClose: (assignmentId: number, candidateId: number) => void;
+  onStatusChange: (
+    assignmentId: number,
+    candidateId: number,
+    status: CandidateAssignment["status"]
+  ) => void;
+  onRemove: (assignmentId: number, candidateId: number) => void;
+  onNavigateToContact: (contactUid: string) => void;
+  candidateStatusMenuAnchor: Record<string, HTMLElement | null>;
+  candidateStatusOptions: {
+    value: CandidateAssignment["status"];
+    label: string;
+  }[];
+  getCandidateStatusColor: (status: CandidateAssignment["status"]) => string;
+}) {
+  const allColumns = useMemo<GridColDef[]>(
+    () => [
+      {
+        field: "name",
+        headerName: "Naam",
+        flex: 1,
+        minWidth: 180,
+        valueGetter: (_value, row) =>
+          row.contact.prefix
+            ? `${row.contact.first_name} ${row.contact.prefix} ${row.contact.last_name}`
+            : `${row.contact.first_name} ${row.contact.last_name}`,
+        renderCell: ({ row }) => (
+          <Link
+            component="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateToContact(row.contact.uid);
+            }}
+            sx={{
+              textDecoration: "underline",
+              color: "inherit",
+              cursor: "pointer",
+              "&:hover": { color: "primary.main" },
+            }}
+          >
+            {row.contact.prefix
+              ? `${row.contact.first_name} ${row.contact.prefix} ${row.contact.last_name}`
+              : `${row.contact.first_name} ${row.contact.last_name}`}
+          </Link>
+        ),
+      },
+      {
+        field: "email",
+        headerName: "E-mail",
+        flex: 1,
+        minWidth: 180,
+        valueGetter: (_value, row) => row.contact.email || "",
+        renderCell: ({ row }) =>
+          row.contact.email ? (
+            <Link
+              href={`mailto:${row.contact.email}`}
+              sx={{ color: "inherit" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {row.contact.email}
+            </Link>
+          ) : (
+            "-"
+          ),
+      },
+      {
+        field: "phone",
+        headerName: "Telefoon",
+        width: 130,
+        valueGetter: (_value, row) => row.contact.phone || "",
+        renderCell: ({ row }) =>
+          row.contact.phone ? (
+            <Link
+              href={`tel:${row.contact.phone}`}
+              sx={{ color: "inherit" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {row.contact.phone}
+            </Link>
+          ) : (
+            "-"
+          ),
+      },
+      {
+        field: "company_role",
+        headerName: "Functie",
+        flex: 1,
+        minWidth: 150,
+        valueGetter: (_value, row) => row.contact.company_role || "-",
+      },
+      {
+        field: "current_company",
+        headerName: "Bedrijf",
+        flex: 1,
+        minWidth: 150,
+        valueGetter: (_value, row) => row.contact.current_company || "-",
+      },
+      {
+        field: "location",
+        headerName: "Locatie",
+        width: 130,
+        valueGetter: (_value, row) => row.contact.location || "-",
+      },
+      {
+        field: "date_of_birth",
+        headerName: "Geboortedatum",
+        width: 130,
+        valueGetter: (_value, row) => {
+          const v = row.contact.date_of_birth;
+          if (!v) return "-";
+          return new Date(v).toLocaleDateString("nl-NL");
+        },
+      },
+      {
+        field: "availability_date",
+        headerName: "Beschikbaar",
+        width: 130,
+        valueGetter: (_value, row) => {
+          const v = (row.contact as { availability_date?: string }).availability_date;
+          if (!v) return "-";
+          return new Date(v).toLocaleDateString("nl-NL");
+        },
+      },
+      {
+        field: "network_roles",
+        headerName: "Netwerk rollen",
+        width: 200,
+        valueGetter: (_value, row) => {
+          const roles = row.contact.network_roles;
+          if (!roles?.length) return "-";
+          return roles.map((r) => networkRoleLabels[r] || r).join(", ");
+        },
+      },
+      {
+        field: "status",
+        headerName: "Status",
+        width: 150,
+        valueGetter: (_value, row) => row.status_label,
+        renderCell: ({ row }) => {
+          const key = `${assignmentId}-${row.id}`;
+          const anchorEl = candidateStatusMenuAnchor[key];
+          return (
+            <>
+              <Box
+                onClick={(e) =>
+                  onStatusMenuOpen(assignmentId, row.id, e)
+                }
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 1,
+                  cursor: "pointer",
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  "&:hover": { bgcolor: "action.hover" },
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: getCandidateStatusColor(row.status),
+                  }}
+                />
+                <Typography variant="body2">{row.status_label}</Typography>
+                <SwapVertIcon fontSize="small" sx={{ opacity: 0.5 }} />
+              </Box>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => onStatusMenuClose(assignmentId, row.id)}
+              >
+                {candidateStatusOptions.map((option) => (
+                  <MenuItem
+                    key={option.value}
+                    onClick={() =>
+                      onStatusChange(assignmentId, row.id, option.value)
+                    }
+                    selected={row.status === option.value}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          bgcolor: getCandidateStatusColor(option.value),
+                        }}
+                      />
+                      <Typography variant="body2">{option.label}</Typography>
+                    </Stack>
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          );
+        },
+      },
+      {
+        field: "cv",
+        headerName: "CV",
+        width: 80,
+        sortable: false,
+        renderCell: ({ row }) => {
+          const cvUrl = (row.contact as { cv_url?: string }).cv_url;
+          return cvUrl ? (
+            <Tooltip title="Bekijk contact (CV)">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigateToContact(row.contact.uid);
+                }}
+              >
+                <DescriptionIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            "-"
+          );
+        },
+      },
+      {
+        field: "actions",
+        headerName: "",
+        width: 100,
+        sortable: false,
+        filterable: false,
+        renderCell: ({ row }) => (
+          <Stack
+            direction="row"
+            spacing={0.5}
+            justifyContent="flex-end"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {row.contact.linkedin_url && (
+              <Tooltip title="Bekijk LinkedIn profiel">
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(
+                      row.contact.linkedin_url!,
+                      "_blank",
+                      "noopener,noreferrer"
+                    );
+                  }}
+                >
+                  <LinkedInIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title="Verwijderen uit opdracht">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(assignmentId, row.id);
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        ),
+      },
+    ],
+    [
+      assignmentId,
+      candidateStatusMenuAnchor,
+      candidateStatusOptions,
+      getCandidateStatusColor,
+      onNavigateToContact,
+      onRemove,
+      onStatusChange,
+      onStatusMenuClose,
+      onStatusMenuOpen,
+    ]
+  );
+
+  const orderedColumns = useMemo(() => {
+    const byField = new Map(allColumns.map((c) => [c.field, c]));
+    return columnOrder
+      .map((field) => byField.get(field))
+      .filter((c): c is GridColDef => c != null);
+  }, [allColumns, columnOrder]);
+
+  return (
+    <DataGrid
+      rows={candidates}
+      columns={orderedColumns}
+      getRowId={(row) => row.id}
+      slots={{
+        toolbar: () => (
+          <GridToolbarContainer>
+            <GridToolbarFilterButton />
+          </GridToolbarContainer>
+        ),
+      }}
+      initialState={{
+        pagination: {
+          paginationModel: { page: 0, pageSize: 10 },
+        },
+      }}
+      pageSizeOptions={[5, 10, 25, 50]}
+      disableRowSelectionOnClick
+      sx={{
+        border: 0,
+        "& .MuiDataGrid-row:hover": { bgcolor: "action.hover" },
+        "& .MuiDataGrid-cell:focus": { outline: "none" },
+      }}
+    />
+  );
+}
 
 // Component to load candidates - MUST be outside main component to prevent infinite loops
 const AssignmentCandidatesLoader = React.memo(
@@ -525,6 +658,34 @@ export default function AssignmentsPage() {
     [key: number]: string;
   }>({});
   const [addCandidateDialogOpen, setAddCandidateDialogOpen] = useState(false);
+  const candidateColumnOrderDialog = useDisclosure();
+  const [candidatesColumnOrder, setCandidatesColumnOrder] = useState<
+    string[]
+  >(() => {
+    try {
+      const stored = localStorage.getItem(CANDIDATES_COLUMN_ORDER_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as string[];
+        const valid = CANDIDATES_COLUMN_META.map((c) => c.field);
+        if (
+          parsed.length === valid.length &&
+          parsed.every((f) => valid.includes(f))
+        ) {
+          return parsed;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return CANDIDATES_COLUMN_META.map((c) => c.field);
+  });
+  const persistCandidatesColumnOrder = useCallback((order: string[]) => {
+    setCandidatesColumnOrder(order);
+    localStorage.setItem(
+      CANDIDATES_COLUMN_ORDER_KEY,
+      JSON.stringify(order)
+    );
+  }, []);
   const { data: searchCandidates = [], isLoading: candidatesLoading } =
     useSearchCandidates(candidateSearchQuery, addCandidateDialogOpen);
 
@@ -551,6 +712,7 @@ export default function AssignmentsPage() {
   const [newAssignmentDescription, setNewAssignmentDescription] = useState("");
   const [newAssignmentAccountUid, setNewAssignmentAccountUid] = useState("");
   const [newAssignmentRecruiterUid, setNewAssignmentRecruiterUid] = useState("");
+  const [newAssignmentSecondaryRecruiterUids, setNewAssignmentSecondaryRecruiterUids] = useState<string[]>([]);
   const [newAssignmentSalaryMin, setNewAssignmentSalaryMin] = useState("");
   const [newAssignmentSalaryMax, setNewAssignmentSalaryMax] = useState("");
   const [newAssignmentVacationDays, setNewAssignmentVacationDays] = useState<
@@ -559,6 +721,7 @@ export default function AssignmentsPage() {
   const [newAssignmentLocation, setNewAssignmentLocation] = useState("");
   const [newAssignmentEmploymentType, setNewAssignmentEmploymentType] =
     useState("");
+  const [newAssignmentStartDate, setNewAssignmentStartDate] = useState("");
   const [newAssignmentBenefits, setNewAssignmentBenefits] = useState<string[]>(
     []
   );
@@ -578,6 +741,7 @@ export default function AssignmentsPage() {
   const [editAssignmentDescription, setEditAssignmentDescription] = useState("");
   const [editAssignmentAccountUid, setEditAssignmentAccountUid] = useState("");
   const [editAssignmentRecruiterUid, setEditAssignmentRecruiterUid] = useState("");
+  const [editAssignmentSecondaryRecruiterUids, setEditAssignmentSecondaryRecruiterUids] = useState<string[]>([]);
   const [editAssignmentSalaryMin, setEditAssignmentSalaryMin] = useState("");
   const [editAssignmentSalaryMax, setEditAssignmentSalaryMax] = useState("");
   const [editAssignmentVacationDays, setEditAssignmentVacationDays] = useState<
@@ -586,6 +750,7 @@ export default function AssignmentsPage() {
   const [editAssignmentLocation, setEditAssignmentLocation] = useState("");
   const [editAssignmentEmploymentType, setEditAssignmentEmploymentType] =
     useState("");
+  const [editAssignmentStartDate, setEditAssignmentStartDate] = useState("");
   const [editAssignmentBenefits, setEditAssignmentBenefits] = useState<string[]>(
     []
   );
@@ -657,11 +822,13 @@ export default function AssignmentsPage() {
       status: a.status,
       account: a.account,
       recruiter: a.recruiter,
+      secondary_recruiters: a.secondary_recruiters || [],
       salary_min: a.salary_min,
       salary_max: a.salary_max,
       vacation_days: a.vacation_days,
       location: a.location,
       employment_type: a.employment_type,
+      start_date: a.start_date,
       benefits: a.benefits,
       notes_image_url: a.notes_image_url,
       candidates: [], // Will be populated by AssignmentCandidatesLoader component
@@ -695,6 +862,7 @@ export default function AssignmentsPage() {
       await createAssignmentMutation.mutateAsync({
         account_uid: newAssignmentAccountUid,
         recruiter_uid: newAssignmentRecruiterUid || null,
+        secondary_recruiter_uids: newAssignmentSecondaryRecruiterUids.length > 0 ? newAssignmentSecondaryRecruiterUids : undefined,
         title: newAssignmentTitle.trim(),
         description: newAssignmentDescription.trim() || null,
         salary_min: parseFormattedNumber(newAssignmentSalaryMin) || null,
@@ -702,6 +870,7 @@ export default function AssignmentsPage() {
         vacation_days: newAssignmentVacationDays || null,
         location: newAssignmentLocation.trim() || null,
         employment_type: newAssignmentEmploymentType || null,
+        start_date: newAssignmentStartDate || null,
         benefits:
           newAssignmentBenefits.length > 0 ? newAssignmentBenefits : null,
         notes_image: newAssignmentNotesImage,
@@ -712,11 +881,13 @@ export default function AssignmentsPage() {
       setNewAssignmentDescription("");
       setNewAssignmentAccountUid("");
       setNewAssignmentRecruiterUid("");
+      setNewAssignmentSecondaryRecruiterUids([]);
       setNewAssignmentSalaryMin("");
       setNewAssignmentSalaryMax("");
       setNewAssignmentVacationDays("");
       setNewAssignmentLocation("");
       setNewAssignmentEmploymentType("");
+      setNewAssignmentStartDate("");
       setNewAssignmentBenefits([]);
       handleClearNotesImage();
       createAssignmentDialog.close();
@@ -735,11 +906,13 @@ export default function AssignmentsPage() {
     setEditAssignmentDescription(assignment.description || "");
     setEditAssignmentAccountUid(assignment.account?.uid || "");
     setEditAssignmentRecruiterUid(assignment.recruiter?.uid || "");
+    setEditAssignmentSecondaryRecruiterUids(assignment.secondary_recruiters?.map(r => r.uid) || []);
     setEditAssignmentSalaryMin(assignment.salary_min ? assignment.salary_min.toLocaleString("nl-NL") : "");
     setEditAssignmentSalaryMax(assignment.salary_max ? assignment.salary_max.toLocaleString("nl-NL") : "");
     setEditAssignmentVacationDays(assignment.vacation_days || "");
     setEditAssignmentLocation(assignment.location || "");
     setEditAssignmentEmploymentType(assignment.employment_type || "");
+    setEditAssignmentStartDate(assignment.start_date || "");
     setEditAssignmentBenefits(assignment.benefits || []);
     setEditAssignmentError(null);
     editAssignmentDialog.open();
@@ -766,6 +939,7 @@ export default function AssignmentsPage() {
         uid: editingAssignment.uid,
         data: {
           recruiter_uid: editAssignmentRecruiterUid || null,
+          secondary_recruiter_uids: editAssignmentSecondaryRecruiterUids,
           title: editAssignmentTitle.trim(),
           description: editAssignmentDescription.trim() || null,
           salary_min: parseFormattedNumber(editAssignmentSalaryMin) || null,
@@ -773,6 +947,7 @@ export default function AssignmentsPage() {
           vacation_days: editAssignmentVacationDays || null,
           location: editAssignmentLocation.trim() || null,
           employment_type: editAssignmentEmploymentType || null,
+          start_date: editAssignmentStartDate || null,
           benefits: editAssignmentBenefits.length > 0 ? editAssignmentBenefits : null,
         },
       });
@@ -1358,7 +1533,10 @@ export default function AssignmentsPage() {
                     </Link>
                     {assignment.recruiter?.name && (
                       <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
-                        Recruiter: {assignment.recruiter.name}
+                        Lead: {assignment.recruiter.name}
+                        {assignment.secondary_recruiters && assignment.secondary_recruiters.length > 0 && (
+                          <> | Team: {assignment.secondary_recruiters.map(r => r.name).join(', ')}</>
+                        )}
                       </Typography>
                     )}
                   </Box>
@@ -1612,7 +1790,7 @@ export default function AssignmentsPage() {
                         </Box>
                       )}
 
-                      {/* Candidates Table */}
+                      {/* Candidates DataGrid */}
                       <Box>
                         <Stack
                           direction="row"
@@ -1626,263 +1804,69 @@ export default function AssignmentsPage() {
                           >
                             Kandidaten
                           </Typography>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<AddIcon />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenAddCandidateDialog(assignment.id);
-                            }}
-                          >
-                            Kandidaat toevoegen
-                          </Button>
+                          <Stack direction="row" spacing={1}>
+                            <Tooltip title="Kolomvolgorde">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  candidateColumnOrderDialog.open();
+                                }}
+                              >
+                                <ViewColumnIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<AddIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenAddCandidateDialog(assignment.id);
+                              }}
+                            >
+                              Kandidaat toevoegen
+                            </Button>
+                          </Stack>
                         </Stack>
                         {assignmentCandidates &&
-                          assignmentCandidates.length > 0 ? (
-                          <>
-                            <TableContainer>
-                              <Table size="small">
-                                <TableHead>
-                                  <TableRow>
-                                    <TableCell>Naam</TableCell>
-                                    <TableCell>E-mail</TableCell>
-                                    <TableCell>Telefoon</TableCell>
-                                    <TableCell>Functie</TableCell>
-                                    <TableCell>Bedrijf</TableCell>
-                                    <TableCell>Locatie</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell align="right">Acties</TableCell>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  {assignmentCandidates.map((candidate) => (
-                                    <TableRow key={candidate.id} hover>
-                                      <TableCell>
-                                        <Link
-                                          component="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate(`/network?kandidaten=1`, {
-                                              state: {
-                                                contactUid:
-                                                  candidate.contact.uid,
-                                              },
-                                            });
-                                          }}
-                                          sx={{
-                                            textDecoration: "underline",
-                                            color: "inherit",
-                                            cursor: "pointer",
-                                            "&:hover": {
-                                              color: "primary.main",
-                                            },
-                                          }}
-                                        >
-                                          {candidate.contact.prefix
-                                            ? `${candidate.contact.first_name} ${candidate.contact.prefix} ${candidate.contact.last_name}`
-                                            : `${candidate.contact.first_name} ${candidate.contact.last_name}`}
-                                        </Link>
-                                      </TableCell>
-                                      <TableCell>
-                                        {candidate.contact.email ? (
-                                          <Link
-                                            href={`mailto:${candidate.contact.email}`}
-                                            sx={{ color: "inherit" }}
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            {candidate.contact.email}
-                                          </Link>
-                                        ) : (
-                                          "-"
-                                        )}
-                                      </TableCell>
-                                      <TableCell>
-                                        {candidate.contact.phone ? (
-                                          <Link
-                                            href={`tel:${candidate.contact.phone}`}
-                                            sx={{ color: "inherit" }}
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            {candidate.contact.phone}
-                                          </Link>
-                                        ) : (
-                                          "-"
-                                        )}
-                                      </TableCell>
-                                      <TableCell>
-                                        {candidate.contact.company_role || "-"}
-                                      </TableCell>
-                                      <TableCell>
-                                        {candidate.contact.current_company ||
-                                          "-"}
-                                      </TableCell>
-                                      <TableCell>
-                                        {candidate.contact.location || "-"}
-                                      </TableCell>
-                                      <TableCell>
-                                        <Box
-                                          onClick={(e) =>
-                                            handleCandidateStatusMenuOpen(
-                                              assignment.id,
-                                              candidate.id,
-                                              e
-                                            )
-                                          }
-                                          sx={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                            cursor: "pointer",
-                                            px: 1,
-                                            py: 0.5,
-                                            borderRadius: 1,
-                                            "&:hover": {
-                                              bgcolor: "action.hover",
-                                            },
-                                          }}
-                                        >
-                                          <Box
-                                            sx={{
-                                              width: 8,
-                                              height: 8,
-                                              borderRadius: "50%",
-                                              bgcolor: getCandidateStatusColor(
-                                                candidate.status
-                                              ),
-                                            }}
-                                          />
-                                          <Typography variant="body2">
-                                            {candidate.status_label}
-                                          </Typography>
-                                          <SwapVertIcon
-                                            fontSize="small"
-                                            sx={{ opacity: 0.5 }}
-                                          />
-                                        </Box>
-                                        <Menu
-                                          anchorEl={
-                                            candidateStatusMenuAnchor[
-                                            `${assignment.id}-${candidate.id}`
-                                            ]
-                                          }
-                                          open={Boolean(
-                                            candidateStatusMenuAnchor[
-                                            `${assignment.id}-${candidate.id}`
-                                            ]
-                                          )}
-                                          onClose={() =>
-                                            handleCandidateStatusMenuClose(
-                                              assignment.id,
-                                              candidate.id
-                                            )
-                                          }
-                                        >
-                                          {candidateStatusOptions.map(
-                                            (option) => (
-                                              <MenuItem
-                                                key={option.value}
-                                                onClick={() =>
-                                                  handleCandidateStatusChange(
-                                                    assignment.id,
-                                                    candidate.id,
-                                                    option.value
-                                                  )
-                                                }
-                                                selected={
-                                                  candidate.status ===
-                                                  option.value
-                                                }
-                                              >
-                                                <Stack
-                                                  direction="row"
-                                                  alignItems="center"
-                                                  spacing={1}
-                                                >
-                                                  <Box
-                                                    sx={{
-                                                      width: 8,
-                                                      height: 8,
-                                                      borderRadius: "50%",
-                                                      bgcolor:
-                                                        getCandidateStatusColor(
-                                                          option.value
-                                                        ),
-                                                    }}
-                                                  />
-                                                  <Typography variant="body2">
-                                                    {option.label}
-                                                  </Typography>
-                                                </Stack>
-                                              </MenuItem>
-                                            )
-                                          )}
-                                        </Menu>
-                                      </TableCell>
-                                      <TableCell align="right">
-                                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                                          {candidate.contact.linkedin_url && (
-                                            <Tooltip title="Bekijk LinkedIn profiel">
-                                              <IconButton
-                                                size="small"
-                                                color="primary"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  window.open(
-                                                    candidate.contact.linkedin_url,
-                                                    "_blank",
-                                                    "noopener,noreferrer"
-                                                  );
-                                                }}
-                                              >
-                                                <LinkedInIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                          )}
-                                          <Tooltip title="Verwijderen uit opdracht">
-                                            <IconButton
-                                              size="small"
-                                              color="error"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRemoveCandidateFromAssignment(
-                                                  assignment.id,
-                                                  candidate.id
-                                                );
-                                              }}
-                                            >
-                                              <DeleteOutlineIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                        </Stack>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </TableContainer>
-                            <Stack
-                              direction="row"
-                              justifyContent="space-between"
-                              alignItems="center"
-                              sx={{ mt: 2 }}
-                            >
-                              <Pagination
-                                count={3}
-                                page={1}
-                                color="primary"
-                                size="small"
-                              />
-                              <FormControl size="small" sx={{ minWidth: 120 }}>
-                                <InputLabel>Results per page</InputLabel>
-                                <Select value={12} label="Results per page">
-                                  <MenuItem value={12}>12</MenuItem>
-                                  <MenuItem value={24}>24</MenuItem>
-                                  <MenuItem value={50}>50</MenuItem>
-                                </Select>
-                              </FormControl>
-                            </Stack>
-                          </>
+                        assignmentCandidates.length > 0 ? (
+                          <Paper
+                            elevation={0}
+                            variant="outlined"
+                            sx={{
+                              height: 'calc(100vh - 200px)',
+                              width: "100%",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <AssignmentCandidatesDataGrid
+                              assignmentId={assignment.id}
+                              candidates={assignmentCandidates}
+                              columnOrder={candidatesColumnOrder}
+                              onColumnOrderChange={
+                                persistCandidatesColumnOrder
+                              }
+                              onStatusMenuOpen={handleCandidateStatusMenuOpen}
+                              onStatusMenuClose={handleCandidateStatusMenuClose}
+                              onStatusChange={handleCandidateStatusChange}
+                              onRemove={handleRemoveCandidateFromAssignment}
+                              onNavigateToContact={(uid) =>
+                                navigate(`/network?kandidaten=1`, {
+                                  state: { contactUid: uid },
+                                })
+                              }
+                              candidateStatusMenuAnchor={
+                                candidateStatusMenuAnchor
+                              }
+                              candidateStatusOptions={
+                                candidateStatusOptions
+                              }
+                              getCandidateStatusColor={
+                                getCandidateStatusColor
+                              }
+                            />
+                          </Paper>
                         ) : (
                           <Typography
                             variant="body2"
@@ -2037,6 +2021,30 @@ export default function AssignmentsPage() {
                                     sx={{ height: 20, fontSize: "0.7rem" }}
                                   />
                                 )}
+                                {candidate.network_roles?.map((role) => {
+                                  const roleLabels: Record<string, { label: string; color: "default" | "success" | "error" | "warning" | "info" }> = {
+                                    candidate: { label: "Kandidaat", color: "info" },
+                                    candidate_placed: { label: "Geplaatst", color: "success" },
+                                    candidate_rejected: { label: "Afgewezen", color: "error" },
+                                    interim: { label: "Interimmer", color: "warning" },
+                                    ambassador: { label: "Ambassadeur", color: "default" },
+                                    budget_holder: { label: "Budgethouder", color: "default" },
+                                    client_principal: { label: "Opdrachtgever", color: "info" },
+                                    signing_authority: { label: "Tekenbevoegd", color: "warning" },
+                                    final_decision_maker: { label: "Eindbeslisser", color: "success" },
+                                  };
+                                  const config = roleLabels[role];
+                                  if (!config) return null;
+                                  return (
+                                    <Chip
+                                      key={role}
+                                      label={config.label}
+                                      size="small"
+                                      color={config.color}
+                                      sx={{ height: 20, fontSize: "0.7rem" }}
+                                    />
+                                  );
+                                })}
                               </Stack>
                             }
                             secondary={
@@ -2120,6 +2128,7 @@ export default function AssignmentsPage() {
           setNewAssignmentDescription("");
           setNewAssignmentAccountUid("");
           setNewAssignmentRecruiterUid("");
+          setNewAssignmentSecondaryRecruiterUids([]);
           setNewAssignmentSalaryMin("");
           setNewAssignmentSalaryMax("");
           setNewAssignmentVacationDays("");
@@ -2154,11 +2163,11 @@ export default function AssignmentsPage() {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel>Recruiter</InputLabel>
+              <InputLabel>Lead Recruiter</InputLabel>
               <Select
                 value={newAssignmentRecruiterUid}
                 onChange={(e) => setNewAssignmentRecruiterUid(e.target.value)}
-                label="Recruiter"
+                label="Lead Recruiter"
               >
                 <MenuItem value="">Geen recruiter toegewezen</MenuItem>
                 {users.map((user) => (
@@ -2166,6 +2175,32 @@ export default function AssignmentsPage() {
                     {user.name}
                   </MenuItem>
                 ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Secundaire Recruiters</InputLabel>
+              <Select
+                multiple
+                value={newAssignmentSecondaryRecruiterUids}
+                onChange={(e) => setNewAssignmentSecondaryRecruiterUids(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                label="Secundaire Recruiters"
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as string[]).map((uid) => {
+                      const user = users.find(u => u.uid === uid);
+                      return <Chip key={uid} label={user?.name || uid} size="small" />;
+                    })}
+                  </Box>
+                )}
+              >
+                {users
+                  .filter(u => u.uid !== newAssignmentRecruiterUid)
+                  .map((user) => (
+                    <MenuItem key={user.uid} value={user.uid}>
+                      {user.name}
+                    </MenuItem>
+                  ))}
               </Select>
             </FormControl>
 
@@ -2210,6 +2245,17 @@ export default function AssignmentsPage() {
                   <MenuItem value="Interim">Interim</MenuItem>
                 </Select>
               </FormControl>
+            </Stack>
+
+            <Stack direction="row" spacing={2} alignItems="center">
+              <TextField
+                label="Startdatum"
+                type="date"
+                value={newAssignmentStartDate}
+                onChange={(e) => setNewAssignmentStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ width: 200 }}
+              />
             </Stack>
 
             <Stack direction="row" spacing={2} alignItems="center">
@@ -2418,11 +2464,11 @@ export default function AssignmentsPage() {
             />
 
             <FormControl fullWidth>
-              <InputLabel>Recruiter</InputLabel>
+              <InputLabel>Lead Recruiter</InputLabel>
               <Select
                 value={editAssignmentRecruiterUid}
                 onChange={(e) => setEditAssignmentRecruiterUid(e.target.value)}
-                label="Recruiter"
+                label="Lead Recruiter"
               >
                 <MenuItem value="">Geen recruiter toegewezen</MenuItem>
                 {users.map((user) => (
@@ -2430,6 +2476,32 @@ export default function AssignmentsPage() {
                     {user.name}
                   </MenuItem>
                 ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Secundaire Recruiters</InputLabel>
+              <Select
+                multiple
+                value={editAssignmentSecondaryRecruiterUids}
+                onChange={(e) => setEditAssignmentSecondaryRecruiterUids(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                label="Secundaire Recruiters"
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as string[]).map((uid) => {
+                      const user = users.find(u => u.uid === uid);
+                      return <Chip key={uid} label={user?.name || uid} size="small" />;
+                    })}
+                  </Box>
+                )}
+              >
+                {users
+                  .filter(u => u.uid !== editAssignmentRecruiterUid)
+                  .map((user) => (
+                    <MenuItem key={user.uid} value={user.uid}>
+                      {user.name}
+                    </MenuItem>
+                  ))}
               </Select>
             </FormControl>
 
@@ -2456,6 +2528,17 @@ export default function AssignmentsPage() {
                   <MenuItem value="Interim">Interim</MenuItem>
                 </Select>
               </FormControl>
+            </Stack>
+
+            <Stack direction="row" spacing={2} alignItems="center">
+              <TextField
+                label="Startdatum"
+                type="date"
+                value={editAssignmentStartDate}
+                onChange={(e) => setEditAssignmentStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ width: 200 }}
+              />
             </Stack>
 
             <Stack direction="row" spacing={2} alignItems="center">
@@ -2562,6 +2645,15 @@ export default function AssignmentsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Candidate columns order */}
+      <ColumnOrderDialog
+        open={candidateColumnOrderDialog.isOpen}
+        onClose={candidateColumnOrderDialog.close}
+        columnOrder={candidatesColumnOrder}
+        onColumnOrderChange={persistCandidatesColumnOrder}
+        columnMeta={CANDIDATES_COLUMN_META}
+      />
     </Box>
   );
 }

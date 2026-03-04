@@ -194,7 +194,7 @@ class ContactController extends Controller
 
     /**
      * Get all contacts with candidate network roles
-     * Returns contacts where network_roles contains: candidate, candidate_placed, or candidate_rejected
+     * Returns contacts where network_roles contains: candidate, candidate_placed, candidate_rejected, or interim
      */
     public function candidates(Request $request)
     {
@@ -202,7 +202,8 @@ class ContactController extends Controller
             ->where(function ($query) {
                 $query->whereJsonContains('network_roles', 'candidate')
                     ->orWhereJsonContains('network_roles', 'candidate_placed')
-                    ->orWhereJsonContains('network_roles', 'candidate_rejected');
+                    ->orWhereJsonContains('network_roles', 'candidate_rejected')
+                    ->orWhereJsonContains('network_roles', 'interim');
             });
 
         // Apply radius filter if provided

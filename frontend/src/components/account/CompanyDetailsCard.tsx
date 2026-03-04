@@ -31,6 +31,7 @@ import { useUpdateAccount, type UpdateAccountData } from "../../api/mutations/ac
 
 const SECONDARY_CATEGORY_OPTIONS = [
   "Retailer",
+  "Supermarkten",
   "Groothandel",
   "Leverancier",
   "Industrie",
@@ -53,6 +54,24 @@ const LABELS_OPTIONS = [
   "Convenience & ready-to-use",
 ] as const;
 
+const SALES_DOEL_OPTIONS = [
+  "Marketing",
+  "Sales",
+  "Inkoop",
+  "Supply Chain",
+  "Finance",
+  "Directie",
+] as const;
+
+const CLIENT_STATUS_OPTIONS = [
+  { value: "potential", label: "Potentieel", color: "#FFA726" },
+  { value: "potential_first_assignment", label: "Potentieel (1e opdracht)", color: "#FFB74D" },
+  { value: "new_client", label: "Nieuwe klant", color: "#81C784" },
+  { value: "active_client", label: "Actieve klant", color: "#388E3C" },
+  { value: "inactive", label: "Niet-actief", color: "#BDBDBD" },
+  { value: "lost", label: "Verloren", color: "#E53935" },
+] as const;
+
 type Props = {
   account: Account;
 };
@@ -68,6 +87,8 @@ export default function CompanyDetailsCard({ account }: Props) {
     industry: account.industry || "",
     category: account.category || "",
     secondary_category: account.secondary_category || "",
+    sales_target: account.sales_target || "",
+    client_status: account.client_status || "",
     tertiary_category: account.tertiary_category || null,
     merken: account.merken || null,
     labels: account.labels || null,
@@ -94,6 +115,8 @@ export default function CompanyDetailsCard({ account }: Props) {
       industry: account.industry || "",
       category: account.category || "",
       secondary_category: account.secondary_category || "",
+      sales_target: account.sales_target || "",
+      client_status: account.client_status || "",
       tertiary_category: account.tertiary_category || null,
       merken: account.merken || null,
       labels: account.labels || null,
@@ -146,6 +169,8 @@ export default function CompanyDetailsCard({ account }: Props) {
       industry: formData.industry || null,
       category: formData.category || null,
       secondary_category: formData.secondary_category || null,
+      sales_target: formData.sales_target || null,
+      client_status: formData.client_status || null,
       tertiary_category: formData.tertiary_category,
       merken: formData.merken,
       labels: formData.labels,
@@ -222,6 +247,26 @@ export default function CompanyDetailsCard({ account }: Props) {
           <Box display="flex" justifyContent="space-between">
             <Typography color="text.secondary">Secundaire categorie</Typography>
             <Typography fontWeight="bold">{account.secondary_category || "-"}</Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between">
+            <Typography color="text.secondary">Sales doel</Typography>
+            <Typography fontWeight="bold">{account.sales_target || "-"}</Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography color="text.secondary">Klant status</Typography>
+            {account.client_status ? (
+              <Chip
+                label={CLIENT_STATUS_OPTIONS.find((o) => o.value === account.client_status)?.label || account.client_status}
+                size="small"
+                sx={{
+                  bgcolor: CLIENT_STATUS_OPTIONS.find((o) => o.value === account.client_status)?.color || "grey.400",
+                  color: ["active_client", "lost"].includes(account.client_status) ? "white" : "black",
+                  fontWeight: "bold",
+                }}
+              />
+            ) : (
+              <Typography fontWeight="bold">-</Typography>
+            )}
           </Box>
           {account.tertiary_category && account.tertiary_category.length > 0 && (
             <Box>
@@ -379,6 +424,43 @@ export default function CompanyDetailsCard({ account }: Props) {
                 {SECONDARY_CATEGORY_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>
                     {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Sales doel"
+                value={formData.sales_target || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, sales_target: e.target.value }))
+                }
+                fullWidth
+              >
+                <MenuItem value="">Geen sales doel</MenuItem>
+                {SALES_DOEL_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Klant status"
+                value={formData.client_status || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, client_status: e.target.value }))
+                }
+                fullWidth
+              >
+                <MenuItem value="">Geen status</MenuItem>
+                {CLIENT_STATUS_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: opt.color, flexShrink: 0 }} />
+                      {opt.label}
+                    </Box>
                   </MenuItem>
                 ))}
               </TextField>

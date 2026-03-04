@@ -15,6 +15,10 @@ export type AssignmentFromAPI = {
     uid: string;
     name: string;
   } | null;
+  secondary_recruiters?: {
+    uid: string;
+    name: string;
+  }[];
   title: string;
   description?: string;
   status: string;
@@ -23,6 +27,7 @@ export type AssignmentFromAPI = {
   vacation_days?: number;
   location?: string;
   employment_type?: string;
+  start_date?: string;
   benefits?: string[];
   notes_image_url?: string | null;
   created_at: string;
@@ -50,10 +55,12 @@ export type CandidateAssignment = {
     current_company?: string;
     location?: string;
     date_of_birth?: string;
+    availability_date?: string;
     network_roles?: string[];
     current_salary_cents?: number;
     education?: string;
     linkedin_url?: string;
+    cv_url?: string;
   };
   status: CandidateAssignmentStatus;
   status_label: string;

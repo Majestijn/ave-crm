@@ -29,6 +29,8 @@ class Account extends Model
         'fte_count',
         'revenue_cents',
         'notes',
+        'sales_target',
+        'client_status',
     ];
 
     protected $casts = [

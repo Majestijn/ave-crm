@@ -11,14 +11,20 @@
 */
 
 $isProduction = env('APP_ENV') === 'production';
+$hasProdCors = ! empty(trim((string) (env('CORS_ALLOWED_ORIGIN') ?? ''))) || ! empty(trim((string) (env('CORS_PATTERN') ?? '')));
+
+// In production without CORS config, fall back to dev origins (avoids block when .env is misconfigured)
+$useDevCors = ! $isProduction || ! $hasProdCors;
 
 // Development origins (localhost with any port)
 $devOrigins = [
-    'http://localhost:5173',   // Vite dev server
-    'http://localhost:8080',   // Backend/nginx
+    'http://localhost:5173',   // Vite dev server (default)
+    'http://localhost:8080',   // Backend/nginx (Docker)
+    'http://localhost:8000',   // php artisan serve
     'http://localhost:3000',   // Alternative frontend port
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8080',
+    'http://127.0.0.1:8000',
 ];
 
 // Patterns need regex delimiters (#...#)
@@ -47,10 +53,10 @@ $prodPatterns = $prodPattern ? ['#' . $prodPattern . '#'] : [];
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => $isProduction ? $prodOrigins : array_merge($devOrigins, $prodOrigins),
-    'allowed_origins_patterns' => $isProduction
-        ? array_merge($prodPatterns, $extensionPatterns)
-        : array_merge($devPatterns, $prodPatterns, $extensionPatterns),
+    'allowed_origins' => $useDevCors ? array_merge($devOrigins, $prodOrigins) : $prodOrigins,
+    'allowed_origins_patterns' => $useDevCors
+        ? array_merge($devPatterns, $prodPatterns, $extensionPatterns)
+        : array_merge($prodPatterns, $extensionPatterns),
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
     'max_age' => 0,

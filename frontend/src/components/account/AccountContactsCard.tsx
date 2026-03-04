@@ -52,6 +52,11 @@ export default function AccountContactsCard({ account, onAddContact }: Props) {
               <Typography fontWeight="bold">
                 {ac.contact?.name || "Onbekend"}
               </Typography>
+              {ac.contact?.company_role && (
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
+                  {ac.contact.company_role}
+                </Typography>
+              )}
               {ac.contact?.network_roles &&
                 ac.contact.network_roles.length > 0 && (
                   <Typography

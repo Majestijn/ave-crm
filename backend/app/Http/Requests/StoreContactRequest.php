@@ -33,7 +33,7 @@ class StoreContactRequest extends FormRequest
             'current_company' => ['nullable', 'string', 'max:255'],
             'company_role' => ['nullable', 'string', 'max:255'],
             'network_roles' => ['nullable', 'array'],
-            'network_roles.*' => ['string', 'in:invoice_contact,candidate,interim,ambassador,potential_management,co_decision_maker,potential_directie,candidate_reference,hr_employment,hr_recruiters,directie,owner,expert,coach,former_owner,former_director,commissioner,investor,network_group'],
+            'network_roles.*' => ['string', 'in:invoice_contact,candidate,candidate_placed,interim,ambassador,potential_management,co_decision_maker,potential_directie,candidate_reference,hr_employment,hr_recruiters,directie,owner,expert,coach,former_owner,former_director,commissioner,investor,network_group,budget_holder,client_principal,signing_authority,final_decision_maker'],
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
             'education' => ['nullable', 'in:MBO,HBO,UNI'],
             'availability_date' => ['nullable', 'date'],

@@ -4,10 +4,23 @@ const getBaseUrl = (): string => {
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
 
+  // On tenant subdomains (e.g. ave-consult-bv.localhost), API must use same host
+  // so DomainTenantFinder can resolve the tenant. Use env only for root localhost.
+  const isTenantSubdomain =
+    hostname.endsWith(".localhost") || hostname.endsWith(".lvh.me");
+  if (isTenantSubdomain) {
+    return `${protocol}//${hostname}:8080/api/v1`;
+  }
+
+  // Root localhost / production: use env or derive from hostname
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
+  }
+
   if (
     hostname === "localhost" ||
-    hostname.endsWith(".localhost") ||
-    hostname.endsWith(".lvh.me")
+    hostname === "127.0.0.1"
   ) {
     return `${protocol}//${hostname}:8080/api/v1`;
   }

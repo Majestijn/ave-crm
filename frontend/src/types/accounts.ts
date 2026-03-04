@@ -41,6 +41,8 @@ export type Account = {
   fte_count?: number;
   revenue_cents?: number;
   notes?: string;
+  sales_target?: string;
+  client_status?: string;
   assignments_count?: number;
   active_assignments_count?: number;
   has_active_assignments?: boolean;

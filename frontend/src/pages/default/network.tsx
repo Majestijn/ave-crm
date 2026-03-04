@@ -26,6 +26,7 @@ import {
   Checkbox,
   FormControlLabel,
 } from "@mui/material";
+import { ColumnOrderDialog } from "../../components/ColumnOrderDialog";
 import {
   DataGrid,
   type GridColDef,
@@ -43,6 +44,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import ClearIcon from "@mui/icons-material/Clear";
 import CakeIcon from "@mui/icons-material/Cake";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
@@ -93,12 +95,33 @@ const networkRoleOptions = [
   { value: "commissioner", label: "Commissaris" },
   { value: "investor", label: "Investeerder" },
   { value: "network_group", label: "Netwerkgroep" },
+  { value: "budget_holder", label: "Budgethouder" },
+  { value: "candidate_placed", label: "Geplaatste kandidaat" },
+  { value: "client_principal", label: "Opdrachtgever" },
+  { value: "signing_authority", label: "Tekenbevoegdheid" },
+  { value: "final_decision_maker", label: "Eindbeslisser" },
 ];
 
 const educationOptions = [
   { value: "MBO", label: "MBO" },
   { value: "HBO", label: "HBO" },
   { value: "UNI", label: "Universiteit" },
+];
+
+const NETWORK_COLUMN_ORDER_KEY = "ave-crm-network-column-order";
+
+const NETWORK_COLUMN_META: { field: string; headerName: string }[] = [
+  { field: "name", headerName: "Naam" },
+  { field: "email", headerName: "E-mail" },
+  { field: "phone", headerName: "Telefoon" },
+  { field: "company_role", headerName: "Functie" },
+  { field: "current_company", headerName: "Bedrijf" },
+  { field: "location", headerName: "Locatie" },
+  { field: "date_of_birth", headerName: "Geboortedatum" },
+  { field: "availability_date", headerName: "Beschikbaar" },
+  { field: "network_roles", headerName: "Netwerk rollen" },
+  { field: "cv", headerName: "CV" },
+  { field: "actions", headerName: "Acties" },
 ];
 
 const ContactSchema = z.object({
@@ -131,6 +154,11 @@ const ContactSchema = z.object({
         "commissioner",
         "investor",
         "network_group",
+        "budget_holder",
+        "candidate_placed",
+        "client_principal",
+        "signing_authority",
+        "final_decision_maker",
       ])
     )
     .optional(),
@@ -163,6 +191,33 @@ export default function NetworkPage() {
   const [ageFilter, setAgeFilter] = useState<AgeFilter | undefined>(undefined);
   const [minAgeInput, setMinAgeInput] = useState("");
   const [maxAgeInput, setMaxAgeInput] = useState("");
+
+  // Column order (persisted in localStorage)
+  const defaultColumnOrder = NETWORK_COLUMN_META.map((c) => c.field);
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(NETWORK_COLUMN_ORDER_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as string[];
+        const valid = parsed.filter((f) => defaultColumnOrder.includes(f));
+        const missing = defaultColumnOrder.filter((f) => !valid.includes(f));
+        return [...valid, ...missing];
+      }
+    } catch {
+      /* ignore */
+    }
+    return defaultColumnOrder;
+  });
+  const columnOrderDialog = useDisclosure();
+
+  const persistColumnOrder = useCallback((order: string[]) => {
+    setColumnOrder(order);
+    try {
+      localStorage.setItem(NETWORK_COLUMN_ORDER_KEY, JSON.stringify(order));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   // Data fetching hooks
   const {
@@ -1052,6 +1107,13 @@ export default function NetworkPage() {
     },
   ];
 
+  const orderedColumns = useMemo(() => {
+    const byField = new Map(columns.map((c) => [c.field, c]));
+    return columnOrder
+      .map((field) => byField.get(field))
+      .filter((c): c is GridColDef => c != null);
+  }, [columns, columnOrder]);
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -1212,6 +1274,14 @@ export default function NetworkPage() {
           >
             Kandidaten
           </Button>
+          <IconButton
+            size="small"
+            onClick={columnOrderDialog.open}
+            title="Kolomvolgorde aanpassen"
+            sx={{ border: "1px solid", borderColor: "divider" }}
+          >
+            <ViewColumnIcon />
+          </IconButton>
         </Stack>
       </Paper>
 
@@ -2357,7 +2427,7 @@ export default function NetworkPage() {
         >
           <DataGrid
             rows={filteredContacts}
-            columns={columns}
+            columns={orderedColumns}
             getRowId={(row) => row.uid}
             initialState={{
               pagination: {
@@ -2385,6 +2455,14 @@ export default function NetworkPage() {
           />
         </Paper>
       )}
+
+      <ColumnOrderDialog
+        open={columnOrderDialog.isOpen}
+        onClose={columnOrderDialog.close}
+        columnOrder={columnOrder}
+        onColumnOrderChange={persistColumnOrder}
+        columnMeta={NETWORK_COLUMN_META}
+      />
     </Box>
   );
 }
