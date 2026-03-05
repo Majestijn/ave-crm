@@ -275,6 +275,8 @@ class CvParsingService
             'model' => $this->modelId,
         ]);
 
+        $this->ensureGoogleCredentials();
+
         // Limit text to 30,000 characters (token limit safety)
         $maxChars = 30000;
         if (strlen($text) > $maxChars) {
@@ -386,6 +388,27 @@ PROMPT;
                 'error' => 'Vertex AI Error: ' . $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Ensure Google Cloud credentials are available for Vertex AI.
+     * The PHP client uses GOOGLE_APPLICATION_CREDENTIALS; we set it explicitly
+     * so credentials work in queue workers and Docker environments.
+     */
+    protected function ensureGoogleCredentials(): void
+    {
+        $credentialsPath = config('services.google_cloud.credentials');
+        if (empty($credentialsPath)) {
+            throw new \RuntimeException(
+                'GOOGLE_APPLICATION_CREDENTIALS niet geconfigureerd. Zet in .env het pad naar je GCP service account JSON (bijv. storage/app/google-credentials.json).'
+            );
+        }
+        if (!file_exists($credentialsPath)) {
+            throw new \RuntimeException(
+                "GCP credentials bestand niet gevonden: {$credentialsPath}. Controleer GOOGLE_APPLICATION_CREDENTIALS in .env."
+            );
+        }
+        putenv('GOOGLE_APPLICATION_CREDENTIALS=' . $credentialsPath);
     }
 
     /**
