@@ -68,7 +68,7 @@ class AccountController extends Controller
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'in:FMCG,Foodservice,Overig'],
-            'secondary_category' => ['nullable', 'string', 'in:Retailer,Groothandel,Leverancier,Industrie,Andere'],
+            'secondary_category' => ['nullable', 'string', 'in:Retailer,Supermarkten,Groothandel,Leverancier,Industrie,Andere'],
             'tertiary_category' => ['nullable', 'array'],
             'tertiary_category.*' => ['string', 'in:Non-food,Food'],
             'merken' => ['nullable', 'array'],
@@ -78,6 +78,8 @@ class AccountController extends Controller
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'sales_target' => ['nullable', 'string', 'in:Marketing,Sales,Inkoop,Supply Chain,Finance,Directie'],
+            'client_status' => ['nullable', 'string', 'in:potential,potential_first_assignment,new_client,active_client,inactive,lost'],
         ]);
 
         $account = Account::create($data);
@@ -128,7 +130,7 @@ class AccountController extends Controller
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'in:FMCG,Foodservice,Overig'],
-            'secondary_category' => ['nullable', 'string', 'in:Retailer,Groothandel,Leverancier,Industrie,Andere'],
+            'secondary_category' => ['nullable', 'string', 'in:Retailer,Supermarkten,Groothandel,Leverancier,Industrie,Andere'],
             'tertiary_category' => ['nullable', 'array'],
             'tertiary_category.*' => ['string', 'in:Non-food,Food'],
             'merken' => ['nullable', 'array'],
@@ -138,6 +140,8 @@ class AccountController extends Controller
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'sales_target' => ['nullable', 'string', 'in:Marketing,Sales,Inkoop,Supply Chain,Finance,Directie'],
+            'client_status' => ['nullable', 'string', 'in:potential,potential_first_assignment,new_client,active_client,inactive,lost'],
         ]);
 
         unset($data['tenant_id'], $data['uid']);

@@ -97,6 +97,12 @@ class User extends Authenticatable
         return $this->hasMany(Assignment::class, 'recruiter_id');
     }
 
+    public function secondaryAssignments()
+    {
+        return $this->belongsToMany(Assignment::class, 'assignment_user')
+            ->withTimestamps();
+    }
+
     /**
      * Generate or regenerate the calendar token for iCal feed access.
      */

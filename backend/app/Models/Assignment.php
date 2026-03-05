@@ -26,6 +26,7 @@ class Assignment extends Model
         'employment_type',
         'benefits',
         'notes_image_path',
+        'start_date',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class Assignment extends Model
         'salary_max' => 'integer',
         'vacation_days' => 'integer',
         'benefits' => 'array',
+        'start_date' => 'date:Y-m-d',
     ];
 
     public function getRouteKeyName(): string
@@ -58,6 +60,12 @@ class Assignment extends Model
     public function recruiter()
     {
         return $this->belongsTo(User::class, 'recruiter_id');
+    }
+
+    public function secondaryRecruiters()
+    {
+        return $this->belongsToMany(User::class, 'assignment_user')
+            ->withTimestamps();
     }
 
     public function candidates()

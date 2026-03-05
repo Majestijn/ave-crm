@@ -6,6 +6,7 @@ import type { AssignmentFromAPI } from "../queries/assignments";
 export type CreateAssignmentData = {
   account_uid: string;
   recruiter_uid?: string | null;
+  secondary_recruiter_uids?: string[];
   title: string;
   description?: string | null;
   status?: string | null;
@@ -14,6 +15,7 @@ export type CreateAssignmentData = {
   vacation_days?: number | null;
   location?: string | null;
   employment_type?: string | null;
+  start_date?: string | null;
   benefits?: string[] | null;
   notes_image?: File | null;
 };
@@ -40,6 +42,12 @@ export const useCreateAssignment = () => {
         }
         if (data.location) formData.append("location", data.location);
         if (data.employment_type) formData.append("employment_type", data.employment_type);
+        if (data.start_date) formData.append("start_date", data.start_date);
+        if (data.secondary_recruiter_uids && data.secondary_recruiter_uids.length > 0) {
+          data.secondary_recruiter_uids.forEach((uid, index) => {
+            formData.append(`secondary_recruiter_uids[${index}]`, uid);
+          });
+        }
         if (data.benefits && data.benefits.length > 0) {
           data.benefits.forEach((benefit, index) => {
             formData.append(`benefits[${index}]`, benefit);
@@ -65,6 +73,7 @@ export const useCreateAssignment = () => {
 export type UpdateAssignmentData = {
   account_uid?: string;
   recruiter_uid?: string | null;
+  secondary_recruiter_uids?: string[];
   title?: string;
   description?: string | null;
   status?: string | null;
@@ -73,6 +82,7 @@ export type UpdateAssignmentData = {
   vacation_days?: number | null;
   location?: string | null;
   employment_type?: string | null;
+  start_date?: string | null;
   benefits?: string[] | null;
   notes_image?: File | null;
 };

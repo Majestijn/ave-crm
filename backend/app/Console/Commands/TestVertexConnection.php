@@ -32,10 +32,12 @@ class TestVertexConnection extends Command
             return 1;
         }
 
-        if (!file_exists(base_path($credentials)) && !file_exists($credentials)) {
-             $this->warn("⚠️  Credentials file not found at: " . base_path($credentials));
-             $this->warn("    (This might be okay if using absolute path on server)");
+        $credentialsPath = str_starts_with($credentials, '/') ? $credentials : base_path($credentials);
+        if (!file_exists($credentialsPath)) {
+            $this->error("❌ Credentials file not found at: {$credentialsPath}");
+            return 1;
         }
+        putenv('GOOGLE_APPLICATION_CREDENTIALS=' . $credentialsPath);
 
         $this->info("\nSending test request...");
 

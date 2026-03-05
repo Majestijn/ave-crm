@@ -13,6 +13,14 @@ AVE CRM is a multi-tenant SaaS CRM system for the recruitment industry. It uses 
 
 ## Build & Run Commands
 
+### First-time setup (new machine / fresh clone)
+
+1. **Backend .env**: For Docker, copy `backend/.env.docker.example` to `backend/.env`, then run `docker-compose exec backend-php php artisan key:generate`. Ensure `APP_ENV=local` for CORS to allow localhost origins.
+2. **Frontend**: `cd frontend && npm install`
+3. **Docker**: `docker-compose up -d`
+4. **Migrations**: See Migrations section below
+5. If CORS errors persist: `docker-compose exec backend-php php artisan config:clear`
+
 ### Backend (Docker)
 
 ```bash

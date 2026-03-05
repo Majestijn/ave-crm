@@ -22,6 +22,8 @@ export type UpdateAccountData = {
   fte_count?: number | null;
   revenue_cents?: number | null;
   notes?: string | null;
+  sales_target?: string | null;
+  client_status?: string | null;
 };
 
 export const useAddContactToAccount = (accountUid: string | undefined) => {
@@ -54,13 +56,28 @@ export const useUpdateAccount = () => {
     }) => {
       return await API.put<Account>(`/accounts/${uid}`, data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.accounts.detail(variables.uid),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.accounts.all,
-      });
+    onSuccess: (updatedAccount, variables) => {
+      // Update cache with server response to avoid refetches (reduces 2 GET to 0)
+      if (updatedAccount) {
+        queryClient.setQueryData(
+          queryKeys.accounts.detail(variables.uid),
+          updatedAccount
+        );
+        queryClient.setQueriesData(
+          { queryKey: queryKeys.accounts.all },
+          (old: Account[] | undefined) =>
+            old?.map((a) =>
+              a.uid === variables.uid ? { ...a, ...updatedAccount } : a
+            )
+        );
+      } else {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.accounts.detail(variables.uid),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.accounts.all,
+        });
+      }
     },
   });
 };

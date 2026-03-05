@@ -163,7 +163,7 @@ export default function AccountDetailPage() {
     <Box
       sx={{
         p: 3,
-        maxWidth: 1600,
+        maxWidth: { xs: "100%", lg: 1920, xl: 2400 },
         margin: "0 auto",
         bgcolor: "#f8f9fa",
         minHeight: "100vh",
