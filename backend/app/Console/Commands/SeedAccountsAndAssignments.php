@@ -254,11 +254,7 @@ class SeedAccountsAndAssignments extends Command
 
         for ($i = 0; $i < $count; $i++) {
             $prefix = $this->prefixes[array_rand($this->prefixes)];
-            $roles = array_slice(
-                $this->networkRoles,
-                0,
-                rand(1, count($this->networkRoles))
-            );
+            $roles = $this->randomSubset($this->networkRoles, 1, count($this->networkRoles));
 
             Contact::create([
                 'first_name' => $faker->firstName(),
