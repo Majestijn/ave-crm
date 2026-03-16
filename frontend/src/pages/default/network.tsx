@@ -67,6 +67,8 @@ import {
   useDeleteContact,
   useUploadContactDocument,
   useDeleteContactDocument,
+  type CreateContactData,
+  type UpdateContactData,
 } from "../../api/mutations/contacts";
 import SmartBulkImportDialog from "../../components/features/SmartBulkImportDialog";
 import BatchImportDialog from "../../components/features/BatchImportDialog";
@@ -563,7 +565,9 @@ export default function NetworkPage() {
     });
   }, [contacts, searchQuery, candidatesOnlyFilter]);
 
-  const normalizeWorkExperiences = (items: ContactForm["work_experiences"]) => {
+  const normalizeWorkExperiences = (
+    items: ContactForm["work_experiences"]
+  ): ContactWorkExperience[] | undefined => {
     if (!items?.length) return undefined;
     return items
       .filter(
@@ -580,16 +584,32 @@ export default function NetworkPage() {
         end_date: (we.end_date as string)?.trim() || null,
         location: (we.location as string)?.trim() || null,
         description: (we.description as string)?.trim() || null,
-      }));
+      })) as ContactWorkExperience[];
   };
 
   const onSubmit = async (data: ContactForm) => {
     setSubmitError(null);
     try {
-      const payload = { ...data };
       const we = normalizeWorkExperiences(data.work_experiences);
-      if (we?.length) payload.work_experiences = we;
-      else delete (payload as any).work_experiences;
+      const payload: CreateContactData = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        ...(data.prefix && { prefix: data.prefix }),
+        ...(data.date_of_birth && { date_of_birth: data.date_of_birth }),
+        ...(data.gender && { gender: data.gender }),
+        ...(data.location && { location: data.location }),
+        ...(data.company_role && { company_role: data.company_role }),
+        ...(data.network_roles?.length && { network_roles: data.network_roles }),
+        ...(data.current_company && { current_company: data.current_company }),
+        ...(data.current_salary_cents != null && { current_salary_cents: data.current_salary_cents }),
+        ...(data.education && { education: data.education }),
+        ...(data.availability_date && { availability_date: data.availability_date }),
+        ...(data.email && { email: data.email }),
+        ...(data.phone && { phone: data.phone }),
+        ...(data.linkedin_url && { linkedin_url: data.linkedin_url }),
+        ...(data.notes && { notes: data.notes }),
+        ...(we && we.length > 0 && { work_experiences: we }),
+      };
 
       const createdContact = await createContactMutation.mutateAsync(payload);
 
@@ -759,9 +779,26 @@ export default function NetworkPage() {
 
     setSubmitError(null);
     try {
-      const payload = { ...data };
       const we = normalizeWorkExperiences(data.work_experiences);
-      payload.work_experiences = we ?? [];
+      const payload: UpdateContactData = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        ...(data.prefix != null && { prefix: data.prefix }),
+        ...(data.date_of_birth != null && { date_of_birth: data.date_of_birth }),
+        ...(data.gender != null && { gender: data.gender }),
+        ...(data.location != null && { location: data.location }),
+        ...(data.company_role != null && { company_role: data.company_role }),
+        ...(data.network_roles != null && { network_roles: data.network_roles }),
+        ...(data.current_company != null && { current_company: data.current_company }),
+        ...(data.current_salary_cents != null && { current_salary_cents: data.current_salary_cents }),
+        ...(data.education != null && { education: data.education }),
+        ...(data.availability_date != null && { availability_date: data.availability_date }),
+        ...(data.email != null && { email: data.email }),
+        ...(data.phone != null && { phone: data.phone }),
+        ...(data.linkedin_url != null && { linkedin_url: data.linkedin_url }),
+        ...(data.notes != null && { notes: data.notes }),
+        work_experiences: we ?? [],
+      };
 
       await updateContactMutation.mutateAsync({
         uid: editingContact.uid,
@@ -1766,7 +1803,7 @@ export default function NetworkPage() {
             />
 
             <WorkExperienceSection
-              fieldArray={workExperienceFields}
+              fieldArray={workExperienceFields as any}
               register={register}
               errors={errors as any}
             />
@@ -2306,7 +2343,7 @@ export default function NetworkPage() {
             </Stack>
 
             <WorkExperienceSection
-              fieldArray={editWorkExperienceFields}
+              fieldArray={editWorkExperienceFields as any}
               register={editRegister}
               errors={editErrors as any}
             />

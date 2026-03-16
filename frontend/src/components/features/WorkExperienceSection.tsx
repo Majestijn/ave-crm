@@ -10,13 +10,22 @@ import {
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import AddIcon from "@mui/icons-material/Add";
-import type { ContactWorkExperience } from "../../types/contacts";
 import type { UseFieldArrayReturn } from "react-hook-form";
 
-type WorkExperienceFormItem = ContactWorkExperience & { id?: string };
+/** Form item type - allows optional fields for empty rows during editing */
+export type WorkExperienceFormItem = {
+  id?: number | string;
+  job_title?: string;
+  company_name?: string;
+  start_date?: string;
+  end_date?: string | null;
+  location?: string | null;
+  description?: string | null;
+};
 
 interface WorkExperienceSectionProps {
-  fieldArray: UseFieldArrayReturn<{ work_experiences: WorkExperienceFormItem[] }, "work_experiences", "id">;
+  /** Accepts any form that has work_experiences array (ContactForm has optional work_experiences) */
+  fieldArray: UseFieldArrayReturn<{ work_experiences?: WorkExperienceFormItem[] }, "work_experiences", "id">;
   register: any;
   errors?: Record<string, { message?: string }>;
 }
@@ -46,9 +55,6 @@ export default function WorkExperienceSection({
     job_title: "",
     company_name: "",
     start_date: "",
-    end_date: null,
-    location: "",
-    description: "",
   };
 
   return (
