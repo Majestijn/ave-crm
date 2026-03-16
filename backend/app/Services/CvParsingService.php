@@ -284,9 +284,9 @@ class CvParsingService
         }
 
         $prompt = <<<PROMPT
-Je bent een CV-parser. Analyseer de volgende CV-tekst en extraheer de kandidaatgegevens.
+Je bent een CV-parser. Analyseer de volgende CV-tekst en extraheer de kandidaatgegevens inclusief de VOLLEDIGE werkgeschiedenis.
 
-Geef het resultaat terug als JSON met ALLEEN deze velden:
+Geef het resultaat terug als JSON met deze velden:
 - first_name: voornaam (VERPLICHT)
 - prefix: tussenvoegsel zoals "van", "de", "van der" (optioneel, alleen als aanwezig)
 - last_name: achternaam (VERPLICHT)
@@ -298,11 +298,20 @@ Geef het resultaat terug als JSON met ALLEEN deze velden:
 - current_company: huidige of meest recente werkgever/bedrijfsnaam (optioneel)
 - current_role: huidige of meest recente functietitel (optioneel)
 - skills: relevante vaardigheden, gescheiden door komma's (optioneel)
+- work_experiences: array van ALLE werkervaringen, van nieuwste naar oudste. Elk item:
+  - job_title: functietitel (verplicht per item)
+  - company_name: bedrijfsnaam (verplicht per item)
+  - start_date: startdatum YYYY-MM-DD (bij alleen jaar: YYYY-01-01)
+  - end_date: einddatum YYYY-MM-DD, of null als huidige functie/heden
+  - location: locatie (optioneel)
+  - description: korte beschrijving taken (optioneel)
 
 BELANGRIJK:
 - Retourneer ALLEEN geldige JSON, geen andere tekst.
 - Als je een veld niet kunt vinden, laat het dan weg uit de JSON.
 - first_name en last_name zijn VERPLICHT.
+- work_experiences: extraheer ALLE banen uit de CV, niet alleen de meest recente.
+- Bij onzekere datums: gebruik het genoemde jaar met maand 01-01 voor start, 12-31 voor eind.
 - Zorg dat Nederlandse namen correct worden geparsed.
 
 CV TEKST:
@@ -321,10 +330,10 @@ PROMPT;
                 ->setRole('user')
                 ->setParts([$part]);
 
-            // Configuration
+            // Configuration (65535 max for Gemini 2.5 Pro; CVs with long work history need more than 8192)
             $generationConfig = (new GenerationConfig())
                 ->setTemperature(0.1)
-                ->setMaxOutputTokens(8192);
+                ->setMaxOutputTokens(65535);
 
             // Construct Resource Name
             $endpoint = "projects/{$this->projectId}/locations/{$this->location}/publishers/google/models/{$this->modelId}";
@@ -335,7 +344,10 @@ PROMPT;
                 ->setContents([$content])
                 ->setGenerationConfig($generationConfig);
 
-            $response = $client->generateContent($request);
+            $timeoutMs = (config('services.google_cloud.timeout_seconds', 180)) * 1000;
+            $response = $client->generateContent($request, [
+                'timeoutMillis' => $timeoutMs,
+            ]);
 
             // Process Response
             $responseText = '';
@@ -356,11 +368,17 @@ PROMPT;
             $data = json_decode($responseText, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error('Vertex AI JSON parse error', ['error' => json_last_error_msg(), 'content' => $responseText]);
-                return [
-                    'success' => false,
-                    'error' => 'Invalid JSON response from Vertex AI',
-                ];
+                // Try to repair truncated JSON (model hit token limit mid-response)
+                $repaired = $this->repairTruncatedJson($responseText);
+                $data = json_decode($repaired, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    Log::error('Vertex AI JSON parse error', ['error' => json_last_error_msg(), 'content' => $responseText]);
+                    return [
+                        'success' => false,
+                        'error' => 'Invalid JSON response from Vertex AI',
+                    ];
+                }
+                Log::info('Vertex AI JSON repair succeeded');
             }
 
             // Validate required fields
@@ -388,6 +406,20 @@ PROMPT;
                 'error' => 'Vertex AI Error: ' . $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Attempt to repair JSON truncated by model token limit (missing closing brackets/braces).
+     */
+    protected function repairTruncatedJson(string $json): string
+    {
+        $openBraces = substr_count($json, '{') - substr_count($json, '}');
+        $openBrackets = substr_count($json, '[') - substr_count($json, ']');
+        if ($openBraces < 0 || $openBrackets < 0) {
+            return $json;
+        }
+        // Close brackets first (array), then braces (object)
+        return $json . str_repeat(']', $openBrackets) . str_repeat('}', $openBraces);
     }
 
     /**

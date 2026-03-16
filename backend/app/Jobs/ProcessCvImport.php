@@ -85,42 +85,107 @@ class ProcessCvImport implements ShouldQueue
                 $data['prefix'] = mb_strtolower($data['prefix']);
             }
 
-            // Check for duplicate contact (case-insensitive name and email comparison)
-            $existingContact = Contact::whereRaw('LOWER(first_name) = ?', [mb_strtolower($data['first_name'])])
-                ->whereRaw('LOWER(last_name) = ?', [mb_strtolower($data['last_name'])])
-                ->when(!empty($data['email']), function ($query) use ($data) {
-                    return $query->whereRaw('LOWER(email) = ?', [mb_strtolower($data['email'])]);
-                })
+            // Check for duplicate contact: match on first_name + last_name only.
+            // Excel-imported contacts often have no email; CV import should update them, not create duplicates.
+            $firstNameLower = mb_strtolower(trim($data['first_name'] ?? ''));
+            $lastNameLower = mb_strtolower(trim($data['last_name'] ?? ''));
+            $existingContact = Contact::whereRaw('LOWER(TRIM(first_name)) = ?', [$firstNameLower])
+                ->whereRaw('LOWER(TRIM(last_name)) = ?', [$lastNameLower])
                 ->first();
 
-            if ($existingContact) {
-                Log::info('ProcessCvImport: Duplicate contact skipped', [
-                    'file' => $this->originalFilename,
-                    'existing_contact_id' => $existingContact->id,
-                    'name' => $data['first_name'] . ' ' . $data['last_name'],
-                    'email' => $data['email'] ?? null,
-                ]);
-                $this->recordSkipped('Contact met deze naam' . (!empty($data['email']) ? ' en email' : '') . ' bestaat al');
-                return;
-            }
-
-            // Create the contact
-            $contact = Contact::create([
-                'first_name' => $data['first_name'],
-                'prefix' => $data['prefix'] ?? null,
-                'last_name' => $data['last_name'],
-                'date_of_birth' => $data['date_of_birth'] ?? null,
-                'email' => $data['email'] ?? null,
-                'phone' => $data['phone'] ?? null,
-                'location' => $data['location'] ?? null,
-                'education' => $data['education'] ?? null,
-                'current_company' => $data['current_company'] ?? null,
-                'company_role' => $data['current_role'] ?? null,
-                'notes' => isset($data['skills']) ? "Skills: {$data['skills']}" : null,
-                'network_roles' => ['candidate'], // Default role for imported CVs
+            Log::info('ProcessCvImport: Duplicate check', [
+                'search' => ['first' => $firstNameLower, 'last' => $lastNameLower],
+                'found' => $existingContact?->id,
             ]);
 
-            // Upload the CV to R2
+            $isUpdate = (bool) $existingContact;
+
+            if ($existingContact) {
+                $contact = $existingContact;
+
+                // Update contact with new data from CV (overwrites with parsed values when present)
+                $contact->update([
+                    'date_of_birth' => $data['date_of_birth'] ?? $contact->date_of_birth,
+                    'email' => $data['email'] ?? $contact->email,
+                    'phone' => $data['phone'] ?? $contact->phone,
+                    'location' => $data['location'] ?? $contact->location,
+                    'education' => $data['education'] ?? $contact->education,
+                    'current_company' => $data['current_company'] ?? $contact->current_company,
+                    'company_role' => $data['current_role'] ?? $contact->company_role,
+                    'notes' => isset($data['skills']) ? "Skills: {$data['skills']}" : $contact->notes,
+                ]);
+
+                // Replace work experiences with new data from CV
+                $contact->workExperiences()->delete();
+                $workExperiences = $data['work_experiences'] ?? [];
+                if (is_array($workExperiences) && !empty($workExperiences)) {
+                    foreach ($workExperiences as $idx => $we) {
+                        $jobTitle = $we['job_title'] ?? null;
+                        $companyName = $we['company_name'] ?? null;
+                        if (empty($jobTitle) || empty($companyName)) {
+                            continue;
+                        }
+                        $startDate = $we['start_date'] ?? null;
+                        if (empty($startDate)) {
+                            continue;
+                        }
+                        $contact->workExperiences()->create([
+                            'job_title' => $jobTitle,
+                            'company_name' => $companyName,
+                            'start_date' => $startDate,
+                            'end_date' => $we['end_date'] ?? null,
+                            'location' => $we['location'] ?? null,
+                            'description' => $we['description'] ?? null,
+                            'sort_order' => $idx,
+                        ]);
+                    }
+                    $contact->syncCurrentRoleFromWorkExperiences();
+                }
+            } else {
+                // Create the contact
+                $contact = Contact::create([
+                    'first_name' => $data['first_name'],
+                    'prefix' => $data['prefix'] ?? null,
+                    'last_name' => $data['last_name'],
+                    'date_of_birth' => $data['date_of_birth'] ?? null,
+                    'email' => $data['email'] ?? null,
+                    'phone' => $data['phone'] ?? null,
+                    'location' => $data['location'] ?? null,
+                    'education' => $data['education'] ?? null,
+                    'current_company' => $data['current_company'] ?? null,
+                    'company_role' => $data['current_role'] ?? null,
+                    'notes' => isset($data['skills']) ? "Skills: {$data['skills']}" : null,
+                    'network_roles' => ['candidate'], // Default role for imported CVs
+                ]);
+
+                // Create work experiences from parsed data
+                $workExperiences = $data['work_experiences'] ?? [];
+                if (is_array($workExperiences) && !empty($workExperiences)) {
+                    foreach ($workExperiences as $idx => $we) {
+                        $jobTitle = $we['job_title'] ?? null;
+                        $companyName = $we['company_name'] ?? null;
+                        if (empty($jobTitle) || empty($companyName)) {
+                            continue;
+                        }
+                        $startDate = $we['start_date'] ?? null;
+                        if (empty($startDate)) {
+                            continue;
+                        }
+                        $contact->workExperiences()->create([
+                            'job_title' => $jobTitle,
+                            'company_name' => $companyName,
+                            'start_date' => $startDate,
+                            'end_date' => $we['end_date'] ?? null,
+                            'location' => $we['location'] ?? null,
+                            'description' => $we['description'] ?? null,
+                            'sort_order' => $idx,
+                        ]);
+                    }
+                    $contact->syncCurrentRoleFromWorkExperiences();
+                }
+            }
+
+            // Upload the CV to R2 (both for new contacts and updates)
             $extension = pathinfo($this->originalFilename, PATHINFO_EXTENSION);
             $mimeType = $this->getMimeType($extension);
             $fileSize = filesize($this->tempFilePath);
@@ -149,9 +214,9 @@ class ProcessCvImport implements ShouldQueue
             ]);
 
             // Record success
-            $this->recordSuccess($contact);
+            $this->recordSuccess($contact, $isUpdate);
 
-            Log::info('ProcessCvImport: Successfully imported CV', [
+            Log::info($isUpdate ? 'ProcessCvImport: Successfully updated contact from CV' : 'ProcessCvImport: Successfully imported CV', [
                 'contact_id' => $contact->id,
                 'name' => $contact->name,
                 'file' => $this->originalFilename,
@@ -174,8 +239,10 @@ class ProcessCvImport implements ShouldQueue
 
     /**
      * Record successful import in cache for batch tracking
+     *
+     * @param bool $updated True when an existing contact was updated (duplicate was found and updated)
      */
-    protected function recordSuccess(Contact $contact): void
+    protected function recordSuccess(Contact $contact, bool $updated = false): void
     {
         $cacheKey = "cv_import_batch:{$this->batchId}";
         $data = cache()->get($cacheKey, ['success' => [], 'failed' => []]);
@@ -184,6 +251,7 @@ class ProcessCvImport implements ShouldQueue
             'contact_id' => $contact->id,
             'contact_uid' => $contact->uid,
             'name' => $contact->name,
+            'updated' => $updated,
         ];
         cache()->put($cacheKey, $data, now()->addHours(24));
     }

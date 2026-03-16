@@ -59,6 +59,14 @@ Recruiters kunnen tijdens het zoeken op LinkedIn een geschikt profiel direct imp
 3. **Ontbrekende data**: e-mail en telefoon staan vaak niet op LinkedIn; velden blijven leeg.
 4. **CORS**: API moet requests van de extension toestaan (zelfde origin als CRM-domein).
 
+## Alternatief: Profiel plakken (ToS-vriendelijk)
+
+Er is een **Paste Profile Import** flow in het CRM die geen browser extension gebruikt:
+- **Netwerk** → **Importeren** → **Profiel plakken**
+- Of direct: `/network?import=paste-profile` (voeg toe aan favorieten voor snelle toegang)
+- Recruiter kopieert handmatig profieltekst op LinkedIn (Ctrl+A, Ctrl+C), plakt in het CRM
+- Geen scraping, geen extension → beter verdedigbaar tegen LinkedIn ToS
+
 ## Uitbreidingen (optioneel)
 
 - **Tokenbeheer in CRM**: pagina "LinkedIn Extension" in instellingen om een token te genereren

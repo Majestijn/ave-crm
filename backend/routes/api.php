@@ -55,6 +55,7 @@ Route::prefix('/v1')->group(function () {
         // Specific routes must come before apiResource to avoid route conflicts
         Route::get('/contacts/candidates', [ContactController::class, 'candidates']);
         Route::post('/contacts/smart-import', [ContactController::class, 'smartBulkImport']);
+        Route::post('/contacts/excel-import', [ContactController::class, 'excelImport']);
         Route::get('/contacts/smart-import/{batchId}', [ContactController::class, 'smartBulkImportStatus']);
         Route::post('/geocode', [ContactController::class, 'geocode']);
         Route::apiResource('contacts', ContactController::class)->only(['index', 'store', 'show', 'update', 'destroy']);

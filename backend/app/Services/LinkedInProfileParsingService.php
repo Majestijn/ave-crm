@@ -100,7 +100,10 @@ PROMPT;
                 ->setContents([$content])
                 ->setGenerationConfig($generationConfig);
 
-            $response = $client->generateContent($request);
+            $timeoutMs = (config('services.google_cloud.timeout_seconds', 180)) * 1000;
+            $response = $client->generateContent($request, [
+                'timeoutMillis' => $timeoutMs,
+            ]);
 
             $responseText = '';
             foreach ($response->getCandidates() as $candidate) {

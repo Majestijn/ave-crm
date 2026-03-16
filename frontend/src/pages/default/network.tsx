@@ -48,6 +48,8 @@ import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import ClearIcon from "@mui/icons-material/Clear";
 import CakeIcon from "@mui/icons-material/Cake";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import TableChartIcon from "@mui/icons-material/TableChart";
 import mammoth from "mammoth";
 import {
   useContacts,
@@ -68,9 +70,11 @@ import {
 } from "../../api/mutations/contacts";
 import SmartBulkImportDialog from "../../components/features/SmartBulkImportDialog";
 import BatchImportDialog from "../../components/features/BatchImportDialog";
+import ExcelImportDialog from "../../components/features/ExcelImportDialog";
 import { useDisclosure } from "../../hooks/useDisclosure";
-import type { Contact } from "../../types/contacts";
-import { useForm, Controller } from "react-hook-form";
+import type { Contact, ContactWorkExperience } from "../../types/contacts";
+import WorkExperienceSection, { formatDateRange } from "../../components/features/WorkExperienceSection";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { networkRoleLabels, formatContactName } from "../../utils/formatters";
@@ -124,6 +128,16 @@ const NETWORK_COLUMN_META: { field: string; headerName: string }[] = [
   { field: "actions", headerName: "Acties" },
 ];
 
+const WorkExperienceSchema = z.object({
+  id: z.number().optional(),
+  job_title: z.string().optional(),
+  company_name: z.string().optional(),
+  start_date: z.string().optional(),
+  end_date: z.string().nullable().optional(),
+  location: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+});
+
 const ContactSchema = z.object({
   first_name: z.string().min(1, "Voornaam is verplicht"),
   prefix: z.string().optional(),
@@ -132,6 +146,7 @@ const ContactSchema = z.object({
   gender: z.string().optional(),
   location: z.string().optional(),
   company_role: z.string().optional(),
+  work_experiences: z.array(WorkExperienceSchema).optional(),
   network_roles: z
     .array(
       z.enum([
@@ -334,8 +349,11 @@ export default function NetworkPage() {
   const editContact = useDisclosure();
   const bulkImport = useDisclosure();
   const smartImport = useDisclosure();
+  const excelImport = useDisclosure();
   const deleteConfirm = useDisclosure();
   const cvViewer = useDisclosure();
+  const workHistoryViewer = useDisclosure();
+  const [workHistoryContact, setWorkHistoryContact] = useState<Contact | null>(null);
 
   // Other state
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -415,6 +433,7 @@ export default function NetworkPage() {
       location: "",
       company_role: "",
       network_roles: [],
+      work_experiences: [],
       current_company: "",
       current_salary_cents: undefined,
       education: undefined,
@@ -428,6 +447,11 @@ export default function NetworkPage() {
     },
   });
 
+  const workExperienceFields = useFieldArray({
+    control,
+    name: "work_experiences",
+  });
+
   // Edit form - separate form instance
   const {
     register: editRegister,
@@ -438,6 +462,11 @@ export default function NetworkPage() {
   } = useForm<ContactForm>({
     resolver: zodResolver(ContactSchema),
     mode: "onBlur",
+  });
+
+  const editWorkExperienceFields = useFieldArray({
+    control: editControl,
+    name: "work_experiences",
   });
 
   // Handle navigation state from account detail page (prefill add contact form)
@@ -471,6 +500,16 @@ export default function NetworkPage() {
         ? editingContact.date_of_birth.split("T")[0]
         : "";
 
+      const workExps = (editingContact.work_experiences || []).map((we) => ({
+        id: we.id,
+        job_title: we.job_title || "",
+        company_name: we.company_name || "",
+        start_date: we.start_date ? we.start_date.split("T")[0] : "",
+        end_date: we.end_date ? we.end_date.split("T")[0] : null,
+        location: we.location || "",
+        description: we.description || "",
+      }));
+
       editReset({
         first_name: editingContact.first_name || "",
         prefix: editingContact.prefix || "",
@@ -480,6 +519,7 @@ export default function NetworkPage() {
         location: editingContact.location || "",
         company_role: editingContact.company_role || "",
         network_roles: (editingContact.network_roles as any) || [],
+        work_experiences: workExps,
         current_company: editingContact.current_company || "",
         current_salary_cents: editingContact.current_salary_cents || undefined,
         education: (editingContact.education as any) || undefined,
@@ -523,11 +563,35 @@ export default function NetworkPage() {
     });
   }, [contacts, searchQuery, candidatesOnlyFilter]);
 
+  const normalizeWorkExperiences = (items: ContactForm["work_experiences"]) => {
+    if (!items?.length) return undefined;
+    return items
+      .filter(
+        (we) =>
+          (we.job_title || "").trim() &&
+          (we.company_name || "").trim() &&
+          (we.start_date || "").trim()
+      )
+      .map((we) => ({
+        ...(we.id ? { id: we.id } : {}),
+        job_title: (we.job_title || "").trim(),
+        company_name: (we.company_name || "").trim(),
+        start_date: we.start_date || "",
+        end_date: (we.end_date as string)?.trim() || null,
+        location: (we.location as string)?.trim() || null,
+        description: (we.description as string)?.trim() || null,
+      }));
+  };
+
   const onSubmit = async (data: ContactForm) => {
     setSubmitError(null);
     try {
-      // Create the contact first
-      const createdContact = await createContactMutation.mutateAsync(data);
+      const payload = { ...data };
+      const we = normalizeWorkExperiences(data.work_experiences);
+      if (we?.length) payload.work_experiences = we;
+      else delete (payload as any).work_experiences;
+
+      const createdContact = await createContactMutation.mutateAsync(payload);
 
       // If there's a CV file, upload it separately
       if (cvFile && createdContact?.uid) {
@@ -695,9 +759,13 @@ export default function NetworkPage() {
 
     setSubmitError(null);
     try {
+      const payload = { ...data };
+      const we = normalizeWorkExperiences(data.work_experiences);
+      payload.work_experiences = we ?? [];
+
       await updateContactMutation.mutateAsync({
         uid: editingContact.uid,
-        data,
+        data: payload,
       });
       editContact.close();
       setEditingContact(null);
@@ -730,6 +798,11 @@ export default function NetworkPage() {
   const handleBulkImport = () => {
     handleImportMenuClose();
     bulkImport.open();
+  };
+
+  const handleExcelImport = () => {
+    handleImportMenuClose();
+    excelImport.open();
   };
 
   const handleDeleteClick = (contact: Contact) => {
@@ -972,6 +1045,31 @@ export default function NetworkPage() {
       flex: 1,
       minWidth: 200,
       valueGetter: (value, row) => formatContactName(row),
+      renderCell: (params) => {
+        const contact = params.row as Contact;
+        return (
+          <Typography
+            component="button"
+            variant="body2"
+            onClick={() => {
+              setWorkHistoryContact(contact);
+              workHistoryViewer.open();
+            }}
+            sx={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              color: "primary.main",
+              textAlign: "left",
+              fontWeight: 500,
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            {formatContactName(contact)}
+          </Typography>
+        );
+      },
     },
     {
       field: "email",
@@ -1174,6 +1272,19 @@ export default function NetworkPage() {
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Importeer meerdere CV's tegelijk
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
+            <MenuItem onClick={handleExcelImport}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <TableChartIcon fontSize="small" color="action" />
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>
+                    Excel Import
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Importeer uit Excel (.xlsx) of CSV
                   </Typography>
                 </Box>
               </Stack>
@@ -1444,6 +1555,13 @@ export default function NetworkPage() {
         onSuccess={() => refetch()}
       />
 
+      {/* Excel Import Dialog */}
+      <ExcelImportDialog
+        open={excelImport.isOpen}
+        onClose={excelImport.close}
+        onSuccess={() => refetch()}
+      />
+
       {/* Add Contact Dialog */}
       <Dialog
         open={addContact.isOpen}
@@ -1645,6 +1763,12 @@ export default function NetworkPage() {
               helperText={errors.linkedin_url?.message ?? " "}
               {...register("linkedin_url")}
               fullWidth
+            />
+
+            <WorkExperienceSection
+              fieldArray={workExperienceFields}
+              register={register}
+              errors={errors as any}
             />
 
             {/* Company Contact Section */}
@@ -1883,6 +2007,103 @@ export default function NetworkPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Work History Modal */}
+      <Dialog
+        open={workHistoryViewer.isOpen}
+        onClose={() => {
+          workHistoryViewer.close();
+          setWorkHistoryContact(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Werkgeschiedenis van {workHistoryContact ? formatContactName(workHistoryContact) : ""}
+        </DialogTitle>
+        <DialogContent dividers>
+          {workHistoryContact && (
+            <>
+              {(!workHistoryContact.work_experiences || workHistoryContact.work_experiences.length === 0) ? (
+                <Box sx={{ py: 4, textAlign: "center" }}>
+                  <WorkOutlineIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Geen werkgeschiedenis geregistreerd voor dit contact
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditIcon />}
+                    onClick={() => {
+                      workHistoryViewer.close();
+                      setWorkHistoryContact(null);
+                      handleEditClick(workHistoryContact);
+                    }}
+                    sx={{ mt: 2 }}
+                  >
+                    Contact bewerken om toe te voegen
+                  </Button>
+                </Box>
+              ) : (
+                <Stack spacing={2}>
+                  {workHistoryContact.work_experiences!.map((we, index) => (
+                    <Box
+                      key={we.id ?? index}
+                      sx={{
+                        py: 1.5,
+                        px: 2,
+                        borderLeft: "3px solid",
+                        borderColor: "primary.main",
+                        bgcolor: "grey.50",
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {we.job_title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {we.company_name}
+                        {we.location && ` · ${we.location}`}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                        {formatDateRange(we.start_date, we.end_date)}
+                      </Typography>
+                      {we.description && (
+                        <Typography variant="body2" sx={{ mt: 1 }} color="text.secondary">
+                          {we.description}
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {workHistoryContact && (workHistoryContact.work_experiences?.length ?? 0) > 0 && (
+            <Button
+              startIcon={<EditIcon />}
+              onClick={() => {
+                workHistoryViewer.close();
+                setWorkHistoryContact(null);
+                handleEditClick(workHistoryContact);
+              }}
+            >
+              Bewerken
+            </Button>
+          )}
+          <Box sx={{ flex: 1 }} />
+          <Button
+            onClick={() => {
+              workHistoryViewer.close();
+              setWorkHistoryContact(null);
+            }}
+          >
+            Sluiten
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Edit Contact Dialog */}
       <Dialog
         open={editContact.isOpen}
@@ -2083,6 +2304,12 @@ export default function NetworkPage() {
                 fullWidth
               />
             </Stack>
+
+            <WorkExperienceSection
+              fieldArray={editWorkExperienceFields}
+              register={editRegister}
+              errors={editErrors as any}
+            />
 
             <TextField
               label="Notities"
