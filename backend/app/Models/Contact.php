@@ -146,6 +146,14 @@ class Contact extends Model
     }
 
     /**
+     * Get all work experiences for this contact (ordered by most recent first)
+     */
+    public function workExperiences(): HasMany
+    {
+        return $this->hasMany(ContactWorkExperience::class)->orderByRaw('end_date IS NULL DESC')->orderByDesc('end_date')->orderByDesc('start_date');
+    }
+
+    /**
      * Get all documents for this contact
      */
     public function documents(): HasMany
@@ -159,5 +167,19 @@ class Contact extends Model
     public function cvDocuments(): HasMany
     {
         return $this->hasMany(ContactDocument::class)->where('type', 'cv');
+    }
+
+    /**
+     * Sync current_company and company_role from the most recent work experience.
+     * Call this after modifying work experiences.
+     */
+    public function syncCurrentRoleFromWorkExperiences(): void
+    {
+        $latest = $this->workExperiences()->first();
+        if ($latest) {
+            $this->current_company = $latest->company_name;
+            $this->company_role = $latest->job_title;
+            $this->saveQuietly(); // Avoid triggering geocoding etc.
+        }
     }
 }

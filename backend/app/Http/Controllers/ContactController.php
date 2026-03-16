@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use App\Jobs\ProcessCvImport;
+use App\Services\ExcelImportService;
 use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -48,7 +49,7 @@ class ContactController extends Controller
             }
         }
 
-        $contacts = $query->get()->toArray();
+        $contacts = $query->with('workExperiences')->get()->toArray();
 
         return response()->json($contacts);
     }
@@ -85,8 +86,27 @@ class ContactController extends Controller
         }
 
         $data = $request->validated();
+        $workExperiences = $data['work_experiences'] ?? null;
+        unset($data['work_experiences']);
 
         $contact = Contact::create($data);
+
+        if (!empty($workExperiences)) {
+            foreach ($workExperiences as $idx => $we) {
+                $contact->workExperiences()->create([
+                    'job_title' => $we['job_title'],
+                    'company_name' => $we['company_name'],
+                    'start_date' => $we['start_date'],
+                    'end_date' => $we['end_date'] ?? null,
+                    'location' => $we['location'] ?? null,
+                    'description' => $we['description'] ?? null,
+                    'sort_order' => $idx,
+                ]);
+            }
+            $contact->syncCurrentRoleFromWorkExperiences();
+        }
+
+        $contact->load('workExperiences');
 
         return response()->json($contact, 201);
     }
@@ -104,6 +124,8 @@ class ContactController extends Controller
         if (!$auth->can('view', $contactModel)) {
             abort(403, 'This action is unauthorized.');
         }
+
+        $contactModel->load('workExperiences');
 
         return response()->json($contactModel);
     }
@@ -141,12 +163,46 @@ class ContactController extends Controller
             'phone' => ['nullable', 'string', 'max:255'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'work_experiences' => ['nullable', 'array'],
+            'work_experiences.*.id' => ['sometimes', 'integer'],
+            'work_experiences.*.job_title' => ['required_with:work_experiences.*', 'string', 'max:255'],
+            'work_experiences.*.company_name' => ['required_with:work_experiences.*', 'string', 'max:255'],
+            'work_experiences.*.start_date' => ['required_with:work_experiences.*', 'date'],
+            'work_experiences.*.end_date' => ['nullable', 'date'],
+            'work_experiences.*.location' => ['nullable', 'string', 'max:255'],
+            'work_experiences.*.description' => ['nullable', 'string'],
         ]);
 
-        // Prevent modifying protected fields
+        $workExperiences = $data['work_experiences'] ?? null;
+        unset($data['work_experiences']);
         unset($data['tenant_id'], $data['uid']);
 
         $contactModel->fill($data)->save();
+
+        if ($workExperiences !== null) {
+            $contactModel->workExperiences()->whereNotIn('id', collect($workExperiences)->pluck('id')->filter()->values())->delete();
+
+            foreach ($workExperiences as $idx => $we) {
+                $payload = [
+                    'job_title' => $we['job_title'],
+                    'company_name' => $we['company_name'],
+                    'start_date' => $we['start_date'],
+                    'end_date' => $we['end_date'] ?? null,
+                    'location' => $we['location'] ?? null,
+                    'description' => $we['description'] ?? null,
+                    'sort_order' => $idx,
+                ];
+                $existingId = $we['id'] ?? null;
+                if ($existingId && $contactModel->workExperiences()->where('id', $existingId)->exists()) {
+                    $contactModel->workExperiences()->where('id', $existingId)->update($payload);
+                } else {
+                    $contactModel->workExperiences()->create($payload);
+                }
+            }
+            $contactModel->syncCurrentRoleFromWorkExperiences();
+        }
+
+        $contactModel->load('workExperiences');
 
         return response()->json($contactModel);
     }
@@ -242,6 +298,30 @@ class ContactController extends Controller
      * Smart bulk import CVs using AI parsing
      * Accepts multiple CV files and queues them for processing
      */
+    /**
+     * Import contacts from Excel (.xlsx) or CSV file.
+     */
+    public function excelImport(Request $request, ExcelImportService $excelImport)
+    {
+        $auth = $request->user();
+
+        if (!in_array($auth->role, ['owner', 'admin', 'management', 'recruiter'])) {
+            abort(403, 'Je hebt geen toestemming om Excel te importeren');
+        }
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,csv', 'max:10240'], // 10MB
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+        $filename = $file->getClientOriginalName();
+
+        $result = $excelImport->import($path, $filename);
+
+        return response()->json($result);
+    }
+
     public function smartBulkImport(Request $request)
     {
         $auth = $request->user();

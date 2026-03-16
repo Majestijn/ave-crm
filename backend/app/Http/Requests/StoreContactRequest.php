@@ -39,6 +39,13 @@ class StoreContactRequest extends FormRequest
             'availability_date' => ['nullable', 'date'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'work_experiences' => ['nullable', 'array'],
+            'work_experiences.*.job_title' => ['required_with:work_experiences.*', 'string', 'max:255'],
+            'work_experiences.*.company_name' => ['required_with:work_experiences.*', 'string', 'max:255'],
+            'work_experiences.*.start_date' => ['required_with:work_experiences.*', 'date'],
+            'work_experiences.*.end_date' => ['nullable', 'date'],
+            'work_experiences.*.location' => ['nullable', 'string', 'max:255'],
+            'work_experiences.*.description' => ['nullable', 'string'],
         ];
     }
 }

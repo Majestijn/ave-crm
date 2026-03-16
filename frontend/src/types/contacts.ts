@@ -1,3 +1,13 @@
+export type ContactWorkExperience = {
+  id?: number;
+  job_title: string;
+  company_name: string;
+  start_date: string; // YYYY-MM-DD
+  end_date?: string | null; // YYYY-MM-DD, null = huidige functie
+  location?: string | null;
+  description?: string | null;
+};
+
 export type Contact = {
   uid: string;
   first_name: string;
@@ -21,6 +31,7 @@ export type Contact = {
   linkedin_url?: string;
   cv_url?: string;
   notes?: string;
+  work_experiences?: ContactWorkExperience[];
 };
 
 export type Paginated<T> = {

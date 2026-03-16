@@ -45,6 +45,7 @@ return [
             : null,
         'location' => env('VERTEX_AI_LOCATION', 'europe-west4'),
         'model' => env('VERTEX_AI_MODEL', 'gemini-2.0-flash-001'),
+        'timeout_seconds' => (int) env('VERTEX_AI_TIMEOUT_SECONDS', 180),
     ],
 
     'google' => [

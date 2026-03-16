@@ -186,7 +186,7 @@ class BatchCvImportService
                         ],
                         'generationConfig' => [
                             'temperature' => 0.1,
-                            'maxOutputTokens' => 8192,
+                            'maxOutputTokens' => 65535,
                         ]
                     ]
                 ];
@@ -227,9 +227,9 @@ class BatchCvImportService
     protected function getExtractionPrompt(): string
     {
         return <<<PROMPT
-Je bent een CV-parser. Analyseer de volgende CV-tekst en extraheer de kandidaatgegevens.
+Je bent een CV-parser. Analyseer de volgende CV-tekst en extraheer de kandidaatgegevens inclusief de VOLLEDIGE werkgeschiedenis.
 
-Geef het resultaat terug als JSON met ALLEEN deze velden:
+Geef het resultaat terug als JSON met deze velden:
 - first_name: voornaam (VERPLICHT)
 - prefix: tussenvoegsel zoals "van", "de", "van der" (optioneel, alleen als aanwezig)
 - last_name: achternaam (VERPLICHT)
@@ -241,11 +241,20 @@ Geef het resultaat terug als JSON met ALLEEN deze velden:
 - current_company: huidige of meest recente werkgever/bedrijfsnaam (optioneel)
 - current_role: huidige of meest recente functietitel (optioneel)
 - skills: relevante vaardigheden, gescheiden door komma's (optioneel)
+- work_experiences: array van ALLE werkervaringen, van nieuwste naar oudste. Elk item:
+  - job_title: functietitel (verplicht per item)
+  - company_name: bedrijfsnaam (verplicht per item)
+  - start_date: startdatum YYYY-MM-DD (bij alleen jaar: YYYY-01-01)
+  - end_date: einddatum YYYY-MM-DD, of null als huidige functie/heden
+  - location: locatie (optioneel)
+  - description: korte beschrijving taken (optioneel)
 
 BELANGRIJK:
 - Retourneer ALLEEN geldige JSON, geen andere tekst
 - Als je een veld niet kunt vinden, laat het dan weg uit de JSON
 - first_name en last_name zijn VERPLICHT - als je deze niet kunt vinden, retourneer dan: {"error": "Naam niet gevonden"}
+- work_experiences: extraheer ALLE banen uit de CV, niet alleen de meest recente
+- Bij onzekere datums: gebruik het genoemde jaar met maand 01-01 voor start, 12-31 voor eind
 - Zorg dat Nederlandse namen correct worden geparsed (bijv. "Jan van der Berg" = first_name: "Jan", prefix: "van der", last_name: "Berg")
 
 JSON RESPONSE:
@@ -439,7 +448,12 @@ PROMPT;
                 // Parse JSON response
                 $text = preg_replace('/^```json\s*/', '', $text);
                 $text = preg_replace('/\s*```$/', '', $text);
-                $data = json_decode(trim($text), true);
+                $text = trim($text);
+                $data = json_decode($text, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $text = $this->repairTruncatedJson($text);
+                    $data = json_decode($text, true);
+                }
 
                 if (!$data || isset($data['error'])) {
                     $failedFiles[] = [
@@ -464,45 +478,104 @@ PROMPT;
                     $data['prefix'] = mb_strtolower($data['prefix']);
                 }
 
-                // Check for duplicate contact (case-insensitive name and email comparison)
-                $existingContact = Contact::whereRaw('LOWER(first_name) = ?', [mb_strtolower($data['first_name'])])
-                    ->whereRaw('LOWER(last_name) = ?', [mb_strtolower($data['last_name'])])
-                    ->when(!empty($data['email']), function ($query) use ($data) {
-                        return $query->whereRaw('LOWER(email) = ?', [mb_strtolower($data['email'])]);
-                    })
+                // Check for duplicate: match on first_name + last_name only.
+                $existingContact = Contact::whereRaw('LOWER(TRIM(first_name)) = ?', [mb_strtolower(trim($data['first_name'] ?? ''))])
+                    ->whereRaw('LOWER(TRIM(last_name)) = ?', [mb_strtolower(trim($data['last_name'] ?? ''))])
                     ->first();
 
-                if ($existingContact) {
-                    Log::info('Batch CV import: Duplicate contact skipped', [
-                        'filename' => $filename,
-                        'existing_contact_id' => $existingContact->id,
-                        'name' => $data['first_name'] . ' ' . $data['last_name'],
-                    ]);
-                    $skippedFiles[] = [
-                        'filename' => $filename,
-                        'reason' => 'Contact met deze naam' . (!empty($data['email']) ? ' en email' : '') . ' bestaat al',
-                    ];
-                    continue;
-                }
-
-                // Create contact
                 try {
-                    $contact = Contact::create([
-                        'first_name' => $data['first_name'],
-                        'prefix' => $data['prefix'] ?? null,
-                        'last_name' => $data['last_name'],
-                        'date_of_birth' => $data['date_of_birth'] ?? null,
-                        'email' => $data['email'] ?? null,
-                        'phone' => $data['phone'] ?? null,
-                        'location' => $data['location'] ?? null,
-                        'education' => $this->normalizeEducation($data['education'] ?? null),
-                        'current_company' => $data['current_company'] ?? null,
-                        'company_role' => $data['current_role'] ?? null,
-                        'notes' => isset($data['skills']) ? "Skills: {$data['skills']}" : null,
-                        'network_roles' => ['candidate'],
-                    ]);
+                    if ($existingContact) {
+                        $contact = $existingContact;
 
-                    // Upload CV to R2 if filepath exists
+                        // Update contact with new data from CV
+                        $contact->update([
+                            'date_of_birth' => $data['date_of_birth'] ?? $contact->date_of_birth,
+                            'email' => $data['email'] ?? $contact->email,
+                            'phone' => $data['phone'] ?? $contact->phone,
+                            'location' => $data['location'] ?? $contact->location,
+                            'education' => $this->normalizeEducation($data['education'] ?? null) ?? $contact->education,
+                            'current_company' => $data['current_company'] ?? $contact->current_company,
+                            'company_role' => $data['current_role'] ?? $contact->company_role,
+                            'notes' => isset($data['skills']) ? "Skills: {$data['skills']}" : $contact->notes,
+                        ]);
+
+                        // Replace work experiences with new data from CV
+                        $contact->workExperiences()->delete();
+                        $workExperiences = $data['work_experiences'] ?? [];
+                        if (is_array($workExperiences) && !empty($workExperiences)) {
+                            foreach ($workExperiences as $idx => $we) {
+                                $jobTitle = $we['job_title'] ?? null;
+                                $companyName = $we['company_name'] ?? null;
+                                if (empty($jobTitle) || empty($companyName)) {
+                                    continue;
+                                }
+                                $startDate = $we['start_date'] ?? null;
+                                if (empty($startDate)) {
+                                    continue;
+                                }
+                                $contact->workExperiences()->create([
+                                    'job_title' => $jobTitle,
+                                    'company_name' => $companyName,
+                                    'start_date' => $startDate,
+                                    'end_date' => $we['end_date'] ?? null,
+                                    'location' => $we['location'] ?? null,
+                                    'description' => $we['description'] ?? null,
+                                    'sort_order' => $idx,
+                                ]);
+                            }
+                            $contact->syncCurrentRoleFromWorkExperiences();
+                        }
+
+                        Log::info('Batch CV import: Contact updated from duplicate', [
+                            'filename' => $filename,
+                            'contact_id' => $contact->id,
+                            'name' => $data['first_name'] . ' ' . $data['last_name'],
+                        ]);
+                    } else {
+                        // Create contact
+                        $contact = Contact::create([
+                            'first_name' => $data['first_name'],
+                            'prefix' => $data['prefix'] ?? null,
+                            'last_name' => $data['last_name'],
+                            'date_of_birth' => $data['date_of_birth'] ?? null,
+                            'email' => $data['email'] ?? null,
+                            'phone' => $data['phone'] ?? null,
+                            'location' => $data['location'] ?? null,
+                            'education' => $this->normalizeEducation($data['education'] ?? null),
+                            'current_company' => $data['current_company'] ?? null,
+                            'company_role' => $data['current_role'] ?? null,
+                            'notes' => isset($data['skills']) ? "Skills: {$data['skills']}" : null,
+                            'network_roles' => ['candidate'],
+                        ]);
+
+                        // Create work experiences from parsed data
+                        $workExperiences = $data['work_experiences'] ?? [];
+                        if (is_array($workExperiences) && !empty($workExperiences)) {
+                            foreach ($workExperiences as $idx => $we) {
+                                $jobTitle = $we['job_title'] ?? null;
+                                $companyName = $we['company_name'] ?? null;
+                                if (empty($jobTitle) || empty($companyName)) {
+                                    continue;
+                                }
+                                $startDate = $we['start_date'] ?? null;
+                                if (empty($startDate)) {
+                                    continue;
+                                }
+                                $contact->workExperiences()->create([
+                                    'job_title' => $jobTitle,
+                                    'company_name' => $companyName,
+                                    'start_date' => $startDate,
+                                    'end_date' => $we['end_date'] ?? null,
+                                    'location' => $we['location'] ?? null,
+                                    'description' => $we['description'] ?? null,
+                                    'sort_order' => $idx,
+                                ]);
+                            }
+                            $contact->syncCurrentRoleFromWorkExperiences();
+                        }
+                    }
+
+                    // Upload CV to R2 if filepath exists (both for new and updated contacts)
                     if ($filepath && file_exists($filepath)) {
                         $this->uploadCvToR2($contact, $filepath, $filename, $batch->tenant_id);
                     }
@@ -612,6 +685,19 @@ PROMPT;
         }
 
         return $name;
+    }
+
+    /**
+     * Attempt to repair JSON truncated by model token limit (missing closing brackets/braces).
+     */
+    protected function repairTruncatedJson(string $json): string
+    {
+        $openBraces = substr_count($json, '{') - substr_count($json, '}');
+        $openBrackets = substr_count($json, '[') - substr_count($json, ']');
+        if ($openBraces < 0 || $openBrackets < 0) {
+            return $json;
+        }
+        return $json . str_repeat(']', $openBrackets) . str_repeat('}', $openBraces);
     }
 
     /**

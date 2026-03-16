@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../client";
 import { queryKeys } from "../queries/keys";
-import type { Contact } from "../../types/contacts";
+import type { Contact, ContactWorkExperience } from "../../types/contacts";
 
 export type CreateContactData = {
   first_name: string;
@@ -20,6 +20,7 @@ export type CreateContactData = {
   phone?: string;
   linkedin_url?: string;
   notes?: string;
+  work_experiences?: ContactWorkExperience[];
   cv_file?: File | null;
 };
 
