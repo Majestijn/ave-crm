@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "docx": "^9.5.1"
+  },
+  "devDependencies": {
+    "xlsx": "^0.18.5"
   }
 }

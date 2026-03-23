@@ -289,7 +289,7 @@ class ContactController extends Controller
         $query->orderBy('last_name')->orderBy('first_name');
 
         $perPage = min(max((int) $request->query('per_page', 50), 1), 100);
-        $candidates = $query->limit($perPage)->get()->toArray();
+        $candidates = $query->paginate($perPage);
 
         return response()->json($candidates);
     }

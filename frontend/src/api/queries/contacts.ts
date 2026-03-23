@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { Contact } from "../../types/contacts";
 import API from "../client";
 import { queryKeys } from "./keys";
@@ -89,25 +89,84 @@ export const useCandidates = (locationFilter?: LocationFilter) => {
 };
 
 /**
- * Search candidates for assignment dialog - fetches max 50, server-side search.
+ * Search candidates for assignment dialog - server-side search with pagination.
  * Use when dialog is open to avoid loading thousands of contacts.
  */
-export const useSearchCandidates = (search: string, enabled: boolean) => {
+export const useSearchCandidates = (
+  search: string,
+  enabled: boolean,
+  page: number,
+  perPage: number = 50
+) => {
+  type CandidateSearchResponse = {
+    data: Contact[];
+    meta?: {
+      current_page?: number;
+      last_page?: number;
+      total?: number;
+    };
+    current_page?: number;
+    last_page?: number;
+    total?: number;
+  };
+
   return useQuery({
-    queryKey: [...queryKeys.contacts.candidates, "search", search],
+    queryKey: [
+      ...queryKeys.contacts.candidates,
+      "search",
+      search,
+      "page",
+      page,
+      "perPage",
+      perPage,
+    ],
     queryFn: async () => {
-      const params = new URLSearchParams({ per_page: "50" });
+      const params = new URLSearchParams({
+        per_page: String(perPage),
+        page: String(Math.max(page, 1)),
+      });
       if (search.trim()) params.set("search", search.trim());
-      const responseData = await API.get<Contact[] | { data: Contact[] }>(
+      const responseData = await API.get<Contact[] | CandidateSearchResponse>(
         `/contacts/candidates?${params.toString()}`
       );
-      if (Array.isArray(responseData)) return responseData;
-      if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
-        return responseData.data;
+      if (Array.isArray(responseData)) {
+        return {
+          data: responseData,
+          meta: {
+            current_page: page,
+            last_page: page,
+            total: responseData.length,
+          },
+        } as CandidateSearchResponse;
       }
-      return [] as Contact[];
+      if (responseData && "data" in responseData && Array.isArray(responseData.data)) {
+        const currentPage =
+          responseData.meta?.current_page ?? responseData.current_page ?? page;
+        const lastPage =
+          responseData.meta?.last_page ?? responseData.last_page ?? currentPage;
+        const total =
+          responseData.meta?.total ?? responseData.total ?? responseData.data.length;
+
+        return {
+          data: responseData.data,
+          meta: {
+            current_page: currentPage,
+            last_page: lastPage,
+            total,
+          },
+        } as CandidateSearchResponse;
+      }
+      return {
+        data: [],
+        meta: {
+          current_page: page,
+          last_page: page,
+          total: 0,
+        },
+      } as CandidateSearchResponse;
     },
     enabled,
+    placeholderData: keepPreviousData,
   });
 };
 
