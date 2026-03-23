@@ -100,6 +100,10 @@ export default function LoginPage() {
     return false;
   };
 
+  // If we get redirected from base domain search, we land on the tenant domain with ?email=...
+  // Prefill the form using this value so the email field is filled immediately.
+  const emailParamFromUrl = new URLSearchParams(window.location.search).get("email") || "";
+
   const {
     register,
     handleSubmit,
@@ -109,6 +113,9 @@ export default function LoginPage() {
   } = useForm<LoginForm>({
     resolver: zodResolver(LoginSchema),
     mode: "onBlur",
+    defaultValues: {
+      email: isTenantDomain() ? emailParamFromUrl : "",
+    },
   });
 
   const [transitioning, setTransitioning] = useState(false);
@@ -160,7 +167,7 @@ export default function LoginPage() {
     }
 
     // Pre-fill email if coming from base domain redirect
-    const emailParam = searchParams.get("email");
+    const emailParam = new URLSearchParams(window.location.search).get("email");
     if (emailParam && isTenantDomain()) {
       setValue("email", emailParam);
       setSearchParams({}, { replace: true });
