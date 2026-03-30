@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\RegisterTenantController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\MeController;
+use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\TenantListController;
 use App\Http\Controllers\UserController;
@@ -41,6 +42,7 @@ Route::prefix('/v1')->group(function () {
 
     Route::middleware([NeedsTenant::class, 'auth:sanctum'])->group(function () {
         Route::get('/auth/me', MeController::class);
+        Route::put('/auth/password', [ChangePasswordController::class, 'update']);
         Route::post('/auth/logout', [LogoutController::class, 'destroy']);
 
         Route::get('/users', [UserController::class, 'index']);
