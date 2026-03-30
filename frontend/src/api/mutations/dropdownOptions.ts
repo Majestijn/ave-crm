@@ -9,9 +9,9 @@ export function useCreateDropdownOption() {
   return useMutation({
     mutationFn: async (data: {
       type: string;
-      value: string;
       label: string;
       color?: string | null;
+      value?: string;
     }) => {
       return API.post<DropdownOption>(
         "/dropdown-options",
