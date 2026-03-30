@@ -31,15 +31,29 @@ class DropdownOptionController extends Controller
     {
         $validated = $request->validate([
             'type' => 'required|string|max:64',
-            'value' => 'required|string|max:255',
+            'value' => 'nullable|string|max:255',
             'label' => 'required|string|max:255',
             'color' => 'nullable|string|max:20',
         ]);
 
+        $value = isset($validated['value']) && trim((string) $validated['value']) !== ''
+            ? trim($validated['value'])
+            : DropdownOption::uniqueValueFromLabel($validated['type'], $validated['label']);
+
+        if (DropdownOption::ofType($validated['type'])->where('value', $value)->exists()) {
+            return response()->json([
+                'message' => 'Er bestaat al een optie met deze interne waarde voor dit type.',
+                'errors' => ['value' => ['Deze waarde is al in gebruik.']],
+            ], 422);
+        }
+
         $maxSort = DropdownOption::ofType($validated['type'])->max('sort_order') ?? -1;
 
         $option = DropdownOption::create([
-            ...$validated,
+            'type' => $validated['type'],
+            'value' => $value,
+            'label' => $validated['label'],
+            'color' => $validated['color'] ?? null,
             'sort_order' => $maxSort + 1,
             'is_active' => true,
         ]);

@@ -38,25 +38,25 @@ class SeedAccountsAndAssignments extends Command
         'MCD Supermarkten',
     ];
 
-    private array $categories = ['FMCG', 'Foodservice', 'Overig'];
+    // private array $categories = ['FMCG', 'Foodservice', 'Overig'];
 
-    private array $secondaryCategories = ['Retailer', 'Supermarkten', 'Groothandel', 'Leverancier', 'Industrie', 'Andere'];
+    // private array $secondaryCategories = ['Retailer', 'Supermarkten', 'Groothandel', 'Leverancier', 'Industrie', 'Andere'];
 
-    private array $tertiaryCategories = ['Non-food', 'Food'];
+    // private array $tertiaryCategories = ['Non-food', 'Food'];
 
-    private array $merkenOptions = ['Merk', 'Private label'];
+    // private array $merkenOptions = ['Merk', 'Private label'];
 
-    private array $labelsOptions = [
-        'Vers',
-        'Zuivel & eieren',
-        'Diepvries',
-        'DKW (houdbaar voedsel)',
-        'Dranken',
-        'Snacks & snoep',
-        'Non-food',
-        'Verpakkingen',
-        'Convenience & ready-to-use',
-    ];
+    // private array $labelsOptions = [
+    //     'Vers',
+    //     'Zuivel & eieren',
+    //     'Diepvries',
+    //     'DKW (houdbaar voedsel)',
+    //     'Dranken',
+    //     'Snacks & snoep',
+    //     'Non-food',
+    //     'Verpakkingen',
+    //     'Convenience & ready-to-use',
+    // ];
 
     private array $assignmentTitles = [
         'Senior Product Manager',
@@ -132,11 +132,6 @@ class SeedAccountsAndAssignments extends Command
                 'website' => 'https://www.' . Str::slug($name) . '.nl',
                 'phone' => $this->randomPhone(),
                 'industry' => 'Retail / Food',
-                'category' => $this->categories[array_rand($this->categories)],
-                'secondary_category' => $this->secondaryCategories[array_rand($this->secondaryCategories)],
-                'tertiary_category' => $this->randomSubset($this->tertiaryCategories, 0, 2),
-                'merken' => $this->randomSubset($this->merkenOptions, 0, 2),
-                'labels' => $this->randomSubset($this->labelsOptions, 0, 5),
                 'fte_count' => rand(50, 5000),
                 'revenue_cents' => rand(1_000_000, 500_000_000) * 100, // 1M - 500M euro
                 'notes' => null,

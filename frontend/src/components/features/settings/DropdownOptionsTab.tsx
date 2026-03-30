@@ -135,9 +135,7 @@ function TypeList({ onSelect }: { onSelect: (type: string) => void }) {
               <List disablePadding>
                 {group.types.map((t) => {
                   const options = allOptions?.[t.type] || [];
-                  const activeCount = options.filter(
-                    (o) => o.is_active,
-                  ).length;
+                  const activeCount = options.filter((o) => o.is_active).length;
                   return (
                     <ListItemButton
                       key={t.type}
@@ -185,7 +183,6 @@ function TypeEditor({
   const reorderMutation = useReorderDropdownOptions();
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [newValue, setNewValue] = useState("");
   const [newLabel, setNewLabel] = useState("");
   const [newColor, setNewColor] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -196,24 +193,20 @@ function TypeEditor({
   const hasColors = options.some((o) => o.color);
 
   const handleAdd = async () => {
-    if (!newValue.trim() || !newLabel.trim()) return;
+    if (!newLabel.trim()) return;
 
     try {
       await createMutation.mutateAsync({
         type,
-        value: newValue.trim(),
         label: newLabel.trim(),
         color: newColor.trim() || null,
       });
-      setNewValue("");
       setNewLabel("");
       setNewColor("");
       setAddDialogOpen(false);
       setError(null);
     } catch (e: any) {
-      setError(
-        e?.response?.data?.message || "Fout bij toevoegen van optie",
-      );
+      setError(e?.response?.data?.message || "Fout bij toevoegen van optie");
     }
   };
 
@@ -440,7 +433,11 @@ function TypeEditor({
 
       <Dialog
         open={addDialogOpen}
-        onClose={() => setAddDialogOpen(false)}
+        onClose={() => {
+          setAddDialogOpen(false);
+          setNewLabel("");
+          setNewColor("");
+        }}
         maxWidth="xs"
         fullWidth
       >
@@ -448,19 +445,13 @@ function TypeEditor({
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Waarde (intern)"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-              fullWidth
-              size="small"
-              helperText="Technische sleutel, niet meer wijzigbaar na aanmaken"
-            />
-            <TextField
-              label="Label (weergave)"
+              label="Naam"
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               fullWidth
               size="small"
+              required
+              autoFocus
             />
             {hasColors && (
               <TextField
@@ -493,11 +484,7 @@ function TypeEditor({
           <Button
             variant="contained"
             onClick={handleAdd}
-            disabled={
-              !newValue.trim() ||
-              !newLabel.trim() ||
-              createMutation.isPending
-            }
+            disabled={!newLabel.trim() || createMutation.isPending}
           >
             Toevoegen
           </Button>

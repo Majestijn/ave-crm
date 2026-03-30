@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
 class DropdownOption extends Model
@@ -52,5 +53,27 @@ class DropdownOption extends Model
     public static function colorFor(string $type, string $value): ?string
     {
         return static::ofType($type)->where('value', $value)->value('color');
+    }
+
+    /**
+     * Stable internal key from a human-readable label (snake-ish slug, unique per type).
+     */
+    public static function uniqueValueFromLabel(string $type, string $label): string
+    {
+        $base = Str::slug($label, '_');
+        if ($base === '') {
+            $base = 'option';
+        }
+        $base = substr($base, 0, 200);
+
+        $value = $base;
+        $n = 2;
+        while (static::ofType($type)->where('value', $value)->exists()) {
+            $suffix = '_' . $n;
+            $value = substr($base, 0, max(1, 255 - strlen($suffix))) . $suffix;
+            $n++;
+        }
+
+        return $value;
     }
 }
