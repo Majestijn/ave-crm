@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use App\Models\DropdownOption;
 use App\Jobs\ProcessCvImport;
 use App\Services\ExcelImportService;
 use App\Services\GeocodingService;
@@ -157,7 +158,7 @@ class ContactController extends Controller
             'network_roles.*' => ['string', 'max:64'],
             'current_company' => ['nullable', 'string', 'max:255'],
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
-            'education' => ['nullable', 'in:MBO,HBO,UNI'],
+            'education' => ['nullable', DropdownOption::validationRule('education')],
             'availability_date' => ['nullable', 'date'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],

@@ -168,6 +168,23 @@ const AssignmentExpandedContent = React.memo(
                   </Typography>
                 </Box>
               )}
+              {assignment.bonus_percentage != null && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Bonusregeling
+                  </Typography>
+                  <Typography variant="body2">
+                    {Number(assignment.bonus_percentage).toLocaleString(
+                      "nl-NL",
+                      {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2,
+                      },
+                    )}
+                    %
+                  </Typography>
+                </Box>
+              )}
             </Stack>
           </Box>
 

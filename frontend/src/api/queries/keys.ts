@@ -26,4 +26,8 @@ export const queryKeys = {
     all: ["users"] as const,
     detail: (id: number) => ["users", id] as const,
   },
+  dropdownOptions: {
+    all: ["dropdown-options"] as const,
+    byType: (type: string) => ["dropdown-options", type] as const,
+  },
 } as const;

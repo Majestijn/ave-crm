@@ -20,6 +20,7 @@ export type AssignmentWithDetails = Assignment & {
   salary_min?: number;
   salary_max?: number;
   vacation_days?: number;
+  bonus_percentage?: number | null;
   start_date?: string;
   notes_image_url?: string | null;
   benefits?: string[];

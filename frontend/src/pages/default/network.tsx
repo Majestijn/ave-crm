@@ -80,6 +80,7 @@ import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { networkRoleLabels, formatContactName } from "../../utils/formatters";
+import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 
 const networkRoleOptions = [
   { value: "invoice_contact", label: "Factuurcontact" },
@@ -247,6 +248,24 @@ export default function NetworkPage() {
   const { data: geocodeResult, isLoading: isGeocoding } = useGeocode(
     debouncedLocation || null
   );
+  const { data: dbNetworkRoles } = useDropdownOptions("network_role");
+  const { data: dbEducation } = useDropdownOptions("education");
+  const { data: dbGender } = useDropdownOptions("gender");
+
+  const activeNetworkRoleOptions = React.useMemo(() => {
+    if (dbNetworkRoles) return dbNetworkRoles.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
+    return networkRoleOptions;
+  }, [dbNetworkRoles]);
+
+  const activeEducationOptions = React.useMemo(() => {
+    if (dbEducation) return dbEducation.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
+    return educationOptions;
+  }, [dbEducation]);
+
+  const activeGenderOptions = React.useMemo(() => {
+    if (dbGender) return dbGender.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
+    return [{ value: "man", label: "Man" }, { value: "vrouw", label: "Vrouw" }];
+  }, [dbGender]);
 
   // Notes viewer disclosure and state (declared before useContactDocuments that depends on it)
   const notesViewer = useDisclosure();
@@ -1667,8 +1686,9 @@ export default function NetworkPage() {
                     helperText=" "
                   >
                     <MenuItem value="">-</MenuItem>
-                    <MenuItem value="man">Man</MenuItem>
-                    <MenuItem value="vrouw">Vrouw</MenuItem>
+                    {activeGenderOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
                   </TextField>
                 )}
               />
@@ -1715,9 +1735,9 @@ export default function NetworkPage() {
                 render={({ field }) => (
                   <Autocomplete
                     multiple
-                    options={networkRoleOptions}
+                    options={activeNetworkRoleOptions}
                     getOptionLabel={(option) => option.label}
-                    value={networkRoleOptions.filter((opt) =>
+                    value={activeNetworkRoleOptions.filter((opt) =>
                       (field.value || []).includes(opt.value as any)
                     )}
                     onChange={(_, newValue) => {
@@ -1768,11 +1788,11 @@ export default function NetworkPage() {
                 control={control}
                 render={({ field }) => (
                   <Autocomplete
-                    options={educationOptions}
+                    options={activeEducationOptions}
                     getOptionLabel={(option) => option.label}
                     value={
                       field.value
-                        ? educationOptions.find(
+                        ? activeEducationOptions.find(
                           (opt) => opt.value === field.value
                         ) || null
                         : null
@@ -2206,8 +2226,9 @@ export default function NetworkPage() {
                     helperText=" "
                   >
                     <MenuItem value="">-</MenuItem>
-                    <MenuItem value="man">Man</MenuItem>
-                    <MenuItem value="vrouw">Vrouw</MenuItem>
+                    {activeGenderOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
                   </TextField>
                 )}
               />
@@ -2254,9 +2275,9 @@ export default function NetworkPage() {
                 render={({ field }) => (
                   <Autocomplete
                     multiple
-                    options={networkRoleOptions}
+                    options={activeNetworkRoleOptions}
                     getOptionLabel={(option) => option.label}
-                    value={networkRoleOptions.filter((opt) =>
+                    value={activeNetworkRoleOptions.filter((opt) =>
                       (field.value || []).includes(opt.value as any)
                     )}
                     onChange={(_, newValue) => {
@@ -2309,11 +2330,11 @@ export default function NetworkPage() {
                 control={editControl}
                 render={({ field }) => (
                   <Autocomplete
-                    options={educationOptions}
+                    options={activeEducationOptions}
                     getOptionLabel={(option) => option.label}
                     value={
                       field.value
-                        ? educationOptions.find(
+                        ? activeEducationOptions.find(
                           (opt) => opt.value === field.value
                         ) || null
                         : null

@@ -19,6 +19,7 @@ import type { ActivityType } from "../../api/queries/activities";
 import { useCreateActivity } from "../../api/mutations/activities";
 import { formatContactName } from "../../utils/formatters";
 import { primaryButtonSx } from "./styles";
+import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 
 type Props = {
   open: boolean;
@@ -40,6 +41,21 @@ export default function AddActivityDialog({
   const [error, setError] = useState<string | null>(null);
 
   const createActivityMutation = useCreateActivity(assignmentUid);
+  const { data: dbActivityTypes } = useDropdownOptions("activity_type");
+
+  const activeActivityTypes = React.useMemo(() => {
+    if (dbActivityTypes) return dbActivityTypes.filter(o => o.is_active);
+    return [
+      { value: "call", label: "Gebeld" },
+      { value: "proposal", label: "Voorgesteld" },
+      { value: "interview", label: "Gesprek" },
+      { value: "hired", label: "Aangenomen" },
+      { value: "rejected", label: "Afgewezen" },
+      { value: "personality_test", label: "Persoonlijkheidstest afgenomen" },
+      { value: "test", label: "Test afgenomen" },
+      { value: "interview_training", label: "Sollicitatie training" },
+    ];
+  }, [dbActivityTypes]);
 
   // Auto-fill description based on type and contact
   useEffect(() => {
@@ -120,14 +136,9 @@ export default function AddActivityDialog({
               label="Type activiteit"
               onChange={(e) => setActivityType(e.target.value as ActivityType)}
             >
-              <MenuItem value="call">Gebeld</MenuItem>
-              <MenuItem value="proposal">Voorgesteld</MenuItem>
-              <MenuItem value="interview">Gesprek</MenuItem>
-              <MenuItem value="hired">Aangenomen</MenuItem>
-              <MenuItem value="rejected">Afgewezen</MenuItem>
-              <MenuItem value="personality_test">Persoonlijkheidstest afgenomen</MenuItem>
-              <MenuItem value="test">Test afgenomen</MenuItem>
-              <MenuItem value="interview_training">Sollicitatie training</MenuItem>
+              {activeActivityTypes.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+              ))}
             </Select>
           </FormControl>
 

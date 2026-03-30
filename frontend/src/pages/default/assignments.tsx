@@ -27,6 +27,7 @@ import {
 } from "../../api/queries/assignments";
 import { useAccounts } from "../../api/queries/accounts";
 import { useUsersForDropdown } from "../../api/queries/users";
+import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 import { useUpdateAssignment } from "../../api/mutations/assignments";
 import {
   useUpdateAssignmentCandidateStatus,
@@ -38,7 +39,6 @@ import { ColumnOrderDialog } from "../../components/ColumnOrderDialog";
 import type { AssignmentWithDetails } from "../../components/features/assignments/types";
 import {
   statusOptions,
-  benefitsOptions,
   CANDIDATES_COLUMN_META,
   CANDIDATES_COLUMN_ORDER_KEY,
 } from "../../components/features/assignments/types";
@@ -81,6 +81,28 @@ export default function AssignmentsPage() {
   } = useAssignments();
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const { data: users = [] } = useUsersForDropdown();
+
+  const { data: dbStatusOptions } = useDropdownOptions("assignment_status");
+  const { data: dbEmploymentTypeOptions } = useDropdownOptions("employment_type");
+
+  const activeStatusOptions = React.useMemo(() => {
+    if (dbStatusOptions) {
+      return dbStatusOptions.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
+    }
+    return statusOptions;
+  }, [dbStatusOptions]);
+
+  const activeEmploymentTypes = React.useMemo(() => {
+    if (dbEmploymentTypeOptions) {
+      return dbEmploymentTypeOptions.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
+    }
+    return [
+      { value: "Fulltime", label: "Fulltime" },
+      { value: "Parttime", label: "Parttime" },
+      { value: "Freelance", label: "Freelance" },
+      { value: "ZZP", label: "ZZP" },
+    ];
+  }, [dbEmploymentTypeOptions]);
 
   const updateAssignmentMutation = useUpdateAssignment();
   const updateCandidateStatusMutation = useUpdateAssignmentCandidateStatus();
@@ -191,6 +213,7 @@ export default function AssignmentsPage() {
       salary_min: a.salary_min,
       salary_max: a.salary_max,
       vacation_days: a.vacation_days,
+      bonus_percentage: a.bonus_percentage ?? null,
       location: a.location,
       employment_type: a.employment_type,
       start_date: a.start_date,
@@ -580,7 +603,7 @@ export default function AssignmentsPage() {
             onClose={() => setFilterAnchor(null)}
             anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
           >
-            {statusOptions.map((opt) => (
+            {activeStatusOptions.map((opt) => (
               <MenuItem
                 key={opt.value}
                 onClick={() => toggleStatusFilter(opt.value)}
@@ -595,15 +618,15 @@ export default function AssignmentsPage() {
               </MenuItem>
             ))}
             <Box sx={{ borderTop: 1, borderColor: "divider", my: 0.5 }} />
-            {["Fulltime", "Parttime", "Freelance", "ZZP"].map((type) => (
-              <MenuItem key={type} onClick={() => toggleEmploymentType(type)}>
+            {activeEmploymentTypes.map((opt) => (
+              <MenuItem key={opt.value} onClick={() => toggleEmploymentType(opt.value)}>
                 <Checkbox
-                  checked={employmentTypeFilters.includes(type)}
+                  checked={employmentTypeFilters.includes(opt.value)}
                   size="small"
                   sx={{ mr: 1 }}
                   disableRipple
                 />
-                {type}
+                {opt.label}
               </MenuItem>
             ))}
           </Menu>
@@ -636,7 +659,7 @@ export default function AssignmentsPage() {
             variant="outlined"
           />
           {statusFilters.map((s) => {
-            const label = statusOptions.find((o) => o.value === s)?.label ?? s;
+            const label = activeStatusOptions.find((o) => o.value === s)?.label ?? s;
             return (
               <Chip
                 key={s}
@@ -706,7 +729,7 @@ export default function AssignmentsPage() {
           const currentStatus =
             assignmentStatuses[assignment.id] || assignment.status || "active";
           const statusLabel =
-            statusOptions.find((opt) => opt.value === currentStatus)?.label ||
+            activeStatusOptions.find((opt) => opt.value === currentStatus)?.label ||
             currentStatus;
 
           return (
@@ -765,7 +788,6 @@ export default function AssignmentsPage() {
         onClose={createAssignmentDialog.close}
         accounts={accounts}
         users={users}
-        benefitsOptions={benefitsOptions}
       />
 
       <EditAssignmentDialog

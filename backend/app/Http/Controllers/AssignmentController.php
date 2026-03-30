@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\Account;
+use App\Models\DropdownOption;
 use App\Models\User;
 use App\Services\FileStorageService;
 use Illuminate\Http\Request;
@@ -54,6 +55,7 @@ class AssignmentController extends Controller
             'salary_min' => $assignment->salary_min,
             'salary_max' => $assignment->salary_max,
             'vacation_days' => $assignment->vacation_days,
+            'bonus_percentage' => $assignment->bonus_percentage,
             'location' => $assignment->location,
             'employment_type' => $assignment->employment_type,
             'benefits' => $assignment->benefits,
@@ -87,10 +89,11 @@ class AssignmentController extends Controller
             'recruiter_uid' => 'nullable|string',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'nullable|string|in:active,proposed,hired,completed,cancelled,shadow_management',
+            'status' => 'nullable|string|' . DropdownOption::validationRule('assignment_status'),
             'salary_min' => 'nullable|integer|min:0',
             'salary_max' => 'nullable|integer|min:0',
             'vacation_days' => 'nullable|integer|min:0|max:100',
+            'bonus_percentage' => 'nullable|numeric|min:0|max:100',
             'location' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:255',
             'benefits' => 'nullable|array',
@@ -98,7 +101,7 @@ class AssignmentController extends Controller
             'start_date' => 'nullable|date',
             'secondary_recruiter_uids' => 'nullable|array',
             'secondary_recruiter_uids.*' => 'string',
-            'notes_image' => 'nullable|file|image|max:5120', // max 5MB
+            'notes_image' => 'nullable|file|image|max:5120',
         ]);
 
         // Find account by uid (manual check instead of exists rule for multi-tenant)
@@ -128,6 +131,7 @@ class AssignmentController extends Controller
             'salary_min' => $validated['salary_min'] ?? null,
             'salary_max' => $validated['salary_max'] ?? null,
             'vacation_days' => $validated['vacation_days'] ?? null,
+            'bonus_percentage' => $validated['bonus_percentage'] ?? null,
             'location' => $validated['location'] ?? null,
             'employment_type' => $validated['employment_type'] ?? null,
             'benefits' => $validated['benefits'] ?? null,
@@ -182,10 +186,11 @@ class AssignmentController extends Controller
             'recruiter_uid' => 'nullable|string',
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'sometimes|string|in:active,proposed,hired,completed,cancelled,shadow_management',
+            'status' => 'sometimes|string|' . DropdownOption::validationRule('assignment_status'),
             'salary_min' => 'nullable|integer|min:0',
             'salary_max' => 'nullable|integer|min:0',
             'vacation_days' => 'nullable|integer|min:0|max:100',
+            'bonus_percentage' => 'nullable|numeric|min:0|max:100',
             'location' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:255',
             'benefits' => 'nullable|array',

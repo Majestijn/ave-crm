@@ -28,6 +28,7 @@ const formatNumberInput = (value: string): string => {
   return parseInt(digits, 10).toLocaleString("nl-NL");
 };
 import { useUpdateAccount, type UpdateAccountData } from "../../api/mutations/accounts";
+import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 
 const SECONDARY_CATEGORY_OPTIONS = [
   "Retailer",
@@ -104,6 +105,64 @@ export default function CompanyDetailsCard({ account }: Props) {
   );
 
   const updateAccountMutation = useUpdateAccount();
+
+  const { data: dbCategory } = useDropdownOptions("account_category");
+  const { data: dbSecondary } = useDropdownOptions("account_secondary_category");
+  const { data: dbTertiary } = useDropdownOptions("account_tertiary_category");
+  const { data: dbBrand } = useDropdownOptions("account_brand");
+  const { data: dbLabel } = useDropdownOptions("account_label");
+  const { data: dbSalesTarget } = useDropdownOptions("sales_target");
+  const { data: dbClientStatus } = useDropdownOptions("client_status");
+
+  const activeCategories = React.useMemo(() => {
+    if (dbCategory?.length)
+      return dbCategory
+        .filter((o) => o.is_active)
+        .map((o) => ({ value: o.value, label: o.label }));
+    return [
+      { value: "FMCG", label: "FMCG" },
+      { value: "Foodservice", label: "Foodservice" },
+      { value: "Overig", label: "Overig" },
+    ];
+  }, [dbCategory]);
+
+  const activeSecondary = React.useMemo(() => {
+    if (dbSecondary?.length)
+      return dbSecondary.filter((o) => o.is_active).map((o) => o.value);
+    return [...SECONDARY_CATEGORY_OPTIONS];
+  }, [dbSecondary]);
+
+  const activeTertiary = React.useMemo(() => {
+    if (dbTertiary?.length)
+      return dbTertiary.filter((o) => o.is_active).map((o) => o.value);
+    return [...TERTIARY_CATEGORY_OPTIONS];
+  }, [dbTertiary]);
+
+  const activeBrands = React.useMemo(() => {
+    if (dbBrand?.length)
+      return dbBrand.filter((o) => o.is_active).map((o) => o.value);
+    return [...MERKEN_OPTIONS];
+  }, [dbBrand]);
+
+  const activeLabels = React.useMemo(() => {
+    if (dbLabel?.length)
+      return dbLabel.filter((o) => o.is_active).map((o) => o.value);
+    return [...LABELS_OPTIONS];
+  }, [dbLabel]);
+
+  const activeSalesTargets = React.useMemo(() => {
+    if (dbSalesTarget?.length)
+      return dbSalesTarget.filter((o) => o.is_active).map((o) => o.value);
+    return [...SALES_DOEL_OPTIONS];
+  }, [dbSalesTarget]);
+
+  const activeClientStatus = React.useMemo(() => {
+    if (dbClientStatus?.length)
+      return dbClientStatus
+        .filter((o) => o.is_active)
+        .map((o) => ({ value: o.value, label: o.label, color: o.color || "#BDBDBD" }));
+    return [...CLIENT_STATUS_OPTIONS];
+  }, [dbClientStatus]);
 
   const handleOpen = () => {
     setFormData({
@@ -256,10 +315,10 @@ export default function CompanyDetailsCard({ account }: Props) {
             <Typography color="text.secondary">Klant status</Typography>
             {account.client_status ? (
               <Chip
-                label={CLIENT_STATUS_OPTIONS.find((o) => o.value === account.client_status)?.label || account.client_status}
+                label={activeClientStatus.find((o) => o.value === account.client_status)?.label || account.client_status}
                 size="small"
                 sx={{
-                  bgcolor: CLIENT_STATUS_OPTIONS.find((o) => o.value === account.client_status)?.color || "grey.400",
+                  bgcolor: activeClientStatus.find((o) => o.value === account.client_status)?.color || "grey.400",
                   color: ["active_client", "lost"].includes(account.client_status) ? "white" : "black",
                   fontWeight: "bold",
                 }}
@@ -406,9 +465,11 @@ export default function CompanyDetailsCard({ account }: Props) {
                 fullWidth
               >
                 <MenuItem value="">Geen categorie</MenuItem>
-                <MenuItem value="FMCG">FMCG</MenuItem>
-                <MenuItem value="Foodservice">Foodservice</MenuItem>
-                <MenuItem value="Overig">Overig</MenuItem>
+                {activeCategories.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
               </TextField>
 
               <TextField
@@ -421,7 +482,7 @@ export default function CompanyDetailsCard({ account }: Props) {
                 fullWidth
               >
                 <MenuItem value="">Geen secundaire categorie</MenuItem>
-                {SECONDARY_CATEGORY_OPTIONS.map((opt) => (
+                {activeSecondary.map((opt) => (
                   <MenuItem key={opt} value={opt}>
                     {opt}
                   </MenuItem>
@@ -438,7 +499,7 @@ export default function CompanyDetailsCard({ account }: Props) {
                 fullWidth
               >
                 <MenuItem value="">Geen sales doel</MenuItem>
-                {SALES_DOEL_OPTIONS.map((opt) => (
+                {activeSalesTargets.map((opt) => (
                   <MenuItem key={opt} value={opt}>
                     {opt}
                   </MenuItem>
@@ -455,7 +516,7 @@ export default function CompanyDetailsCard({ account }: Props) {
                 fullWidth
               >
                 <MenuItem value="">Geen status</MenuItem>
-                {CLIENT_STATUS_OPTIONS.map((opt) => (
+                {activeClientStatus.map((opt) => (
                   <MenuItem key={opt.value} value={opt.value}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: opt.color, flexShrink: 0 }} />
@@ -470,7 +531,7 @@ export default function CompanyDetailsCard({ account }: Props) {
                   Tertiaire categorie
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {TERTIARY_CATEGORY_OPTIONS.map((opt) => {
+                  {activeTertiary.map((opt) => {
                     const isSelected = (formData.tertiary_category || []).includes(opt);
                     return (
                       <Chip
@@ -505,7 +566,7 @@ export default function CompanyDetailsCard({ account }: Props) {
                   Merken
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {MERKEN_OPTIONS.map((opt) => {
+                  {activeBrands.map((opt) => {
                     const isSelected = (formData.merken || []).includes(opt);
                     return (
                       <Chip
@@ -540,7 +601,7 @@ export default function CompanyDetailsCard({ account }: Props) {
                   Labels
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {LABELS_OPTIONS.map((opt) => {
+                  {activeLabels.map((opt) => {
                     const isSelected = (formData.labels || []).includes(opt);
                     return (
                       <Chip

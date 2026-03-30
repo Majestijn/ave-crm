@@ -13,6 +13,7 @@ export type CreateAssignmentData = {
   salary_min?: number | null;
   salary_max?: number | null;
   vacation_days?: number | null;
+  bonus_percentage?: number | null;
   location?: string | null;
   employment_type?: string | null;
   start_date?: string | null;
@@ -39,6 +40,9 @@ export const useCreateAssignment = () => {
         }
         if (data.vacation_days !== null && data.vacation_days !== undefined) {
           formData.append("vacation_days", String(data.vacation_days));
+        }
+        if (data.bonus_percentage !== null && data.bonus_percentage !== undefined) {
+          formData.append("bonus_percentage", String(data.bonus_percentage));
         }
         if (data.location) formData.append("location", data.location);
         if (data.employment_type) formData.append("employment_type", data.employment_type);
@@ -80,6 +84,7 @@ export type UpdateAssignmentData = {
   salary_min?: number | null;
   salary_max?: number | null;
   vacation_days?: number | null;
+  bonus_percentage?: number | null;
   location?: string | null;
   employment_type?: string | null;
   start_date?: string | null;

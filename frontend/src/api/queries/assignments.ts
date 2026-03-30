@@ -25,6 +25,7 @@ export type AssignmentFromAPI = {
   salary_min?: number;
   salary_max?: number;
   vacation_days?: number;
+  bonus_percentage?: number | null;
   location?: string;
   employment_type?: string;
   start_date?: string;
