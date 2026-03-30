@@ -43,6 +43,7 @@ import type { Account } from "../../types/accounts";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 function AccountCardLogo({
   logoUrl,
   name,
@@ -199,6 +200,55 @@ export default function AccountsPage() {
   const [activeOnlyFilter, setActiveOnlyFilter] = useState(false);
   const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
+
+  const { data: dbCategory } = useDropdownOptions("account_category");
+  const { data: dbSecondary } = useDropdownOptions("account_secondary_category");
+  const { data: dbTertiary } = useDropdownOptions("account_tertiary_category");
+  const { data: dbBrand } = useDropdownOptions("account_brand");
+  const { data: dbLabel } = useDropdownOptions("account_label");
+  const { data: dbSalesTarget } = useDropdownOptions("sales_target");
+
+  const activeCategories = React.useMemo(() => {
+    if (dbCategory?.length)
+      return dbCategory
+        .filter((o) => o.is_active)
+        .map((o) => ({ value: o.value, label: o.label }));
+    return [
+      { value: "FMCG", label: "FMCG" },
+      { value: "Foodservice", label: "Foodservice" },
+      { value: "Overig", label: "Overig" },
+    ];
+  }, [dbCategory]);
+
+  const activeSecondary = React.useMemo(() => {
+    if (dbSecondary?.length)
+      return dbSecondary.filter((o) => o.is_active).map((o) => o.value);
+    return [...SECONDARY_CATEGORY_OPTIONS];
+  }, [dbSecondary]);
+
+  const activeTertiary = React.useMemo(() => {
+    if (dbTertiary?.length)
+      return dbTertiary.filter((o) => o.is_active).map((o) => o.value);
+    return [...TERTIARY_CATEGORY_OPTIONS];
+  }, [dbTertiary]);
+
+  const activeBrands = React.useMemo(() => {
+    if (dbBrand?.length)
+      return dbBrand.filter((o) => o.is_active).map((o) => o.value);
+    return [...MERKEN_OPTIONS];
+  }, [dbBrand]);
+
+  const activeLabels = React.useMemo(() => {
+    if (dbLabel?.length)
+      return dbLabel.filter((o) => o.is_active).map((o) => o.value);
+    return [...LABELS_OPTIONS];
+  }, [dbLabel]);
+
+  const activeSalesTargets = React.useMemo(() => {
+    if (dbSalesTarget?.length)
+      return dbSalesTarget.filter((o) => o.is_active).map((o) => o.value);
+    return [...SALES_DOEL_OPTIONS];
+  }, [dbSalesTarget]);
 
   useEffect(() => {
     refresh();
@@ -461,33 +511,17 @@ export default function AccountsPage() {
           onClose={() => setFilterAnchor(null)}
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         >
-          <MenuItem onClick={() => toggleCategory("FMCG")}>
-            <Checkbox
-              checked={categoryFilters.includes("FMCG")}
-              size="small"
-              sx={{ mr: 1 }}
-              disableRipple
-            />
-            FMCG
-          </MenuItem>
-          <MenuItem onClick={() => toggleCategory("Foodservice")}>
-            <Checkbox
-              checked={categoryFilters.includes("Foodservice")}
-              size="small"
-              sx={{ mr: 1 }}
-              disableRipple
-            />
-            Foodservice
-          </MenuItem>
-          <MenuItem onClick={() => toggleCategory("Overig")}>
-            <Checkbox
-              checked={categoryFilters.includes("Overig")}
-              size="small"
-              sx={{ mr: 1 }}
-              disableRipple
-            />
-            Overig
-          </MenuItem>
+          {activeCategories.map((cat) => (
+            <MenuItem key={cat.value} onClick={() => toggleCategory(cat.value)}>
+              <Checkbox
+                checked={categoryFilters.includes(cat.value)}
+                size="small"
+                sx={{ mr: 1 }}
+                disableRipple
+              />
+              {cat.label}
+            </MenuItem>
+          ))}
           <Box sx={{ borderTop: 1, borderColor: "divider", my: 0.5 }} />
           <MenuItem
             onClick={() => setActiveOnlyFilter((prev) => !prev)}
@@ -639,9 +673,11 @@ export default function AccountsPage() {
                 fullWidth
               >
                 <MenuItem value="">Selecteer categorie...</MenuItem>
-                <MenuItem value="FMCG">FMCG</MenuItem>
-                <MenuItem value="Foodservice">Foodservice</MenuItem>
-                <MenuItem value="Overig">Overig</MenuItem>
+                {activeCategories.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
               </TextField>
               <TextField
                 select
@@ -653,7 +689,7 @@ export default function AccountsPage() {
                 fullWidth
               >
                 <MenuItem value="">Selecteer secundaire categorie...</MenuItem>
-                {SECONDARY_CATEGORY_OPTIONS.map((opt) => (
+                {activeSecondary.map((opt) => (
                   <MenuItem key={opt} value={opt}>
                     {opt}
                   </MenuItem>
@@ -669,7 +705,7 @@ export default function AccountsPage() {
                 fullWidth
               >
                 <MenuItem value="">Selecteer sales doel...</MenuItem>
-                {SALES_DOEL_OPTIONS.map((opt) => (
+                {activeSalesTargets.map((opt) => (
                   <MenuItem key={opt} value={opt}>
                     {opt}
                   </MenuItem>
@@ -682,7 +718,7 @@ export default function AccountsPage() {
                 Tertiaire categorie
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {TERTIARY_CATEGORY_OPTIONS.map((opt) => {
+                {activeTertiary.map((opt) => {
                   const isSelected = tertiaryCategory.includes(opt);
                   return (
                     <Chip
@@ -715,7 +751,7 @@ export default function AccountsPage() {
                 Merken
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {MERKEN_OPTIONS.map((opt) => {
+                {activeBrands.map((opt) => {
                   const isSelected = merken.includes(opt);
                   return (
                     <Chip
@@ -748,7 +784,7 @@ export default function AccountsPage() {
                 Labels
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {LABELS_OPTIONS.map((opt) => {
+                {activeLabels.map((opt) => {
                   const isSelected = labels.includes(opt);
                   return (
                     <Chip

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 
 class AccountController extends Controller
@@ -67,19 +68,19 @@ class AccountController extends Controller
             'website' => ['nullable', 'url', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', 'in:FMCG,Foodservice,Overig'],
-            'secondary_category' => ['nullable', 'string', 'in:Retailer,Supermarkten,Groothandel,Leverancier,Industrie,Andere'],
+            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
+            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
             'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', 'in:Non-food,Food'],
+            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
             'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', 'in:Merk,Private label'],
+            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
             'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', 'in:Vers,Zuivel & eieren,Diepvries,DKW (houdbaar voedsel),Dranken,Snacks & snoep,Non-food,Verpakkingen,Convenience & ready-to-use'],
+            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
-            'sales_target' => ['nullable', 'string', 'in:Marketing,Sales,Inkoop,Supply Chain,Finance,Directie'],
-            'client_status' => ['nullable', 'string', 'in:potential,potential_first_assignment,new_client,active_client,inactive,lost'],
+            'sales_target' => ['nullable', 'string', DropdownOption::validationRule('sales_target')],
+            'client_status' => ['nullable', 'string', DropdownOption::validationRule('client_status')],
         ]);
 
         $account = Account::create($data);
@@ -129,19 +130,19 @@ class AccountController extends Controller
             'website' => ['nullable', 'url', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', 'in:FMCG,Foodservice,Overig'],
-            'secondary_category' => ['nullable', 'string', 'in:Retailer,Supermarkten,Groothandel,Leverancier,Industrie,Andere'],
+            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
+            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
             'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', 'in:Non-food,Food'],
+            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
             'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', 'in:Merk,Private label'],
+            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
             'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', 'in:Vers,Zuivel & eieren,Diepvries,DKW (houdbaar voedsel),Dranken,Snacks & snoep,Non-food,Verpakkingen,Convenience & ready-to-use'],
+            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
-            'sales_target' => ['nullable', 'string', 'in:Marketing,Sales,Inkoop,Supply Chain,Finance,Directie'],
-            'client_status' => ['nullable', 'string', 'in:potential,potential_first_assignment,new_client,active_client,inactive,lost'],
+            'sales_target' => ['nullable', 'string', DropdownOption::validationRule('sales_target')],
+            'client_status' => ['nullable', 'string', DropdownOption::validationRule('client_status')],
         ]);
 
         unset($data['tenant_id'], $data['uid']);

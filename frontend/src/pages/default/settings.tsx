@@ -30,6 +30,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import API from "../../../axios-client";
 import type { Paginated, User } from "../../types/users";
+import DropdownOptionsTab from "../../components/features/settings/DropdownOptionsTab";
 
 const a11yProps = (index: number) => ({
   id: `settings-tab-${index}`,
@@ -104,6 +105,7 @@ const SettingsPage = () => {
           <Tab label="Overzicht" {...a11yProps(0)} />
           <Tab label="Notificaties" {...a11yProps(1)} />
           <Tab label="Gebruikers" {...a11yProps(2)} />
+          <Tab label="Dropdown opties" {...a11yProps(3)} />
         </Tabs>
 
         <TabPanel value={currentTab} index={0}>
@@ -114,6 +116,9 @@ const SettingsPage = () => {
         </TabPanel>
         <TabPanel value={currentTab} index={2}>
           <UsersTab currentUser={currentUser} />
+        </TabPanel>
+        <TabPanel value={currentTab} index={3}>
+          <DropdownOptionsTab />
         </TabPanel>
       </Paper>
     </Box>

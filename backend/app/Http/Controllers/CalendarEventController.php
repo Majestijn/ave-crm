@@ -6,6 +6,7 @@ use App\Models\CalendarEvent;
 use App\Models\Account;
 use App\Models\Assignment;
 use App\Models\Contact;
+use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -81,7 +82,7 @@ class CalendarEventController extends Controller
             'account_uid' => 'nullable|string',
             'assignment_id' => 'nullable|integer',
             'contact_uid' => 'nullable|string',
-            'event_type' => 'nullable|string|in:meeting,call,interview,reminder,other',
+            'event_type' => 'nullable|string|' . DropdownOption::validationRule('calendar_event_type'),
             'color' => 'nullable|string|max:20',
         ]);
 
@@ -189,7 +190,7 @@ class CalendarEventController extends Controller
             'account_uid' => 'nullable|string',
             'assignment_id' => 'nullable|integer',
             'contact_uid' => 'nullable|string',
-            'event_type' => 'nullable|string|in:meeting,call,interview,reminder,other',
+            'event_type' => 'nullable|string|' . DropdownOption::validationRule('calendar_event_type'),
             'color' => 'nullable|string|max:20',
         ]);
 
@@ -258,12 +259,17 @@ class CalendarEventController extends Controller
      */
     private function getDefaultColor(string $eventType): string
     {
+        $color = DropdownOption::colorFor('calendar_event_type', $eventType);
+        if ($color) {
+            return $color;
+        }
+
         return match ($eventType) {
-            'meeting' => '#818cf8',    // Indigo/purple
-            'call' => '#38bdf8',       // Sky blue
-            'interview' => '#a78bfa',  // Violet
-            'reminder' => '#fb923c',   // Orange
-            'other' => '#94a3b8',      // Slate
+            'meeting' => '#818cf8',
+            'call' => '#38bdf8',
+            'interview' => '#a78bfa',
+            'reminder' => '#fb923c',
+            'other' => '#94a3b8',
             default => '#818cf8',
         };
     }

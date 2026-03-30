@@ -19,8 +19,9 @@ import {
 } from "@mui/material";
 import type { User } from "../../../types/users";
 import { useUpdateAssignment } from "../../../api/mutations/assignments";
+import { useDropdownOptions } from "../../../api/queries/dropdownOptions";
 import type { AssignmentWithDetails } from "./types";
-import { benefitsOptions, formatNumberInput, parseFormattedNumber } from "./types";
+import { benefitsOptions as defaultBenefitsOptions, formatNumberInput, parseFormattedNumber } from "./types";
 
 type EditAssignmentDialogProps = {
   open: boolean;
@@ -37,6 +38,26 @@ export default function EditAssignmentDialog({
 }: EditAssignmentDialogProps) {
   const updateMutation = useUpdateAssignment();
 
+  const { data: dbBenefitsOptions } = useDropdownOptions("benefit");
+  const { data: dbEmploymentTypeOptions } = useDropdownOptions("employment_type");
+
+  const activeBenefits = React.useMemo(() => {
+    if (dbBenefitsOptions) return dbBenefitsOptions.filter(o => o.is_active).map(o => o.value);
+    return defaultBenefitsOptions;
+  }, [dbBenefitsOptions]);
+
+  const activeEmploymentTypes = React.useMemo(() => {
+    if (dbEmploymentTypeOptions) {
+      return dbEmploymentTypeOptions.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
+    }
+    return [
+      { value: "Fulltime", label: "Fulltime" },
+      { value: "Parttime", label: "Parttime" },
+      { value: "Freelance", label: "Freelance" },
+      { value: "Interim", label: "Interim" },
+    ];
+  }, [dbEmploymentTypeOptions]);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [recruiterUid, setRecruiterUid] = useState("");
@@ -46,6 +67,7 @@ export default function EditAssignmentDialog({
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
   const [vacationDays, setVacationDays] = useState<number | "">("");
+  const [bonusPercentage, setBonusPercentage] = useState<number | "">("");
   const [location, setLocation] = useState("");
   const [employmentType, setEmploymentType] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -71,6 +93,11 @@ export default function EditAssignmentDialog({
         : "",
     );
     setVacationDays(assignment.vacation_days || "");
+    setBonusPercentage(
+      assignment.bonus_percentage != null
+        ? Number(assignment.bonus_percentage)
+        : "",
+    );
     setLocation(assignment.location || "");
     setEmploymentType(assignment.employment_type || "");
     setStartDate(assignment.start_date || "");
@@ -104,6 +131,8 @@ export default function EditAssignmentDialog({
           salary_min: parseFormattedNumber(salaryMin) || null,
           salary_max: parseFormattedNumber(salaryMax) || null,
           vacation_days: vacationDays || null,
+          bonus_percentage:
+            bonusPercentage === "" ? null : bonusPercentage,
           location: location.trim() || null,
           employment_type: employmentType || null,
           start_date: startDate || null,
@@ -211,10 +240,11 @@ export default function EditAssignmentDialog({
                 label="Dienstverband"
               >
                 <MenuItem value="">Geen</MenuItem>
-                <MenuItem value="Fulltime">Fulltime</MenuItem>
-                <MenuItem value="Parttime">Parttime</MenuItem>
-                <MenuItem value="Freelance">Freelance</MenuItem>
-                <MenuItem value="Interim">Interim</MenuItem>
+                {activeEmploymentTypes.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Stack>
@@ -256,23 +286,47 @@ export default function EditAssignmentDialog({
               placeholder="bijv. 60.000"
             />
           </Stack>
-          <TextField
-            label="Vakantiedagen"
-            type="number"
-            value={vacationDays}
-            onChange={(e) =>
-              setVacationDays(e.target.value ? parseInt(e.target.value) : "")
-            }
-            InputProps={{ inputProps: { min: 0, max: 100 } }}
-            sx={{ width: 160 }}
-          />
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <TextField
+              label="Vakantiedagen"
+              type="number"
+              fullWidth
+              value={vacationDays}
+              onChange={(e) =>
+                setVacationDays(e.target.value ? parseInt(e.target.value) : "")
+              }
+              InputProps={{ inputProps: { min: 0, max: 100 } }}
+            />
+            <TextField
+              label="Bonusregeling"
+              type="number"
+              fullWidth
+              value={bonusPercentage}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  setBonusPercentage("");
+                  return;
+                }
+                const n = parseFloat(raw);
+                if (!Number.isNaN(n)) setBonusPercentage(n);
+              }}
+              InputProps={{
+                inputProps: { min: 0, max: 100, step: 0.01 },
+                endAdornment: (
+                  <InputAdornment position="end">%</InputAdornment>
+                ),
+              }}
+              helperText="Percentage van het jaarsalaris (optioneel)"
+            />
+          </Stack>
 
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
               Arbeidsvoorwaarden
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {benefitsOptions.map((benefit) => {
+              {activeBenefits.map((benefit) => {
                 const isSelected = benefits.includes(benefit);
                 return (
                   <Chip

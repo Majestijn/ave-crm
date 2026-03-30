@@ -33,6 +33,7 @@ import {
 import type { Activity, ActivityType } from "../../api/queries/activities";
 import { formatContactName, formatDateNL, normalizeDate } from "../../utils/formatters";
 import { getActivityColor, primaryButtonSx } from "./styles";
+import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 
 type TimelineActivity = {
   id: number;
@@ -87,6 +88,22 @@ export default function ActivityTimeline({
   isEditing,
   isDeleting,
 }: Props) {
+  const { data: dbActivityTypes } = useDropdownOptions("activity_type");
+
+  const activeActivityTypes = React.useMemo(() => {
+    if (dbActivityTypes) return dbActivityTypes.filter(o => o.is_active);
+    return [
+      { value: "call", label: "Gebeld" },
+      { value: "proposal", label: "Voorgesteld" },
+      { value: "interview", label: "Gesprek" },
+      { value: "hired", label: "Aangenomen" },
+      { value: "rejected", label: "Afgewezen" },
+      { value: "personality_test", label: "Persoonlijkheidstest afgenomen" },
+      { value: "test", label: "Test afgenomen" },
+      { value: "interview_training", label: "Sollicitatie training" },
+    ];
+  }, [dbActivityTypes]);
+
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deleteActivityId, setDeleteActivityId] = useState<number | null>(null);
   const [editType, setEditType] = useState<ActivityType>("call");
@@ -328,14 +345,9 @@ export default function ActivityTimeline({
                 label="Type activiteit"
                 onChange={(e) => setEditType(e.target.value as ActivityType)}
               >
-                <MenuItem value="call">Gebeld</MenuItem>
-                <MenuItem value="proposal">Voorgesteld</MenuItem>
-                <MenuItem value="interview">Gesprek</MenuItem>
-                <MenuItem value="hired">Aangenomen</MenuItem>
-                <MenuItem value="rejected">Afgewezen</MenuItem>
-                <MenuItem value="personality_test">Persoonlijkheidstest afgenomen</MenuItem>
-                <MenuItem value="test">Test afgenomen</MenuItem>
-                <MenuItem value="interview_training">Sollicitatie training</MenuItem>
+                {activeActivityTypes.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
               </Select>
             </FormControl>
 

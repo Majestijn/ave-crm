@@ -22,6 +22,7 @@ class Assignment extends Model
         'salary_min',
         'salary_max',
         'vacation_days',
+        'bonus_percentage',
         'location',
         'employment_type',
         'benefits',
@@ -34,6 +35,7 @@ class Assignment extends Model
         'salary_min' => 'integer',
         'salary_max' => 'integer',
         'vacation_days' => 'integer',
+        'bonus_percentage' => 'float',
         'benefits' => 'array',
         'start_date' => 'date:Y-m-d',
     ];

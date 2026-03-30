@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\Contact;
+use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -76,7 +77,7 @@ class AssignmentCandidateController extends Controller
         $contact = Contact::where('uid', $contactUid)->firstOrFail();
 
         $validated = $request->validate([
-            'status' => 'required|string|in:called,proposed,first_interview,second_interview,hired,rejected',
+            'status' => 'required|string|' . DropdownOption::validationRule('candidate_assignment_status'),
         ]);
 
         $assignment->candidates()->updateExistingPivot($contact->id, [
@@ -106,6 +107,11 @@ class AssignmentCandidateController extends Controller
 
     private function getStatusLabel(string $status): string
     {
+        $dbLabel = DropdownOption::labelFor('candidate_assignment_status', $status);
+        if ($dbLabel !== $status) {
+            return $dbLabel;
+        }
+
         $labels = [
             'called' => 'Gebeld',
             'proposed' => 'Voorgesteld',

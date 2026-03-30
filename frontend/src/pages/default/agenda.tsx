@@ -36,6 +36,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import SearchIcon from "@mui/icons-material/Search";
 import API from "../../../axios-client";
+import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 
 // Custom calendar styles
 const calendarStyles = {
@@ -173,6 +174,23 @@ const formatDateTimeLocal = (date: Date): string => {
 
 export default function AgendaPage() {
   const calendarRef = useRef<FullCalendar>(null);
+  const { data: dbEventTypes } = useDropdownOptions("calendar_event_type");
+
+  const activeEventTypeOptions = React.useMemo(() => {
+    if (dbEventTypes) {
+      return dbEventTypes.filter(o => o.is_active).map(o => {
+        const defaultOpt = eventTypeOptions.find(d => d.value === o.value);
+        return {
+          value: o.value,
+          label: o.label,
+          color: o.color || defaultOpt?.color || "#94a3b8",
+          bgColor: defaultOpt?.bgColor || "#f1f5f9",
+        };
+      });
+    }
+    return eventTypeOptions;
+  }, [dbEventTypes]);
+
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -677,7 +695,7 @@ export default function AgendaPage() {
               fullWidth
               disabled={dialogMode === "view"}
             >
-              {eventTypeOptions.map((option) => (
+              {activeEventTypeOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Box

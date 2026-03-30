@@ -18,6 +18,7 @@ use App\Http\Controllers\CalendarFeedController;
 use App\Http\Controllers\ContactDocumentController;
 use App\Http\Controllers\BatchCvImportController;
 use App\Http\Controllers\LinkedInImportController;
+use App\Http\Controllers\DropdownOptionController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -120,6 +121,16 @@ Route::prefix('/v1')->group(function () {
         // Calendar feed URL management (authenticated)
         Route::get('/calendar-feed/url', [CalendarFeedController::class, 'getUrl']);
         Route::post('/calendar-feed/regenerate', [CalendarFeedController::class, 'regenerateToken']);
+
+        // Dropdown options (configurable select/dropdown values)
+        Route::get('/dropdown-options', [DropdownOptionController::class, 'index']);
+        Route::get('/dropdown-options/{type}', [DropdownOptionController::class, 'show']);
+        Route::middleware('can:manage-users')->group(function () {
+            Route::post('/dropdown-options', [DropdownOptionController::class, 'store']);
+            Route::put('/dropdown-options/reorder', [DropdownOptionController::class, 'reorder']);
+            Route::put('/dropdown-options/{id}', [DropdownOptionController::class, 'update']);
+            Route::delete('/dropdown-options/{id}', [DropdownOptionController::class, 'destroy']);
+        });
 
         // LinkedIn import (browser extension)
         Route::post('/linkedin-import', [LinkedInImportController::class, 'store']);
