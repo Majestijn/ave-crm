@@ -71,6 +71,237 @@ const NewUserSchema = z.object({
 
 type NewUserForm = z.infer<typeof NewUserSchema>;
 
+const ChangePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "Vul je huidige wachtwoord in"),
+    password: z
+      .string()
+      .min(8, "Minimaal 8 tekens")
+      .regex(/\d/, "Minstens 1 cijfer")
+      .regex(/[^A-Za-z0-9]/, "Minstens 1 speciaal teken"),
+    password_confirmation: z.string(),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    message: "Wachtwoorden komen niet overeen",
+    path: ["password_confirmation"],
+  });
+
+type ChangePasswordForm = z.infer<typeof ChangePasswordSchema>;
+
+const ChangePasswordSection = () => {
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    setError,
+    watch,
+  } = useForm<ChangePasswordForm>({
+    resolver: zodResolver(ChangePasswordSchema),
+    mode: "onBlur",
+    defaultValues: {
+      current_password: "",
+      password: "",
+      password_confirmation: "",
+    },
+  });
+
+  const password = watch("password") ?? "";
+  const passwordChecklist = {
+    hasMinLength: password.length >= 8,
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[^A-Za-z0-9]/.test(password),
+  };
+
+  const onSubmit = async (data: ChangePasswordForm) => {
+    setSubmitError(null);
+    setSuccess(false);
+    try {
+      await API.put("/auth/password", {
+        current_password: data.current_password,
+        password: data.password,
+        password_confirmation: data.password_confirmation,
+      });
+      setSuccess(true);
+      reset();
+      setShowCurrent(false);
+      setShowNew(false);
+      setShowConfirm(false);
+    } catch (err: unknown) {
+      const e = err as {
+        response?: {
+          data?: { message?: string; errors?: Record<string, string[] | string> };
+        };
+      };
+      const fieldErrors = e?.response?.data?.errors;
+      if (fieldErrors?.current_password) {
+        setError("current_password", {
+          type: "server",
+          message: Array.isArray(fieldErrors.current_password)
+            ? fieldErrors.current_password[0]
+            : String(fieldErrors.current_password),
+        });
+      }
+      if (fieldErrors?.password) {
+        setError("password", {
+          type: "server",
+          message: Array.isArray(fieldErrors.password)
+            ? fieldErrors.password[0]
+            : String(fieldErrors.password),
+        });
+      }
+      if (fieldErrors?.password_confirmation) {
+        setError("password_confirmation", {
+          type: "server",
+          message: Array.isArray(fieldErrors.password_confirmation)
+            ? fieldErrors.password_confirmation[0]
+            : String(fieldErrors.password_confirmation),
+        });
+      }
+      const msg = e?.response?.data?.message;
+      setSubmitError(
+        msg ||
+          (fieldErrors && typeof fieldErrors === "object"
+            ? Object.values(fieldErrors)
+                .flat()
+                .map((v) => (Array.isArray(v) ? v.join(", ") : v))
+                .filter(Boolean)
+                .join(", ")
+            : "") ||
+          "Er is iets misgegaan bij het wijzigen van het wachtwoord.",
+      );
+    }
+  };
+
+  return (
+    <Box sx={{ p: 2, maxWidth: 480 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Wachtwoord wijzigen
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Vul je huidige wachtwoord in en kies een nieuw wachtwoord. Minimaal 8
+        tekens, minstens één cijfer en één speciaal teken (zelfde regels als bij
+        nieuwe gebruikers).
+      </Typography>
+      {success && (
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccess(false)}
+        >
+          Wachtwoord succesvol gewijzigd.
+        </Alert>
+      )}
+      <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
+        <TextField
+          label="Huidige wachtwoord"
+          type={showCurrent ? "text" : "password"}
+          autoComplete="current-password"
+          error={!!errors.current_password}
+          helperText={errors.current_password?.message ?? " "}
+          {...register("current_password")}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  edge="end"
+                  aria-label="Toon/Verberg wachtwoord"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  {showCurrent ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <TextField
+          label="Nieuw wachtwoord"
+          type={showNew ? "text" : "password"}
+          autoComplete="new-password"
+          error={!!errors.password}
+          helperText={errors.password?.message ?? " "}
+          {...register("password")}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  edge="end"
+                  aria-label="Toon/Verberg wachtwoord"
+                  onClick={() => setShowNew(!showNew)}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  {showNew ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Box
+          sx={{
+            display: "grid",
+            gap: 0.5,
+            color: "text.secondary",
+            fontSize: 13,
+            pl: 1.75,
+          }}
+        >
+          <ChecklistRow ok={passwordChecklist.hasMinLength}>
+            Minimaal 8 tekens
+          </ChecklistRow>
+          <ChecklistRow ok={passwordChecklist.hasNumber}>
+            Minstens 1 cijfer
+          </ChecklistRow>
+          <ChecklistRow ok={passwordChecklist.hasSpecial}>
+            Minstens 1 speciaal teken
+          </ChecklistRow>
+        </Box>
+        <TextField
+          label="Bevestig nieuw wachtwoord"
+          type={showConfirm ? "text" : "password"}
+          autoComplete="new-password"
+          error={!!errors.password_confirmation}
+          helperText={errors.password_confirmation?.message ?? " "}
+          {...register("password_confirmation")}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  edge="end"
+                  aria-label="Toon/Verberg wachtwoord"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  {showConfirm ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        {submitError && (
+          <Alert severity="error" onClose={() => setSubmitError(null)}>
+            {submitError}
+          </Alert>
+        )}
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={isSubmitting}
+          sx={{ alignSelf: "flex-start" }}
+        >
+          {isSubmitting ? "Bezig…" : "Wachtwoord opslaan"}
+        </Button>
+      </Stack>
+    </Box>
+  );
+};
+
 const SettingsPage = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -109,7 +340,7 @@ const SettingsPage = () => {
         </Tabs>
 
         <TabPanel value={currentTab} index={0}>
-          <Typography variant="body1">Placeholder submenu 1</Typography>
+          <ChangePasswordSection />
         </TabPanel>
         <TabPanel value={currentTab} index={1}>
           <Typography variant="body1">Placeholder submenu 2</Typography>
