@@ -25,7 +25,15 @@ import type { Account } from "../../../types/accounts";
 import type { User } from "../../../types/users";
 import { useCreateAssignment } from "../../../api/mutations/assignments";
 import { useDropdownOptions } from "../../../api/queries/dropdownOptions";
+import { buildAllowedValueSet } from "../../../utils/dropdownValidation";
 import { benefitsOptions as defaultBenefitsOptions } from "./types";
+
+const EMPLOYMENT_TYPE_FALLBACK = [
+  "Fulltime",
+  "Parttime",
+  "Freelance",
+  "Interim",
+] as const;
 
 type CreateAssignmentDialogProps = {
   open: boolean;
@@ -75,6 +83,16 @@ export default function CreateAssignmentDialog({
       { value: "Interim", label: "Interim" },
     ];
   }, [dbEmploymentTypeOptions]);
+
+  const allowedEmploymentSet = React.useMemo(
+    () => buildAllowedValueSet(dbEmploymentTypeOptions, [...EMPLOYMENT_TYPE_FALLBACK]),
+    [dbEmploymentTypeOptions]
+  );
+
+  const allowedBenefitsSet = React.useMemo(
+    () => buildAllowedValueSet(dbBenefitsOptions, defaultBenefitsOptions),
+    [dbBenefitsOptions]
+  );
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -169,6 +187,18 @@ export default function CreateAssignmentDialog({
     }
     if (!title.trim()) {
       setError("Vul een titel in");
+      return;
+    }
+
+    if (employmentType && !allowedEmploymentSet.has(employmentType)) {
+      setError("Selecteer een geldig dienstverband uit de lijst.");
+      return;
+    }
+
+    if (benefits.some((b) => !allowedBenefitsSet.has(b))) {
+      setError(
+        "Een of meer arbeidsvoorwaarden zijn ongeldig. Kies opties uit de lijst."
+      );
       return;
     }
 
