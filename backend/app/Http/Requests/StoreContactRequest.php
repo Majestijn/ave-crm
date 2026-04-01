@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Models\Contact;
+use App\Models\DropdownOption;
 use App\Models\User;
 
 class StoreContactRequest extends FormRequest
@@ -26,16 +27,16 @@ class StoreContactRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:255'],
             'prefix' => ['nullable', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:255'],
-            'gender' => ['nullable', 'string', 'max:16'],
+            'gender' => ['nullable', 'string', DropdownOption::validationRule('gender')],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'current_company' => ['nullable', 'string', 'max:255'],
             'company_role' => ['nullable', 'string', 'max:255'],
             'network_roles' => ['nullable', 'array'],
-            'network_roles.*' => ['string', 'in:invoice_contact,candidate,candidate_placed,interim,ambassador,potential_management,co_decision_maker,potential_directie,candidate_reference,hr_employment,hr_recruiters,directie,owner,expert,coach,former_owner,former_director,commissioner,investor,network_group,budget_holder,client_principal,signing_authority,final_decision_maker'],
+            'network_roles.*' => ['string', 'max:64', DropdownOption::validationRule('network_role')],
             'current_salary_cents' => ['nullable', 'integer', 'min:0'],
-            'education' => ['nullable', 'in:MBO,HBO,UNI'],
+            'education' => ['nullable', 'string', DropdownOption::validationRule('education')],
             'availability_date' => ['nullable', 'date'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
             'notes' => ['nullable', 'string'],

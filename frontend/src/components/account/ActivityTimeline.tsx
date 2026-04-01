@@ -34,6 +34,18 @@ import type { Activity, ActivityType } from "../../api/queries/activities";
 import { formatContactName, formatDateNL, normalizeDate } from "../../utils/formatters";
 import { getActivityColor, primaryButtonSx } from "./styles";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
+import { buildAllowedValueSet } from "../../utils/dropdownValidation";
+
+const ACTIVITY_TYPE_FALLBACK = [
+  "call",
+  "proposal",
+  "interview",
+  "hired",
+  "rejected",
+  "personality_test",
+  "test",
+  "interview_training",
+] as const;
 
 type TimelineActivity = {
   id: number;
@@ -104,6 +116,11 @@ export default function ActivityTimeline({
     ];
   }, [dbActivityTypes]);
 
+  const allowedActivityTypeSet = React.useMemo(
+    () => buildAllowedValueSet(dbActivityTypes, [...ACTIVITY_TYPE_FALLBACK]),
+    [dbActivityTypes]
+  );
+
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deleteActivityId, setDeleteActivityId] = useState<number | null>(null);
   const [editType, setEditType] = useState<ActivityType>("call");
@@ -150,7 +167,14 @@ export default function ActivityTimeline({
 
   const handleSaveEdit = async () => {
     if (!editingActivity || !onEdit) return;
-    
+
+    setEditError(null);
+
+    if (!allowedActivityTypeSet.has(editType)) {
+      setEditError("Selecteer een geldig activiteitstype uit de lijst.");
+      return;
+    }
+
     try {
       await onEdit(editingActivity, {
         type: editType,

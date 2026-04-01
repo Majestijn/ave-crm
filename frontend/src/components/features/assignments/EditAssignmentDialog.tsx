@@ -20,8 +20,16 @@ import {
 import type { User } from "../../../types/users";
 import { useUpdateAssignment } from "../../../api/mutations/assignments";
 import { useDropdownOptions } from "../../../api/queries/dropdownOptions";
+import { buildAllowedValueSet } from "../../../utils/dropdownValidation";
 import type { AssignmentWithDetails } from "./types";
 import { benefitsOptions as defaultBenefitsOptions, formatNumberInput, parseFormattedNumber } from "./types";
+
+const EMPLOYMENT_TYPE_FALLBACK = [
+  "Fulltime",
+  "Parttime",
+  "Freelance",
+  "Interim",
+] as const;
 
 type EditAssignmentDialogProps = {
   open: boolean;
@@ -57,6 +65,16 @@ export default function EditAssignmentDialog({
       { value: "Interim", label: "Interim" },
     ];
   }, [dbEmploymentTypeOptions]);
+
+  const allowedEmploymentSet = React.useMemo(
+    () => buildAllowedValueSet(dbEmploymentTypeOptions, [...EMPLOYMENT_TYPE_FALLBACK]),
+    [dbEmploymentTypeOptions]
+  );
+
+  const allowedBenefitsSet = React.useMemo(
+    () => buildAllowedValueSet(dbBenefitsOptions, defaultBenefitsOptions),
+    [dbBenefitsOptions]
+  );
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -115,6 +133,18 @@ export default function EditAssignmentDialog({
 
     if (!title.trim()) {
       setError("Vul een titel in");
+      return;
+    }
+
+    if (employmentType && !allowedEmploymentSet.has(employmentType)) {
+      setError("Selecteer een geldig dienstverband uit de lijst.");
+      return;
+    }
+
+    if (benefits.some((b) => !allowedBenefitsSet.has(b))) {
+      setError(
+        "Een of meer arbeidsvoorwaarden zijn ongeldig. Kies opties uit de lijst."
+      );
       return;
     }
 

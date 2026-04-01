@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountActivity;
 use App\Models\Account;
+use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -29,7 +30,7 @@ class AccountActivityController extends Controller
     public function store(Request $request, Account $account)
     {
         $validated = $request->validate([
-            'type' => 'required|string',
+            'type' => 'required|string|' . DropdownOption::validationRule('activity_type'),
             'description' => 'required|string',
             'date' => 'required|date',
             'contact_uid' => 'nullable|exists:contacts,uid',
@@ -71,7 +72,7 @@ class AccountActivityController extends Controller
     public function update(Request $request, AccountActivity $accountActivity)
     {
         $validated = $request->validate([
-            'type' => 'sometimes|required|string',
+            'type' => 'sometimes|required|string|' . DropdownOption::validationRule('activity_type'),
             'description' => 'sometimes|required|string',
             'date' => 'sometimes|required|date',
             'contact_uid' => 'nullable|exists:contacts,uid',

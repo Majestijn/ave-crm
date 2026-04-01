@@ -20,6 +20,18 @@ import { useCreateActivity } from "../../api/mutations/activities";
 import { formatContactName } from "../../utils/formatters";
 import { primaryButtonSx } from "./styles";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
+import { buildAllowedValueSet } from "../../utils/dropdownValidation";
+
+const ACTIVITY_TYPE_FALLBACK = [
+  "call",
+  "proposal",
+  "interview",
+  "hired",
+  "rejected",
+  "personality_test",
+  "test",
+  "interview_training",
+] as const;
 
 type Props = {
   open: boolean;
@@ -56,6 +68,20 @@ export default function AddActivityDialog({
       { value: "interview_training", label: "Sollicitatie training" },
     ];
   }, [dbActivityTypes]);
+
+  const allowedActivityTypeSet = React.useMemo(
+    () => buildAllowedValueSet(dbActivityTypes, [...ACTIVITY_TYPE_FALLBACK]),
+    [dbActivityTypes]
+  );
+
+  // Keep selected type valid when dropdown options load or change
+  useEffect(() => {
+    if (activeActivityTypes.length === 0) return;
+    const values = activeActivityTypes.map((o) => o.value);
+    if (!values.includes(activityType)) {
+      setActivityType(values[0] as ActivityType);
+    }
+  }, [activeActivityTypes, activityType]);
 
   // Auto-fill description based on type and contact
   useEffect(() => {
@@ -98,6 +124,11 @@ export default function AddActivityDialog({
 
   const handleSubmit = async () => {
     setError(null);
+
+    if (!allowedActivityTypeSet.has(activityType)) {
+      setError("Selecteer een geldig activiteitstype uit de lijst.");
+      return;
+    }
 
     try {
       await createActivityMutation.mutateAsync({

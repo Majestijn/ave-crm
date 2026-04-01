@@ -2,15 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import API from "../client";
 import { queryKeys } from "./keys";
 
-export type ActivityType =
-  | "call"
-  | "proposal"
-  | "interview"
-  | "hired"
-  | "rejected"
-  | "personality_test"
-  | "test"
-  | "interview_training";
+/** Values come from dropdown_options (type activity_type); defaults listed in UI fallbacks. */
+export type ActivityType = string;
 
 export type Activity = {
   id: number;

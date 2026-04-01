@@ -14,7 +14,8 @@ export type CreateContactData = {
   network_roles?: string[];
   current_company?: string;
   current_salary_cents?: number;
-  education?: "MBO" | "HBO" | "UNI";
+  /** Value from dropdown_options type `education` */
+  education?: string;
   availability_date?: string;
   email?: string;
   phone?: string;

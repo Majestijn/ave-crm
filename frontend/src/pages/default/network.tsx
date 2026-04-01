@@ -80,6 +80,8 @@ import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { networkRoleLabels, formatContactName } from "../../utils/formatters";
+import { flattenRhfFieldErrorMessage } from "../../utils/formErrors";
+import { buildAllowedValueSet } from "../../utils/dropdownValidation";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 
 const networkRoleOptions = [
@@ -141,58 +143,59 @@ const WorkExperienceSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-const ContactSchema = z.object({
-  first_name: z.string().min(1, "Voornaam is verplicht"),
-  prefix: z.string().optional(),
-  last_name: z.string().min(1, "Achternaam is verplicht"),
-  date_of_birth: z.string().optional(),
-  gender: z.string().optional(),
-  location: z.string().optional(),
-  company_role: z.string().optional(),
-  work_experiences: z.array(WorkExperienceSchema).optional(),
-  network_roles: z
-    .array(
-      z.enum([
-        "invoice_contact",
-        "candidate",
-        "interim",
-        "ambassador",
-        "potential_management",
-        "co_decision_maker",
-        "potential_directie",
-        "candidate_reference",
-        "hr_employment",
-        "hr_recruiters",
-        "directie",
-        "owner",
-        "expert",
-        "coach",
-        "former_owner",
-        "former_director",
-        "commissioner",
-        "investor",
-        "network_group",
-        "budget_holder",
-        "candidate_placed",
-        "client_principal",
-        "signing_authority",
-        "final_decision_maker",
-      ])
-    )
-    .optional(),
-  current_company: z.string().optional(),
-  current_salary_cents: z.number().optional(),
-  education: z.enum(["MBO", "HBO", "UNI"]).optional(),
-  availability_date: z.string().optional().or(z.literal("")),
-  email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional(),
-  linkedin_url: z.string().url().optional().or(z.literal("")),
-  notes: z.string().optional(),
-  is_company_contact: z.boolean().optional(),
-  account_uid: z.string().optional(),
-});
+/** Validates dropdown-backed fields against active dropdown_options (same source as the Autocompletes). */
+function buildContactSchema(allowed: {
+  networkRoles: ReadonlySet<string>;
+  gender: ReadonlySet<string>;
+  education: ReadonlySet<string>;
+}) {
+  return z.object({
+    first_name: z.string().min(1, "Voornaam is verplicht"),
+    prefix: z.string().optional(),
+    last_name: z.string().min(1, "Achternaam is verplicht"),
+    date_of_birth: z.string().optional(),
+    gender: z
+      .string()
+      .optional()
+      .refine(
+        (v) => v === undefined || v === "" || allowed.gender.has(v),
+        { message: "Selecteer een geldig geslacht uit de lijst." }
+      ),
+    location: z.string().optional(),
+    company_role: z.string().optional(),
+    work_experiences: z.array(WorkExperienceSchema).optional(),
+    network_roles: z
+      .array(z.string())
+      .optional()
+      .refine(
+        (arr) =>
+          !arr?.length ||
+          arr.every((v) => allowed.networkRoles.has(v)),
+        {
+          message:
+            "Selecteer alleen netwerkrollen uit de lijst (instellingen).",
+        }
+      ),
+    current_company: z.string().optional(),
+    current_salary_cents: z.number().optional(),
+    education: z
+      .string()
+      .optional()
+      .refine(
+        (v) => v === undefined || v === "" || allowed.education.has(v),
+        { message: "Selecteer een geldige opleiding uit de lijst." }
+      ),
+    availability_date: z.string().optional().or(z.literal("")),
+    email: z.string().email().optional().or(z.literal("")),
+    phone: z.string().optional(),
+    linkedin_url: z.string().url().optional().or(z.literal("")),
+    notes: z.string().optional(),
+    is_company_contact: z.boolean().optional(),
+    account_uid: z.string().optional(),
+  });
+}
 
-type ContactForm = z.infer<typeof ContactSchema>;
+type ContactForm = z.infer<ReturnType<typeof buildContactSchema>>;
 
 export default function NetworkPage() {
   // Location filter state - must be declared before useContacts
@@ -256,6 +259,39 @@ export default function NetworkPage() {
     if (dbNetworkRoles) return dbNetworkRoles.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
     return networkRoleOptions;
   }, [dbNetworkRoles]);
+
+  const allowedNetworkRoleValueSet = React.useMemo(
+    () =>
+      buildAllowedValueSet(
+        dbNetworkRoles,
+        networkRoleOptions.map((o) => o.value)
+      ),
+    [dbNetworkRoles]
+  );
+
+  const allowedGenderValueSet = React.useMemo(
+    () => buildAllowedValueSet(dbGender, ["man", "vrouw"]),
+    [dbGender]
+  );
+
+  const allowedEducationValueSet = React.useMemo(
+    () => buildAllowedValueSet(dbEducation, ["MBO", "HBO", "UNI"]),
+    [dbEducation]
+  );
+
+  const contactSchema = React.useMemo(
+    () =>
+      buildContactSchema({
+        networkRoles: allowedNetworkRoleValueSet,
+        gender: allowedGenderValueSet,
+        education: allowedEducationValueSet,
+      }),
+    [
+      allowedNetworkRoleValueSet,
+      allowedGenderValueSet,
+      allowedEducationValueSet,
+    ]
+  );
 
   const activeEducationOptions = React.useMemo(() => {
     if (dbEducation) return dbEducation.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
@@ -444,7 +480,7 @@ export default function NetworkPage() {
     watch,
     setValue,
   } = useForm<ContactForm>({
-    resolver: zodResolver(ContactSchema),
+    resolver: zodResolver(contactSchema),
     mode: "onBlur",
     defaultValues: {
       first_name: "",
@@ -481,7 +517,7 @@ export default function NetworkPage() {
     reset: editReset,
     control: editControl,
   } = useForm<ContactForm>({
-    resolver: zodResolver(ContactSchema),
+    resolver: zodResolver(contactSchema),
     mode: "onBlur",
   });
 
@@ -1748,7 +1784,12 @@ export default function NetworkPage() {
                         {...params}
                         label="Netwerk rollen"
                         error={!!errors.network_roles}
-                        helperText={errors.network_roles?.message ?? " "}
+                        helperText={
+                          flattenRhfFieldErrorMessage(errors.network_roles) ??
+                          (errors.network_roles
+                            ? "Ongeldige selectie voor netwerkrollen."
+                            : " ")
+                        }
                       />
                     )}
                     renderTags={(value, getTagProps) =>
@@ -2288,7 +2329,12 @@ export default function NetworkPage() {
                         {...params}
                         label="Netwerk rollen"
                         error={!!editErrors.network_roles}
-                        helperText={editErrors.network_roles?.message ?? " "}
+                        helperText={
+                          flattenRhfFieldErrorMessage(editErrors.network_roles) ??
+                          (editErrors.network_roles
+                            ? "Ongeldige selectie voor netwerkrollen."
+                            : " ")
+                        }
                       />
                     )}
                     renderTags={(value, getTagProps) =>

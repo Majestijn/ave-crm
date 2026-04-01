@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AccountActivity;
 use App\Models\Assignment;
 use App\Models\Contact;
+use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -49,7 +50,7 @@ class AssignmentActivityController extends Controller
         $assignment = Assignment::where('uid', $assignmentUid)->firstOrFail();
 
         $validated = $request->validate([
-            'type' => 'required|string',
+            'type' => 'required|string|' . DropdownOption::validationRule('activity_type'),
             'description' => 'required|string',
             'date' => 'required|date',
             'contact_uid' => 'nullable|string',
@@ -105,7 +106,7 @@ class AssignmentActivityController extends Controller
         $activity = AccountActivity::findOrFail($activityId);
 
         $validated = $request->validate([
-            'type' => 'sometimes|required|string',
+            'type' => 'sometimes|required|string|' . DropdownOption::validationRule('activity_type'),
             'description' => 'sometimes|required|string',
             'date' => 'sometimes|required|date',
             'contact_uid' => 'nullable|string',
