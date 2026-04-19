@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Tenant;
 
@@ -33,6 +34,16 @@ class ResetDemo extends Command
         }
 
         $this->info('🔄 Starting demo reset...');
+
+        // Landlord schema must exist (plain `migrate:fresh` without --path finds no migrations here → empty DB).
+        if (! Schema::connection('landlord')->hasTable('tenants')) {
+            $this->warn('Landlord-tabellen ontbreken; voer eerst landlord-migraties uit...');
+            $this->call('migrate', [
+                '--database' => 'landlord',
+                '--path' => 'database/migrations/landlord',
+                '--force' => true,
+            ]);
+        }
 
         // 1. Get all tenants
         $tenants = Tenant::all();

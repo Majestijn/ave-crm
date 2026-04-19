@@ -24,8 +24,21 @@ export type Contact = {
   distance?: number; // Distance in km (only present when filtering by radius)
   current_company?: string;
   company_role?: string;
+  /** Zelfde dropdown_types als bij klanten (account_category, …) */
+  category?: string | null;
+  secondary_category?: string | null;
+  tertiary_category?: string[] | null;
+  merken?: string[] | null;
+  labels?: string[] | null;
   network_roles?: string[];
-  current_salary_cents?: number;
+  /** Bruto jaarsalaris (centen, EUR) — huidige situatie netwerkcontact */
+  annual_salary_cents?: number | null;
+  /** Uurtarief in centen (EUR), bv. 4550 = €45,50 */
+  hourly_rate_cents?: number | null;
+  vacation_days?: number | null;
+  bonus_percentage?: number | null;
+  /** Waarden uit dropdown_options type `benefit` (zelfde als opdrachten) */
+  benefits?: string[] | null;
   education?: string;
   availability_date?: string; // ISO date (YYYY-MM-DD) – beschikbaarheidsdatum
   linkedin_url?: string;

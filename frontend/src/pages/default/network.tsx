@@ -76,13 +76,27 @@ import ExcelImportDialog from "../../components/features/ExcelImportDialog";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import type { Contact, ContactWorkExperience } from "../../types/contacts";
 import WorkExperienceSection, { formatDateRange } from "../../components/features/WorkExperienceSection";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import {
+  useForm,
+  Controller,
+  useFieldArray,
+  type Control,
+  type FieldErrors,
+} from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { networkRoleLabels, formatContactName } from "../../utils/formatters";
 import { flattenRhfFieldErrorMessage } from "../../utils/formErrors";
-import { buildAllowedValueSet } from "../../utils/dropdownValidation";
+import {
+  buildAllowedValueSet,
+  activeDropdownLabeled,
+} from "../../utils/dropdownValidation";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
+import {
+  benefitsOptions,
+  formatNumberInput,
+  parseFormattedNumber,
+} from "../../components/features/assignments/types";
 
 const networkRoleOptions = [
   { value: "invoice_contact", label: "Factuurcontact" },
@@ -125,6 +139,10 @@ const NETWORK_COLUMN_META: { field: string; headerName: string }[] = [
   { field: "phone", headerName: "Telefoon" },
   { field: "company_role", headerName: "Functie" },
   { field: "current_company", headerName: "Bedrijf" },
+  { field: "annual_salary_cents", headerName: "Jaarsalaris" },
+  { field: "vacation_days", headerName: "Vakantiedagen" },
+  { field: "bonus_percentage", headerName: "Bonus" },
+  { field: "benefits", headerName: "Arbeidsvoorwaarden" },
   { field: "location", headerName: "Locatie" },
   { field: "date_of_birth", headerName: "Geboortedatum" },
   { field: "availability_date", headerName: "Beschikbaar" },
@@ -148,6 +166,12 @@ function buildContactSchema(allowed: {
   networkRoles: ReadonlySet<string>;
   gender: ReadonlySet<string>;
   education: ReadonlySet<string>;
+  benefits: ReadonlySet<string>;
+  accountCategory: ReadonlySet<string>;
+  accountSecondary: ReadonlySet<string>;
+  accountTertiary: ReadonlySet<string>;
+  accountBrand: ReadonlySet<string>;
+  accountLabel: ReadonlySet<string>;
 }) {
   return z.object({
     first_name: z.string().min(1, "Voornaam is verplicht"),
@@ -177,7 +201,63 @@ function buildContactSchema(allowed: {
         }
       ),
     current_company: z.string().optional(),
-    current_salary_cents: z.number().optional(),
+    category: z
+      .string()
+      .optional()
+      .refine(
+        (v) => v === undefined || v === "" || allowed.accountCategory.has(v),
+        { message: "Ongeldige hoofdcategorie." }
+      ),
+    secondary_category: z
+      .string()
+      .optional()
+      .refine(
+        (v) =>
+          v === undefined ||
+          v === "" ||
+          allowed.accountSecondary.has(v),
+        { message: "Ongeldige secundaire categorie." }
+      ),
+    tertiary_category: z
+      .array(z.string())
+      .optional()
+      .refine(
+        (arr) =>
+          !arr?.length ||
+          arr.every((v) => allowed.accountTertiary.has(v)),
+        { message: "Ongeldige tertiaire categorie." }
+      ),
+    merken: z
+      .array(z.string())
+      .optional()
+      .refine(
+        (arr) =>
+          !arr?.length || arr.every((v) => allowed.accountBrand.has(v)),
+        { message: "Ongeldige merkkeuze." }
+      ),
+    labels: z
+      .array(z.string())
+      .optional()
+      .refine(
+        (arr) =>
+          !arr?.length || arr.every((v) => allowed.accountLabel.has(v)),
+        { message: "Ongeldige labelkeuze." }
+      ),
+    annual_salary_cents: z.number().int().min(0).optional(),
+    hourly_rate_cents: z.number().int().min(0).optional(),
+    vacation_days: z.number().int().min(0).max(366).optional(),
+    bonus_percentage: z.number().min(0).max(100).optional(),
+    benefits: z
+      .array(z.string())
+      .optional()
+      .refine(
+        (arr) =>
+          !arr?.length || arr.every((v) => allowed.benefits.has(v)),
+        {
+          message:
+            "Selecteer alleen arbeidsvoorwaarden uit de lijst (instellingen).",
+        }
+      ),
     education: z
       .string()
       .optional()
@@ -196,6 +276,489 @@ function buildContactSchema(allowed: {
 }
 
 type ContactForm = z.infer<ReturnType<typeof buildContactSchema>>;
+
+const CONTACT_ACCOUNT_CATEGORY_FALLBACK = [
+  "fmcg",
+  "foodservice",
+  "andere",
+] as const;
+const CONTACT_ACCOUNT_SECONDARY_FALLBACK = [
+  "retailer",
+  "groothandel",
+  "leverancier",
+  "industrie",
+  "andere",
+] as const;
+const CONTACT_ACCOUNT_TERTIARY_FALLBACK = ["non_food", "food"] as const;
+const CONTACT_ACCOUNT_BRAND_FALLBACK = ["merk", "private_label"] as const;
+const CONTACT_ACCOUNT_LABEL_FALLBACK = [
+  "vers",
+  "zuivel_eieren",
+  "diepvries",
+  "dkw_houdbaar_voedsel",
+  "dranken",
+  "snacks_snoep",
+  "non_food",
+  "verpakkingen",
+  "convenience_ready_to_use",
+] as const;
+
+/** Hoofd-/secundaire/tertiaire categorie, merken en labels (zelfde opties als bij klanten). */
+function ContactSectorFields({
+  control,
+  errors,
+  activeCategories,
+  activeSecondary,
+  activeTertiary,
+  activeBrands,
+  activeLabels,
+  isTertiaryPending,
+  isBrandsPending,
+  isLabelsPending,
+}: {
+  control: Control<ContactForm>;
+  errors: FieldErrors<ContactForm>;
+  activeCategories: { value: string; label: string }[];
+  activeSecondary: { value: string; label: string }[];
+  activeTertiary: { value: string; label: string }[];
+  activeBrands: { value: string; label: string }[];
+  activeLabels: { value: string; label: string }[];
+  isTertiaryPending: boolean;
+  isBrandsPending: boolean;
+  isLabelsPending: boolean;
+}) {
+  return (
+    <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
+      <Typography variant="subtitle2" sx={{ mb: 2 }}>
+        Sector & labels (zelfde opties als bij klanten)
+      </Typography>
+      <Stack spacing={2}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Controller
+            name="category"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                select
+                label="Hoofdcategorie"
+                {...field}
+                value={field.value || ""}
+                fullWidth
+                error={!!errors.category}
+                helperText={errors.category?.message ?? " "}
+              >
+                <MenuItem value="">Geen</MenuItem>
+                {activeCategories.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+          <Controller
+            name="secondary_category"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                select
+                label="Secundaire categorie"
+                {...field}
+                value={field.value || ""}
+                fullWidth
+                error={!!errors.secondary_category}
+                helperText={errors.secondary_category?.message ?? " "}
+              >
+                <MenuItem value="">Geen</MenuItem>
+                {activeSecondary.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+        </Stack>
+
+        <Box>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            Tertiaire categorie
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              alignItems: "center",
+              minHeight: 36,
+            }}
+          >
+            {isTertiaryPending ? (
+              <CircularProgress size={22} />
+            ) : activeTertiary.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
+              </Typography>
+            ) : (
+              <Controller
+                name="tertiary_category"
+                control={control}
+                render={({ field }) => (
+                  <>
+                    {activeTertiary.map((opt) => {
+                      const selected = field.value || [];
+                      const isSelected = selected.includes(opt.value);
+                      return (
+                        <Chip
+                          key={opt.value}
+                          label={opt.label}
+                          size="small"
+                          variant={isSelected ? "filled" : "outlined"}
+                          color={isSelected ? "primary" : "default"}
+                          onClick={() => {
+                            const next = isSelected
+                              ? selected.filter((o) => o !== opt.value)
+                              : [...selected, opt.value];
+                            field.onChange(next);
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            "&:hover": {
+                              bgcolor: isSelected ? "primary.dark" : "action.hover",
+                            },
+                          }}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+              />
+            )}
+          </Box>
+          {errors.tertiary_category && (
+            <Typography variant="caption" color="error">
+              {flattenRhfFieldErrorMessage(errors.tertiary_category) ?? "Ongeldige selectie."}
+            </Typography>
+          )}
+        </Box>
+
+        <Box>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            Merken
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              alignItems: "center",
+              minHeight: 36,
+            }}
+          >
+            {isBrandsPending ? (
+              <CircularProgress size={22} />
+            ) : activeBrands.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
+              </Typography>
+            ) : (
+              <Controller
+                name="merken"
+                control={control}
+                render={({ field }) => (
+                  <>
+                    {activeBrands.map((opt) => {
+                      const selected = field.value || [];
+                      const isSelected = selected.includes(opt.value);
+                      return (
+                        <Chip
+                          key={opt.value}
+                          label={opt.label}
+                          size="small"
+                          variant={isSelected ? "filled" : "outlined"}
+                          color={isSelected ? "primary" : "default"}
+                          onClick={() => {
+                            const next = isSelected
+                              ? selected.filter((o) => o !== opt.value)
+                              : [...selected, opt.value];
+                            field.onChange(next);
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            "&:hover": {
+                              bgcolor: isSelected ? "primary.dark" : "action.hover",
+                            },
+                          }}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+              />
+            )}
+          </Box>
+        </Box>
+
+        <Box>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            Labels
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              alignItems: "center",
+              minHeight: 36,
+            }}
+          >
+            {isLabelsPending ? (
+              <CircularProgress size={22} />
+            ) : activeLabels.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
+              </Typography>
+            ) : (
+              <Controller
+                name="labels"
+                control={control}
+                render={({ field }) => (
+                  <>
+                    {activeLabels.map((opt) => {
+                      const selected = field.value || [];
+                      const isSelected = selected.includes(opt.value);
+                      return (
+                        <Chip
+                          key={opt.value}
+                          label={opt.label}
+                          size="small"
+                          variant={isSelected ? "filled" : "outlined"}
+                          color={isSelected ? "primary" : "default"}
+                          onClick={() => {
+                            const next = isSelected
+                              ? selected.filter((o) => o !== opt.value)
+                              : [...selected, opt.value];
+                            field.onChange(next);
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            "&:hover": {
+                              bgcolor: isSelected ? "primary.dark" : "action.hover",
+                            },
+                          }}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+              />
+            )}
+          </Box>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+function formatEURFromCents(cents: number | null | undefined): string {
+  if (cents == null || cents === 0) return "-";
+  return new Intl.NumberFormat("nl-NL", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
+}
+
+function parseHourlyEurosToCents(raw: string): number | undefined {
+  const t = raw.trim().replace(/\s/g, "").replace(",", ".");
+  if (!t) return undefined;
+  const n = parseFloat(t);
+  if (Number.isNaN(n) || n < 0) return undefined;
+  return Math.round(n * 100);
+}
+
+function formatCentsAsHourlyInput(cents: number | null | undefined): string {
+  if (cents == null) return "";
+  return (cents / 100).toFixed(2).replace(".", ",");
+}
+
+/** Salaris & arbeidsvoorwaarden (zelfde benefit-dropdown als opdrachten). */
+function ContactCompensationFields({
+  control,
+  errors,
+  benefitOptionsLabeled,
+}: {
+  control: Control<ContactForm>;
+  errors: FieldErrors<ContactForm>;
+  benefitOptionsLabeled: { value: string; label: string }[];
+}) {
+  const benefitValues = benefitOptionsLabeled.map((o) => o.value);
+  const labelByValue = useMemo(() => {
+    const m = new Map<string, string>();
+    benefitOptionsLabeled.forEach((o) => m.set(o.value, o.label));
+    return m;
+  }, [benefitOptionsLabeled]);
+
+  return (
+    <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+        Salaris en arbeidsvoorwaarden
+      </Typography>
+      <Stack spacing={2}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Controller
+            name="annual_salary_cents"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                label="Jaarsalaris (bruto)"
+                fullWidth
+                value={
+                  field.value != null
+                    ? formatNumberInput(String(Math.round(field.value / 100)))
+                    : ""
+                }
+                onChange={(e) => {
+                  const euros = parseFormattedNumber(e.target.value);
+                  field.onChange(
+                    euros === "" ? undefined : Math.round(euros * 100)
+                  );
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">€</InputAdornment>
+                  ),
+                }}
+                placeholder="bijv. 65.000"
+                helperText=" "
+              />
+            )}
+          />
+          <Controller
+            name="hourly_rate_cents"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                label="Uurtarief"
+                fullWidth
+                value={formatCentsAsHourlyInput(field.value ?? undefined)}
+                onChange={(e) => {
+                  field.onChange(parseHourlyEurosToCents(e.target.value));
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">€</InputAdornment>
+                  ),
+                }}
+                placeholder="bijv. 45,50"
+                helperText=" "
+              />
+            )}
+          />
+        </Stack>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Controller
+            name="vacation_days"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                label="Vakantiedagen"
+                type="number"
+                fullWidth
+                value={field.value ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "") {
+                    field.onChange(undefined);
+                    return;
+                  }
+                  const n = parseInt(v, 10);
+                  field.onChange(Number.isNaN(n) ? undefined : n);
+                }}
+                InputProps={{ inputProps: { min: 0, max: 366 } }}
+                helperText=" "
+              />
+            )}
+          />
+          <Controller
+            name="bonus_percentage"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                label="Bonusregeling"
+                type="number"
+                fullWidth
+                value={field.value ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    field.onChange(undefined);
+                    return;
+                  }
+                  const n = parseFloat(raw);
+                  if (!Number.isNaN(n)) field.onChange(n);
+                }}
+                InputProps={{
+                  inputProps: { min: 0, max: 100, step: 0.01 },
+                  endAdornment: (
+                    <InputAdornment position="end">%</InputAdornment>
+                  ),
+                }}
+                helperText="% van jaarsalaris (optioneel)"
+              />
+            )}
+          />
+        </Stack>
+        <Controller
+          name="benefits"
+          control={control}
+          render={({ field }) => {
+            const selected = field.value ?? [];
+            return (
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Arbeidsvoorwaarden
+                </Typography>
+                {errors.benefits ? (
+                  <Typography variant="caption" color="error" display="block" sx={{ mb: 1 }}>
+                    {flattenRhfFieldErrorMessage(errors.benefits) ?? "Ongeldige selectie."}
+                  </Typography>
+                ) : null}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {benefitValues.map((value) => {
+                    const isSelected = selected.includes(value);
+                    const label = labelByValue.get(value) ?? value;
+                    return (
+                      <Chip
+                        key={value}
+                        label={label}
+                        size="small"
+                        variant={isSelected ? "filled" : "outlined"}
+                        color={isSelected ? "primary" : "default"}
+                        onClick={() => {
+                          if (isSelected) {
+                            field.onChange(selected.filter((b) => b !== value));
+                          } else {
+                            field.onChange([...selected, value]);
+                          }
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": {
+                            bgcolor: isSelected ? "primary.dark" : "action.hover",
+                          },
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
+            );
+          }}
+        />
+      </Stack>
+    </Box>
+  );
+}
 
 export default function NetworkPage() {
   // Location filter state - must be declared before useContacts
@@ -254,6 +817,15 @@ export default function NetworkPage() {
   const { data: dbNetworkRoles } = useDropdownOptions("network_role");
   const { data: dbEducation } = useDropdownOptions("education");
   const { data: dbGender } = useDropdownOptions("gender");
+  const { data: dbBenefits } = useDropdownOptions("benefit");
+  const { data: dbAccountCategory } = useDropdownOptions("account_category");
+  const { data: dbAccountSecondary } = useDropdownOptions("account_secondary_category");
+  const { data: dbAccountTertiary, isPending: isTertiaryPending } =
+    useDropdownOptions("account_tertiary_category");
+  const { data: dbAccountBrand, isPending: isBrandsPending } =
+    useDropdownOptions("account_brand");
+  const { data: dbAccountLabel, isPending: isLabelsPending } =
+    useDropdownOptions("account_label");
 
   const activeNetworkRoleOptions = React.useMemo(() => {
     if (dbNetworkRoles) return dbNetworkRoles.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
@@ -279,17 +851,102 @@ export default function NetworkPage() {
     [dbEducation]
   );
 
+  const allowedBenefitsValueSet = React.useMemo(
+    () => buildAllowedValueSet(dbBenefits, benefitsOptions),
+    [dbBenefits]
+  );
+
+  const allowedAccountCategorySet = React.useMemo(
+    () =>
+      buildAllowedValueSet(dbAccountCategory, [...CONTACT_ACCOUNT_CATEGORY_FALLBACK]),
+    [dbAccountCategory]
+  );
+
+  const allowedAccountSecondarySet = React.useMemo(
+    () =>
+      buildAllowedValueSet(dbAccountSecondary, [...CONTACT_ACCOUNT_SECONDARY_FALLBACK]),
+    [dbAccountSecondary]
+  );
+
+  const allowedAccountTertiarySet = React.useMemo(
+    () =>
+      buildAllowedValueSet(dbAccountTertiary, [...CONTACT_ACCOUNT_TERTIARY_FALLBACK]),
+    [dbAccountTertiary]
+  );
+
+  const allowedAccountBrandSet = React.useMemo(
+    () => buildAllowedValueSet(dbAccountBrand, [...CONTACT_ACCOUNT_BRAND_FALLBACK]),
+    [dbAccountBrand]
+  );
+
+  const allowedAccountLabelSet = React.useMemo(
+    () => buildAllowedValueSet(dbAccountLabel, [...CONTACT_ACCOUNT_LABEL_FALLBACK]),
+    [dbAccountLabel]
+  );
+
+  const activeAccountCategories = React.useMemo(
+    () => activeDropdownLabeled(dbAccountCategory),
+    [dbAccountCategory]
+  );
+
+  const activeAccountSecondary = React.useMemo(
+    () => activeDropdownLabeled(dbAccountSecondary),
+    [dbAccountSecondary]
+  );
+
+  const activeAccountTertiaryLabeled = React.useMemo(
+    () => activeDropdownLabeled(dbAccountTertiary),
+    [dbAccountTertiary]
+  );
+
+  const activeAccountBrandLabeled = React.useMemo(
+    () => activeDropdownLabeled(dbAccountBrand),
+    [dbAccountBrand]
+  );
+
+  const activeAccountLabelLabeled = React.useMemo(
+    () => activeDropdownLabeled(dbAccountLabel),
+    [dbAccountLabel]
+  );
+
+  const activeBenefitOptionsLabeled = React.useMemo(() => {
+    if (dbBenefits?.length) {
+      return dbBenefits
+        .filter((o) => o.is_active)
+        .map((o) => ({ value: o.value, label: o.label }));
+    }
+    return benefitsOptions.map((b) => ({ value: b, label: b }));
+  }, [dbBenefits]);
+
+  const benefitLabelByValue = React.useMemo(() => {
+    const m = new Map<string, string>();
+    activeBenefitOptionsLabeled.forEach((o) => m.set(o.value, o.label));
+    return m;
+  }, [activeBenefitOptionsLabeled]);
+
   const contactSchema = React.useMemo(
     () =>
       buildContactSchema({
         networkRoles: allowedNetworkRoleValueSet,
         gender: allowedGenderValueSet,
         education: allowedEducationValueSet,
+        benefits: allowedBenefitsValueSet,
+        accountCategory: allowedAccountCategorySet,
+        accountSecondary: allowedAccountSecondarySet,
+        accountTertiary: allowedAccountTertiarySet,
+        accountBrand: allowedAccountBrandSet,
+        accountLabel: allowedAccountLabelSet,
       }),
     [
       allowedNetworkRoleValueSet,
       allowedGenderValueSet,
       allowedEducationValueSet,
+      allowedBenefitsValueSet,
+      allowedAccountCategorySet,
+      allowedAccountSecondarySet,
+      allowedAccountTertiarySet,
+      allowedAccountBrandSet,
+      allowedAccountLabelSet,
     ]
   );
 
@@ -492,7 +1149,16 @@ export default function NetworkPage() {
       network_roles: [],
       work_experiences: [],
       current_company: "",
-      current_salary_cents: undefined,
+      category: "",
+      secondary_category: "",
+      tertiary_category: [],
+      merken: [],
+      labels: [],
+      annual_salary_cents: undefined,
+      hourly_rate_cents: undefined,
+      vacation_days: undefined,
+      bonus_percentage: undefined,
+      benefits: [],
       education: undefined,
       availability_date: "",
       email: "",
@@ -578,7 +1244,20 @@ export default function NetworkPage() {
         network_roles: (editingContact.network_roles as any) || [],
         work_experiences: workExps,
         current_company: editingContact.current_company || "",
-        current_salary_cents: editingContact.current_salary_cents || undefined,
+        category: editingContact.category || "",
+        secondary_category: editingContact.secondary_category || "",
+        tertiary_category: editingContact.tertiary_category?.length
+          ? [...editingContact.tertiary_category]
+          : [],
+        merken: editingContact.merken?.length ? [...editingContact.merken] : [],
+        labels: editingContact.labels?.length ? [...editingContact.labels] : [],
+        annual_salary_cents: editingContact.annual_salary_cents ?? undefined,
+        hourly_rate_cents: editingContact.hourly_rate_cents ?? undefined,
+        vacation_days: editingContact.vacation_days ?? undefined,
+        bonus_percentage: editingContact.bonus_percentage ?? undefined,
+        benefits: editingContact.benefits?.length
+          ? [...editingContact.benefits]
+          : [],
         education: (editingContact.education as any) || undefined,
         availability_date: editingContact.availability_date
           ? editingContact.availability_date.split("T")[0]
@@ -656,7 +1335,26 @@ export default function NetworkPage() {
         ...(data.company_role && { company_role: data.company_role }),
         ...(data.network_roles?.length && { network_roles: data.network_roles }),
         ...(data.current_company && { current_company: data.current_company }),
-        ...(data.current_salary_cents != null && { current_salary_cents: data.current_salary_cents }),
+        ...(data.category && { category: data.category }),
+        ...(data.secondary_category && {
+          secondary_category: data.secondary_category,
+        }),
+        ...(data.tertiary_category?.length && {
+          tertiary_category: data.tertiary_category,
+        }),
+        ...(data.merken?.length && { merken: data.merken }),
+        ...(data.labels?.length && { labels: data.labels }),
+        ...(data.annual_salary_cents != null && {
+          annual_salary_cents: data.annual_salary_cents,
+        }),
+        ...(data.hourly_rate_cents != null && {
+          hourly_rate_cents: data.hourly_rate_cents,
+        }),
+        ...(data.vacation_days != null && { vacation_days: data.vacation_days }),
+        ...(data.bonus_percentage != null && {
+          bonus_percentage: data.bonus_percentage,
+        }),
+        ...(data.benefits?.length && { benefits: data.benefits }),
         ...(data.education && { education: data.education }),
         ...(data.availability_date && { availability_date: data.availability_date }),
         ...(data.email && { email: data.email }),
@@ -845,7 +1543,20 @@ export default function NetworkPage() {
         ...(data.company_role != null && { company_role: data.company_role }),
         ...(data.network_roles != null && { network_roles: data.network_roles }),
         ...(data.current_company != null && { current_company: data.current_company }),
-        ...(data.current_salary_cents != null && { current_salary_cents: data.current_salary_cents }),
+        category: data.category?.trim() ? data.category : null,
+        secondary_category: data.secondary_category?.trim()
+          ? data.secondary_category
+          : null,
+        tertiary_category: data.tertiary_category?.length
+          ? data.tertiary_category
+          : null,
+        merken: data.merken?.length ? data.merken : null,
+        labels: data.labels?.length ? data.labels : null,
+        annual_salary_cents: data.annual_salary_cents ?? null,
+        hourly_rate_cents: data.hourly_rate_cents ?? null,
+        vacation_days: data.vacation_days ?? null,
+        bonus_percentage: data.bonus_percentage ?? null,
+        benefits: data.benefits?.length ? data.benefits : null,
         ...(data.education != null && { education: data.education }),
         ...(data.availability_date != null && { availability_date: data.availability_date }),
         ...(data.email != null && { email: data.email }),
@@ -1189,6 +1900,62 @@ export default function NetworkPage() {
       flex: 1,
       minWidth: 180,
       valueGetter: (value) => value || "-",
+    },
+    {
+      field: "annual_salary_cents",
+      headerName: "Jaarsalaris",
+      width: 130,
+      valueGetter: (_value, row) =>
+        formatEURFromCents((row as Contact).annual_salary_cents ?? undefined),
+    },
+    {
+      field: "vacation_days",
+      headerName: "Vakantiedagen",
+      width: 110,
+      align: "right",
+      headerAlign: "right",
+      valueGetter: (_value, row) => {
+        const d = (row as Contact).vacation_days;
+        return d != null ? `${d}` : "-";
+      },
+    },
+    {
+      field: "bonus_percentage",
+      headerName: "Bonus",
+      width: 90,
+      align: "right",
+      headerAlign: "right",
+      valueGetter: (_value, row) => {
+        const b = (row as Contact).bonus_percentage;
+        if (b == null) return "-";
+        return `${Number(b).toLocaleString("nl-NL", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        })}%`;
+      },
+    },
+    {
+      field: "benefits",
+      headerName: "Arbeidsvoorwaarden",
+      minWidth: 220,
+      flex: 0.75,
+      sortable: false,
+      renderCell: (params) => {
+        const raw = (params.row as Contact).benefits;
+        if (!raw?.length) return "-";
+        return (
+          <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ py: 0.5, alignItems: "center" }}>
+            {raw.map((val) => (
+              <Chip
+                key={val}
+                label={benefitLabelByValue.get(val) ?? val}
+                size="small"
+                variant="outlined"
+              />
+            ))}
+          </Stack>
+        );
+      },
     },
     {
       field: "location",
@@ -1855,12 +2622,31 @@ export default function NetworkPage() {
               />
             </Stack>
 
+            <ContactSectorFields
+              control={control}
+              errors={errors}
+              activeCategories={activeAccountCategories}
+              activeSecondary={activeAccountSecondary}
+              activeTertiary={activeAccountTertiaryLabeled}
+              activeBrands={activeAccountBrandLabeled}
+              activeLabels={activeAccountLabelLabeled}
+              isTertiaryPending={isTertiaryPending}
+              isBrandsPending={isBrandsPending}
+              isLabelsPending={isLabelsPending}
+            />
+
             <TextField
               label="LinkedIn URL"
               error={!!errors.linkedin_url}
               helperText={errors.linkedin_url?.message ?? " "}
               {...register("linkedin_url")}
               fullWidth
+            />
+
+            <ContactCompensationFields
+              control={control}
+              errors={errors}
+              benefitOptionsLabeled={activeBenefitOptionsLabeled}
             />
 
             <WorkExperienceSection
@@ -2370,6 +3156,19 @@ export default function NetworkPage() {
               />
             </Stack>
 
+            <ContactSectorFields
+              control={editControl}
+              errors={editErrors}
+              activeCategories={activeAccountCategories}
+              activeSecondary={activeAccountSecondary}
+              activeTertiary={activeAccountTertiaryLabeled}
+              activeBrands={activeAccountBrandLabeled}
+              activeLabels={activeAccountLabelLabeled}
+              isTertiaryPending={isTertiaryPending}
+              isBrandsPending={isBrandsPending}
+              isLabelsPending={isLabelsPending}
+            />
+
             <Stack direction="row" spacing={2}>
               <Controller
                 name="education"
@@ -2408,6 +3207,12 @@ export default function NetworkPage() {
                 fullWidth
               />
             </Stack>
+
+            <ContactCompensationFields
+              control={editControl}
+              errors={editErrors}
+              benefitOptionsLabeled={activeBenefitOptionsLabeled}
+            />
 
             <WorkExperienceSection
               fieldArray={editWorkExperienceFields as any}

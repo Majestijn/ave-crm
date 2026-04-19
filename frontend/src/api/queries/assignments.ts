@@ -58,7 +58,7 @@ export type CandidateAssignment = {
     date_of_birth?: string;
     availability_date?: string;
     network_roles?: string[];
-    current_salary_cents?: number;
+    annual_salary_cents?: number | null;
     education?: string;
     linkedin_url?: string;
     cv_url?: string;

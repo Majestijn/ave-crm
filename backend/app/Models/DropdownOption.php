@@ -42,7 +42,13 @@ class DropdownOption extends Model
 
     public static function validationRule(string $type): string
     {
-        return 'in:' . implode(',', static::validValues($type));
+        $values = static::validValues($type);
+
+        if ($values === []) {
+            return 'max:255';
+        }
+
+        return 'in:' . implode(',', $values);
     }
 
     public static function labelFor(string $type, string $value): string
