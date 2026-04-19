@@ -35,6 +35,19 @@ import {
   activeDropdownValues,
 } from "../../utils/dropdownValidation";
 
+/** Normaliseert API-waarde (legacy string of array) naar opgeslagen waarden. */
+function accountSalesTargetsAsValues(
+  value: string | string[] | null | undefined,
+): string[] | null {
+  if (value == null) return null;
+  if (Array.isArray(value)) {
+    const next = value.filter(Boolean);
+    return next.length ? next : null;
+  }
+  const s = String(value).trim();
+  return s ? [s] : null;
+}
+
 type Props = {
   account: Account;
 };
@@ -43,6 +56,7 @@ export default function CompanyDetailsCard({ account }: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const [formData, setFormData] = useState<UpdateAccountData>({
     name: account.name,
+    parent_company: account.parent_company || "",
     logo_url: account.logo_url || "",
     location: account.location || "",
     website: account.website || "",
@@ -50,7 +64,7 @@ export default function CompanyDetailsCard({ account }: Props) {
     industry: account.industry || "",
     category: account.category || "",
     secondary_category: account.secondary_category || "",
-    sales_target: account.sales_target || "",
+    sales_target: accountSalesTargetsAsValues(account.sales_target),
     client_status: account.client_status || "",
     tertiary_category: account.tertiary_category || null,
     merken: account.merken || null,
@@ -76,7 +90,8 @@ export default function CompanyDetailsCard({ account }: Props) {
     useDropdownOptions("account_brand");
   const { data: dbLabel, isPending: isLabelsPending } =
     useDropdownOptions("account_label");
-  const { data: dbSalesTarget } = useDropdownOptions("sales_target");
+  const { data: dbSalesTarget, isPending: isSalesTargetPending } =
+    useDropdownOptions("sales_target");
   const { data: dbClientStatus } = useDropdownOptions("client_status");
 
   const activeCategories = React.useMemo(
@@ -117,6 +132,7 @@ export default function CompanyDetailsCard({ account }: Props) {
   const handleOpen = () => {
     setFormData({
       name: account.name,
+      parent_company: account.parent_company || "",
       logo_url: account.logo_url || "",
       location: account.location || "",
       website: account.website || "",
@@ -124,7 +140,7 @@ export default function CompanyDetailsCard({ account }: Props) {
       industry: account.industry || "",
       category: account.category || "",
       secondary_category: account.secondary_category || "",
-      sales_target: account.sales_target || "",
+      sales_target: accountSalesTargetsAsValues(account.sales_target),
       client_status: account.client_status || "",
       tertiary_category: account.tertiary_category || null,
       merken: account.merken || null,
@@ -171,6 +187,7 @@ export default function CompanyDetailsCard({ account }: Props) {
 
     const dataToSubmit: UpdateAccountData = {
       name: formData.name,
+      parent_company: formData.parent_company?.trim() || null,
       logo_url: formData.logo_url || null,
       location: formData.location || null,
       website: formData.website || null,
@@ -178,7 +195,7 @@ export default function CompanyDetailsCard({ account }: Props) {
       industry: formData.industry || null,
       category: formData.category || null,
       secondary_category: formData.secondary_category || null,
-      sales_target: formData.sales_target || null,
+      sales_target: formData.sales_target?.length ? formData.sales_target : null,
       client_status: formData.client_status || null,
       tertiary_category: formData.tertiary_category,
       merken: formData.merken,
@@ -221,6 +238,10 @@ export default function CompanyDetailsCard({ account }: Props) {
             <Typography fontWeight="bold">{account.name}</Typography>
           </Box>
           <Box display="flex" justifyContent="space-between">
+            <Typography color="text.secondary">Moederbedrijf</Typography>
+            <Typography fontWeight="bold">{account.parent_company?.trim() || "-"}</Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between">
             <Typography color="text.secondary">Locatie</Typography>
             <Typography fontWeight="bold">{account.location || "-"}</Typography>
           </Box>
@@ -257,9 +278,28 @@ export default function CompanyDetailsCard({ account }: Props) {
             <Typography color="text.secondary">Secundaire categorie</Typography>
             <Typography fontWeight="bold">{account.secondary_category || "-"}</Typography>
           </Box>
-          <Box display="flex" justifyContent="space-between">
-            <Typography color="text.secondary">Sales doel</Typography>
-            <Typography fontWeight="bold">{account.sales_target || "-"}</Typography>
+          <Box>
+            <Typography color="text.secondary" sx={{ mb: 0.5 }}>
+              Sales doel
+            </Typography>
+            {(() => {
+              const values = accountSalesTargetsAsValues(account.sales_target);
+              if (!values?.length) {
+                return <Typography fontWeight="bold">-</Typography>;
+              }
+              return (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                  {values.map((v) => (
+                    <Chip
+                      key={v}
+                      label={activeSalesTargets.find((o) => o.value === v)?.label ?? v}
+                      size="small"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              );
+            })()}
           </Box>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography color="text.secondary">Klant status</Typography>
@@ -366,6 +406,16 @@ export default function CompanyDetailsCard({ account }: Props) {
               />
 
               <TextField
+                label="Moederbedrijf"
+                value={formData.parent_company || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, parent_company: e.target.value }))
+                }
+                fullWidth
+                placeholder="Vrij veld, bijv. naam van de holding"
+              />
+
+              <TextField
                 label="Logo URL"
                 value={formData.logo_url || ""}
                 onChange={(e) => setFormData((prev) => ({ ...prev, logo_url: e.target.value }))}
@@ -439,22 +489,57 @@ export default function CompanyDetailsCard({ account }: Props) {
                 ))}
               </TextField>
 
-              <TextField
-                select
-                label="Sales doel"
-                value={formData.sales_target || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, sales_target: e.target.value }))
-                }
-                fullWidth
-              >
-                <MenuItem value="">Geen sales doel</MenuItem>
-                {activeSalesTargets.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Sales doel
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 1,
+                    alignItems: "center",
+                    minHeight: 36,
+                  }}
+                >
+                  {isSalesTargetPending ? (
+                    <CircularProgress size={22} />
+                  ) : activeSalesTargets.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
+                      Dropdown opties → Sales doel.
+                    </Typography>
+                  ) : (
+                    activeSalesTargets.map((opt) => {
+                      const isSelected = (formData.sales_target || []).includes(opt.value);
+                      return (
+                        <Chip
+                          key={opt.value}
+                          label={opt.label}
+                          size="small"
+                          variant={isSelected ? "filled" : "outlined"}
+                          color={isSelected ? "primary" : "default"}
+                          onClick={() => {
+                            setFormData((prev) => {
+                              const current = prev.sales_target || [];
+                              const next = current.includes(opt.value)
+                                ? current.filter((o) => o !== opt.value)
+                                : [...current, opt.value];
+                              return { ...prev, sales_target: next.length ? next : null };
+                            });
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            "&:hover": {
+                              bgcolor: isSelected ? "primary.dark" : "action.hover",
+                            },
+                          }}
+                        />
+                      );
+                    })
+                  )}
+                </Box>
+              </Box>
 
               <TextField
                 select

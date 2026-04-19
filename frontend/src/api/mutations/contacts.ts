@@ -13,7 +13,16 @@ export type CreateContactData = {
   company_role?: string;
   network_roles?: string[];
   current_company?: string;
-  current_salary_cents?: number;
+  category?: string | null;
+  secondary_category?: string | null;
+  tertiary_category?: string[] | null;
+  merken?: string[] | null;
+  labels?: string[] | null;
+  annual_salary_cents?: number | null;
+  hourly_rate_cents?: number | null;
+  vacation_days?: number | null;
+  bonus_percentage?: number | null;
+  benefits?: string[] | null;
   /** Value from dropdown_options type `education` */
   education?: string;
   availability_date?: string;

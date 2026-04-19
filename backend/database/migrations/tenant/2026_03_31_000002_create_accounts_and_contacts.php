@@ -24,7 +24,7 @@ return new class extends Migration {
             $table->integer('fte_count')->nullable();
             $table->bigInteger('revenue_cents')->nullable();
             $table->text('notes')->nullable();
-            $table->string('sales_target')->nullable();
+            $table->json('sales_target')->nullable();
             $table->string('client_status')->nullable();
             $table->timestamps();
             $table->softDeletes();
@@ -46,7 +46,6 @@ return new class extends Migration {
             $table->string('current_company')->nullable();
             $table->string('company_role')->nullable();
             $table->json('network_roles')->nullable();
-            $table->integer('current_salary_cents')->nullable();
             $table->string('education')->nullable();
             $table->date('availability_date')->nullable();
             $table->string('linkedin_url')->nullable();

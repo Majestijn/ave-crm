@@ -1,0 +1,96 @@
+id,type,value,label,color,sort_order,is_active,created_at,updated_at
+1,education,mbo,Mbo,,0,true,2026-04-01 22:27:46,2026-04-01 22:27:46
+2,education,hbo,Hbo,,1,true,2026-04-01 22:27:50,2026-04-01 22:27:50
+3,education,uni,Uni,,2,true,2026-04-01 22:27:53,2026-04-01 22:27:53
+4,account_category,fmcg,FMCG,,0,true,2026-04-01 22:29:46,2026-04-01 22:29:46
+5,account_category,foodservice,Foodservice,,1,true,2026-04-01 22:29:52,2026-04-01 22:29:52
+6,account_category,andere,Andere,,2,true,2026-04-01 22:29:55,2026-04-01 22:29:55
+7,account_secondary_category,retailer,Retailer,,0,true,2026-04-01 22:30:03,2026-04-01 22:30:03
+8,account_secondary_category,groothandel,Groothandel,,1,true,2026-04-01 22:30:16,2026-04-01 22:30:16
+9,account_secondary_category,leverancier,Leverancier,,2,true,2026-04-01 22:30:23,2026-04-01 22:30:23
+10,account_secondary_category,industrie,Industrie,,3,true,2026-04-01 22:30:27,2026-04-01 22:30:27
+11,account_secondary_category,andere,Andere,,4,true,2026-04-01 22:30:30,2026-04-01 22:30:30
+12,account_tertiary_category,non_food,Non-food,,0,true,2026-04-01 22:30:38,2026-04-01 22:30:38
+13,account_tertiary_category,food,Food,,1,true,2026-04-01 22:30:41,2026-04-01 22:30:41
+14,account_brand,merk,Merk,,0,true,2026-04-01 22:30:50,2026-04-01 22:30:50
+15,account_brand,private_label,Private label,,1,true,2026-04-01 22:30:55,2026-04-01 22:30:55
+16,account_label,vers,Vers,,0,true,2026-04-01 22:31:03,2026-04-01 22:31:03
+17,account_label,zuivel_eieren,Zuivel & eieren,,1,true,2026-04-01 22:31:09,2026-04-01 22:31:09
+18,account_label,diepvries,Diepvries,,2,true,2026-04-01 22:31:12,2026-04-01 22:31:12
+19,account_label,dkw_houdbaar_voedsel,DKW (houdbaar voedsel),,3,true,2026-04-01 22:31:24,2026-04-01 22:31:24
+20,account_label,dranken,Dranken,,4,true,2026-04-01 22:31:29,2026-04-01 22:31:29
+21,account_label,snacks_snoep,Snacks & snoep,,5,true,2026-04-01 22:31:35,2026-04-01 22:31:35
+22,account_label,non_food,Non-food,,6,true,2026-04-01 22:31:39,2026-04-01 22:31:39
+23,account_label,verpakkingen,Verpakkingen,,7,true,2026-04-01 22:31:45,2026-04-01 22:31:45
+24,account_label,convenience_ready_to_use,Convenience & ready-to-use,,8,true,2026-04-01 22:31:54,2026-04-01 22:31:54
+25,gender,man,Man,,0,true,2026-04-01 22:32:16,2026-04-01 22:32:16
+26,gender,vrouw,Vrouw,,1,true,2026-04-01 22:32:18,2026-04-01 22:32:18
+27,employment_type,fulltime,Fulltime,,0,true,2026-04-01 22:32:32,2026-04-01 22:32:32
+28,employment_type,parttime,Parttime,,1,true,2026-04-01 22:32:37,2026-04-01 22:32:37
+29,employment_type,interim,Interim,,2,true,2026-04-01 22:32:41,2026-04-01 22:32:41
+30,network_role,factuurcontact,Factuurcontact,,0,true,2026-04-01 22:33:15,2026-04-01 22:33:15
+31,network_role,kandidaat,Kandidaat,,1,true,2026-04-01 22:33:20,2026-04-01 22:33:20
+32,network_role,interimmer,Interimmer,,2,true,2026-04-01 22:33:26,2026-04-01 22:33:26
+33,network_role,ambassadeur,Ambassadeur,,3,true,2026-04-01 22:33:34,2026-04-01 22:33:34
+34,network_role,potentieel_management,Potentieel Management,,4,true,2026-04-01 22:33:41,2026-04-01 22:33:41
+35,network_role,medebeslisser,Medebeslisser,,5,true,2026-04-01 22:33:50,2026-04-01 22:33:50
+36,network_role,potentieel_directie,Potentieel Directie,,6,true,2026-04-01 22:33:56,2026-04-01 22:33:56
+37,network_role,referentie_van_kandidaat,Referentie van kandidaat,,7,true,2026-04-01 22:34:03,2026-04-01 22:34:03
+38,network_role,hr_eerste_contact_arbeidsvoorwaarden,HR eerste contact arbeidsvoorwaarden,,8,true,2026-04-01 22:34:12,2026-04-01 22:34:12
+39,network_role,hr_recruiters,HR Recruiters,,9,true,2026-04-01 22:34:18,2026-04-01 22:34:18
+40,network_role,directie,Directie,,10,true,2026-04-01 22:34:24,2026-04-01 22:34:24
+41,network_role,eigenaar,Eigenaar,,11,true,2026-04-01 22:34:27,2026-04-01 22:34:27
+42,network_role,expert,Expert,,12,true,2026-04-01 22:34:30,2026-04-01 22:34:30
+43,network_role,coach,Coach,,13,true,2026-04-01 22:34:35,2026-04-01 22:34:35
+44,network_role,oud_eigenaar,Oud Eigenaar,,14,true,2026-04-01 22:34:41,2026-04-01 22:34:41
+45,network_role,oud_directeur,Oud Directeur,,15,true,2026-04-01 22:34:45,2026-04-01 22:34:45
+46,network_role,commissaris,Commissaris,,16,true,2026-04-01 22:34:51,2026-04-01 22:34:51
+47,network_role,investeerder,Investeerder,,17,true,2026-04-01 22:34:55,2026-04-01 22:34:55
+48,network_role,netwerk_groep,Netwerk Groep,,18,true,2026-04-01 22:35:00,2026-04-01 22:35:00
+49,assignment_status,1e_contact_moment,1e contact moment,,0,true,2026-04-01 22:36:32,2026-04-01 22:36:32
+50,assignment_status,1e_gesprek_online_of_offline,1e gesprek online of offline,,1,true,2026-04-01 22:36:39,2026-04-01 22:36:39
+51,assignment_status,test_afnemen,Test afnemen,,2,true,2026-04-01 22:36:43,2026-04-01 22:36:43
+52,assignment_status,sollicitatietraining,Sollicitatietraining,,3,true,2026-04-01 22:36:47,2026-04-01 22:36:47
+53,assignment_status,1e_gesprek_klant,1e gesprek klant,,4,true,2026-04-01 22:36:55,2026-04-01 22:36:55
+54,assignment_status,2e_gesprek_klant,2e gesprek klant,,5,true,2026-04-01 22:36:59,2026-04-01 22:36:59
+55,assignment_status,arbeidsvoorwaardengesprek,Arbeidsvoorwaardengesprek,,6,true,2026-04-01 22:37:08,2026-04-01 22:37:08
+56,assignment_status,eindgesprek_klant,Eindgesprek klant,,7,true,2026-04-01 22:37:14,2026-04-01 22:37:14
+57,assignment_status,bedrijfstest_afnemen,Bedrijfstest afnemen,,8,true,2026-04-01 22:37:21,2026-04-01 22:37:21
+58,assignment_status,aangenomen,Aangenomen,,9,true,2026-04-01 22:37:27,2026-04-01 22:37:27
+59,assignment_status,afgewezen,Afgewezen,,10,true,2026-04-01 22:37:32,2026-04-01 22:37:32
+60,assignment_status,opdracht_on_hold,Opdracht on hold,,11,true,2026-04-01 22:37:38,2026-04-01 22:37:38
+61,assignment_status,administratief_voltooid,Administratief voltooid,,12,true,2026-04-01 22:37:47,2026-04-01 22:37:47
+62,assignment_status,schaduwmanagement,Schaduwmanagement,,13,true,2026-04-01 22:37:55,2026-04-01 22:37:55
+63,assignment_status,voltooid,Voltooid,,14,true,2026-04-01 22:37:58,2026-04-01 22:37:58
+64,benefit,reiskostenvergoeding,Reiskostenvergoeding,,0,true,2026-04-13 07:41:15,2026-04-13 07:41:15
+65,benefit,pensioen,Pensioen,,1,true,2026-04-13 07:41:20,2026-04-13 07:41:20
+66,benefit,dienstreizen_vergoeding,Dienstreizen vergoeding,,2,true,2026-04-13 07:41:30,2026-04-13 07:41:30
+67,benefit,mogelijkheid_tot_promotie,Mogelijkheid tot promotie,,3,true,2026-04-13 07:41:35,2026-04-13 07:41:35
+68,benefit,flexibele_werkuren,Flexibele werkuren,,4,true,2026-04-13 07:41:43,2026-04-13 07:41:43
+69,benefit,personeelskorting,Personeelskorting,,5,true,2026-04-13 07:41:48,2026-04-13 07:41:48
+70,benefit,bedrijfsfeesten,Bedrijfsfeesten,,6,true,2026-04-13 07:41:54,2026-04-13 07:41:54
+71,benefit,productkorting_werknemers,Productkorting werknemers,,7,true,2026-04-13 07:42:01,2026-04-13 07:42:01
+72,benefit,auto_van_de_zaak,Auto van de zaak,,8,true,2026-04-13 07:42:11,2026-04-13 07:42:11
+73,benefit,budget_voor_professionele_ontwikkeling,Budget voor professionele ontwikkeling,,9,true,2026-04-13 07:42:21,2026-04-13 07:42:21
+74,benefit,zorgverzekering,Zorgverzekering,,10,true,2026-04-13 07:42:27,2026-04-13 07:42:27
+75,benefit,collectieve_zorgverzekering,Collectieve zorgverzekering,,11,true,2026-04-13 07:42:37,2026-04-13 07:42:37
+76,benefit,bedrijfsopleiding,Bedrijfsopleiding,,12,true,2026-04-13 07:42:50,2026-04-13 07:42:50
+77,benefit,vrijdagmiddagborrel,Vrijdagmiddagborrel,,13,true,2026-04-13 07:42:59,2026-04-13 07:42:59
+78,benefit,kerstpakket,Kerstpakket,,14,true,2026-04-13 07:43:04,2026-04-13 07:43:04
+79,benefit,extra_vakantiedagen,Extra vakantiedagen,,15,true,2026-04-13 07:43:10,2026-04-13 07:43:10
+80,benefit,fietsplan,Fietsplan,,16,true,2026-04-13 07:43:14,2026-04-13 07:43:14
+82,benefit,bedrijfsfitness,Bedrijfsfitness,,17,true,2026-04-13 07:43:32,2026-04-13 07:43:32
+83,benefit,winstdeling,Winstdeling,,18,true,2026-04-13 07:43:36,2026-04-13 07:43:36
+84,benefit,werk_vanuit_huis,Werk vanuit huis,,19,true,2026-04-13 07:46:13,2026-04-13 07:46:13
+85,benefit,telefoon_van_de_zaak,Telefoon van de zaak,,20,true,2026-04-13 07:46:21,2026-04-13 07:46:21
+86,benefit,telefoonplan,Telefoonplan,,21,true,2026-04-13 07:46:30,2026-04-13 07:46:30
+87,benefit,aanvullend_pensioen,Aanvullend pensioen,,22,true,2026-04-13 07:46:38,2026-04-13 07:46:38
+88,benefit,gezondeheidsprogramma,Gezondeheidsprogramma,,23,true,2026-04-13 07:46:43,2026-04-13 07:46:43
+89,benefit,lunchkorting,Lunchkorting,,24,true,2026-04-13 07:46:47,2026-04-13 07:46:47
+90,benefit,kosteloos_parkeren,Kosteloos parkeren,,25,true,2026-04-13 07:46:51,2026-04-13 07:46:51
+91,benefit,levensverzekering,Levensverzekering,,26,true,2026-04-13 07:46:57,2026-04-13 07:46:57
+92,benefit,aandelenopties,Aandelenopties,,27,true,2026-04-13 07:47:01,2026-04-13 07:47:01
+93,benefit,taaltraining_aangeboden,Taaltraining aangeboden,,28,true,2026-04-13 07:47:12,2026-04-13 07:47:12
+94,benefit,kinderopvang,Kinderopvang,,29,true,2026-04-13 07:47:18,2026-04-13 07:47:18
+95,benefit,verhuisvergoeding,Verhuisvergoeding,,30,true,2026-04-13 07:47:22,2026-04-13 07:47:22
+96,benefit,huisvestingsvergoeding,Huisvestingsvergoeding,,31,true,2026-04-13 07:47:32,2026-04-13 07:47:32

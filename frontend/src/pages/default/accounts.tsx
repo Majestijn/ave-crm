@@ -100,6 +100,7 @@ function AccountCardLogo({
 
 const AccountSchema = z.object({
   name: z.string().min(1, "Bedrijfsnaam is verplicht"),
+  parent_company: z.string().optional().or(z.literal("")),
   logo_url: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
@@ -107,7 +108,6 @@ const AccountSchema = z.object({
   industry: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),
   secondary_category: z.string().optional().or(z.literal("")),
-  sales_target: z.string().optional().or(z.literal("")),
   fte_count: z.number().optional(),
   notes: z.string().optional().or(z.literal("")),
 });
@@ -166,6 +166,7 @@ export default function AccountsPage() {
   >("name_asc");
   const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
   const [tertiaryCategory, setTertiaryCategory] = useState<string[]>([]);
+  const [salesTargets, setSalesTargets] = useState<string[]>([]);
   const [merken, setMerken] = useState<string[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
   const [activeOnlyFilter, setActiveOnlyFilter] = useState(false);
@@ -180,7 +181,8 @@ export default function AccountsPage() {
     useDropdownOptions("account_brand");
   const { data: dbLabel, isPending: isLabelsPending } =
     useDropdownOptions("account_label");
-  const { data: dbSalesTarget } = useDropdownOptions("sales_target");
+  const { data: dbSalesTarget, isPending: isSalesTargetPending } =
+    useDropdownOptions("sales_target");
 
   const activeCategories = React.useMemo(
     () => activeDropdownLabeled(dbCategory),
@@ -226,6 +228,7 @@ export default function AccountsPage() {
     mode: "onBlur",
     defaultValues: {
       name: "",
+      parent_company: "",
       logo_url: "",
       location: "",
       website: "",
@@ -233,7 +236,6 @@ export default function AccountsPage() {
       industry: "",
       category: "",
       secondary_category: "",
-      sales_target: "",
       fte_count: undefined,
       notes: "",
     },
@@ -244,12 +246,14 @@ export default function AccountsPage() {
     try {
       const submitData = {
         ...data,
+        parent_company: data.parent_company?.trim() || undefined,
         secondary_category: data.secondary_category || undefined,
         tertiary_category: tertiaryCategory.length
           ? tertiaryCategory
           : undefined,
         merken: merken.length ? merken : undefined,
         labels: labels.length ? labels : undefined,
+        sales_target: salesTargets.length ? salesTargets : undefined,
         revenue_cents: revenueValue ? revenueValue * 100 : undefined,
       };
       await API.post("/accounts", submitData);
@@ -258,6 +262,7 @@ export default function AccountsPage() {
       setRevenueInput("");
       setRevenueValue(undefined);
       setTertiaryCategory([]);
+      setSalesTargets([]);
       setMerken([]);
       setLabels([]);
       await refresh();
@@ -569,6 +574,7 @@ export default function AccountsPage() {
           setSubmitError(null);
           reset();
           setTertiaryCategory([]);
+          setSalesTargets([]);
           setMerken([]);
           setLabels([]);
         }}
@@ -583,6 +589,15 @@ export default function AccountsPage() {
               helperText={errors.name?.message ?? " "}
               {...register("name")}
               fullWidth
+            />
+
+            <TextField
+              label="Moederbedrijf"
+              error={!!errors.parent_company}
+              helperText={errors.parent_company?.message ?? " "}
+              {...register("parent_company")}
+              fullWidth
+              placeholder="Optioneel, vrij tekstveld"
             />
 
             <TextField
@@ -657,23 +672,57 @@ export default function AccountsPage() {
                   </MenuItem>
                 ))}
               </TextField>
-              <TextField
-                select
-                label="Sales doel"
-                error={!!errors.sales_target}
-                helperText={errors.sales_target?.message ?? " "}
-                {...register("sales_target")}
-                defaultValue=""
-                fullWidth
-              >
-                <MenuItem value="">Selecteer sales doel...</MenuItem>
-                {activeSalesTargets.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
             </Stack>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                Sales doel
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1,
+                  alignItems: "center",
+                  minHeight: 36,
+                }}
+              >
+                {isSalesTargetPending ? (
+                  <CircularProgress size={22} />
+                ) : activeSalesTargets.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
+                    Dropdown opties → Sales doel.
+                  </Typography>
+                ) : (
+                  activeSalesTargets.map((opt) => {
+                    const isSelected = salesTargets.includes(opt.value);
+                    return (
+                      <Chip
+                        key={opt.value}
+                        label={opt.label}
+                        size="small"
+                        variant={isSelected ? "filled" : "outlined"}
+                        color={isSelected ? "primary" : "default"}
+                        onClick={() => {
+                          setSalesTargets((prev) =>
+                            prev.includes(opt.value)
+                              ? prev.filter((o) => o !== opt.value)
+                              : [...prev, opt.value],
+                          );
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": {
+                            bgcolor: isSelected ? "primary.dark" : "action.hover",
+                          },
+                        }}
+                      />
+                    );
+                  })
+                )}
+              </Box>
+            </Box>
 
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1.5 }}>

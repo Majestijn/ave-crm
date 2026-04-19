@@ -153,6 +153,7 @@ class DropdownOptionSeeder extends Seeder
                 ['value' => 'Supply Chain', 'label' => 'Supply Chain'],
                 ['value' => 'Finance', 'label' => 'Finance'],
                 ['value' => 'Directie', 'label' => 'Directie'],
+                ['value' => 'Category Management', 'label' => 'Category Management'],
             ],
 
             'client_status' => [

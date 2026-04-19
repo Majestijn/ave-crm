@@ -16,6 +16,7 @@ class Account extends Model
     protected $fillable = [
         'uid',
         'name',
+        'parent_company',
         'logo_url',
         'location',
         'website',
@@ -40,6 +41,7 @@ class Account extends Model
         'tertiary_category' => 'array',
         'merken' => 'array',
         'labels' => 'array',
+        'sales_target' => 'array',
     ];
 
     public function getRouteKeyName(): string

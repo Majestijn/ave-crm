@@ -28,6 +28,7 @@ export type Assignment = {
 export type Account = {
   uid: string;
   name: string;
+  parent_company?: string | null;
   logo_url?: string;
   location?: string;
   website?: string;
@@ -41,7 +42,7 @@ export type Account = {
   fte_count?: number;
   revenue_cents?: number;
   notes?: string;
-  sales_target?: string;
+  sales_target?: string[];
   client_status?: string;
   assignments_count?: number;
   active_assignments_count?: number;

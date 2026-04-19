@@ -63,6 +63,7 @@ class AccountController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'parent_company' => ['nullable', 'string', 'max:255'],
             'logo_url' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
@@ -79,7 +80,8 @@ class AccountController extends Controller
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
-            'sales_target' => ['nullable', 'string', DropdownOption::validationRule('sales_target')],
+            'sales_target' => ['nullable', 'array'],
+            'sales_target.*' => ['string', DropdownOption::validationRule('sales_target')],
             'client_status' => ['nullable', 'string', DropdownOption::validationRule('client_status')],
         ]);
 
@@ -125,6 +127,7 @@ class AccountController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'parent_company' => ['nullable', 'string', 'max:255'],
             'logo_url' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
@@ -141,7 +144,8 @@ class AccountController extends Controller
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
-            'sales_target' => ['nullable', 'string', DropdownOption::validationRule('sales_target')],
+            'sales_target' => ['nullable', 'array'],
+            'sales_target.*' => ['string', DropdownOption::validationRule('sales_target')],
             'client_status' => ['nullable', 'string', DropdownOption::validationRule('client_status')],
         ]);
 
