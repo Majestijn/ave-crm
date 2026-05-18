@@ -16,9 +16,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
 } from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DescriptionIcon from "@mui/icons-material/Description";
 import type { User } from "../../../types/users";
-import { useUpdateAssignment } from "../../../api/mutations/assignments";
+import {
+  useUpdateAssignment,
+  useUploadAssignmentRoleProfile,
+  useDeleteAssignmentRoleProfile,
+} from "../../../api/mutations/assignments";
 import { useDropdownOptions } from "../../../api/queries/dropdownOptions";
 import { buildAllowedValueSet } from "../../../utils/dropdownValidation";
 import type { AssignmentWithDetails } from "./types";
@@ -30,6 +37,8 @@ const EMPLOYMENT_TYPE_FALLBACK = [
   "Freelance",
   "Interim",
 ] as const;
+
+const ROLE_PROFILE_MAX_BYTES = 15 * 1024 * 1024;
 
 type EditAssignmentDialogProps = {
   open: boolean;
@@ -45,6 +54,8 @@ export default function EditAssignmentDialog({
   users,
 }: EditAssignmentDialogProps) {
   const updateMutation = useUpdateAssignment();
+  const uploadRoleProfileMutation = useUploadAssignmentRoleProfile();
+  const deleteRoleProfileMutation = useDeleteAssignmentRoleProfile();
 
   const { data: dbBenefitsOptions } = useDropdownOptions("benefit");
   const { data: dbEmploymentTypeOptions } = useDropdownOptions("employment_type");
@@ -86,10 +97,16 @@ export default function EditAssignmentDialog({
   const [salaryMax, setSalaryMax] = useState("");
   const [vacationDays, setVacationDays] = useState<number | "">("");
   const [bonusPercentage, setBonusPercentage] = useState<number | "">("");
+  const [totalFee, setTotalFee] = useState("");
+  const [advanceFee, setAdvanceFee] = useState("");
   const [location, setLocation] = useState("");
   const [employmentType, setEmploymentType] = useState("");
+  const [hoursPerWeekMin, setHoursPerWeekMin] = useState<number | "">("");
+  const [hoursPerWeekMax, setHoursPerWeekMax] = useState<number | "">("");
   const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [benefits, setBenefits] = useState<string[]>([]);
+  const [roleProfileFile, setRoleProfileFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -116,16 +133,70 @@ export default function EditAssignmentDialog({
         ? Number(assignment.bonus_percentage)
         : "",
     );
+    setTotalFee(
+      assignment.total_fee
+        ? assignment.total_fee.toLocaleString("nl-NL")
+        : "",
+    );
+    setAdvanceFee(
+      assignment.advance_fee
+        ? assignment.advance_fee.toLocaleString("nl-NL")
+        : "",
+    );
     setLocation(assignment.location || "");
     setEmploymentType(assignment.employment_type || "");
+    setHoursPerWeekMin(assignment.hours_per_week_min ?? "");
+    setHoursPerWeekMax(assignment.hours_per_week_max ?? "");
     setStartDate(assignment.start_date || "");
+    setEndDate(assignment.end_date || "");
     setBenefits(assignment.benefits || []);
+    setRoleProfileFile(null);
     setError(null);
   }, [assignment, open]);
 
   const handleClose = () => {
+    setRoleProfileFile(null);
     onClose();
     setError(null);
+  };
+
+  const handleRoleProfileFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.toLowerCase().split(".").pop();
+    const allowed = ["pdf", "doc", "docx"];
+    if (!ext || !allowed.includes(ext)) {
+      setError(
+        "Alleen PDF of Word (.doc, .docx) zijn toegestaan voor het rolprofiel."
+      );
+      return;
+    }
+
+    if (file.size > ROLE_PROFILE_MAX_BYTES) {
+      setError("Rolprofiel mag maximaal 15 MB zijn.");
+      return;
+    }
+
+    setRoleProfileFile(file);
+    setError(null);
+    event.target.value = "";
+  };
+
+  const handleDeleteRoleProfile = async () => {
+    if (!assignment?.uid) return;
+
+    setError(null);
+    try {
+      await deleteRoleProfileMutation.mutateAsync(assignment.uid);
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      setError(
+        ax.response?.data?.message ?? "Rolprofiel verwijderen is mislukt."
+      );
+    }
   };
 
   const handleSave = async () => {
@@ -148,6 +219,33 @@ export default function EditAssignmentDialog({
       return;
     }
 
+    if (
+      hoursPerWeekMin !== "" &&
+      hoursPerWeekMax !== "" &&
+      hoursPerWeekMin > hoursPerWeekMax
+    ) {
+      setError(
+        "Het minimum aantal werkuren per week mag niet hoger zijn dan het maximum."
+      );
+      return;
+    }
+
+    if (startDate && endDate && endDate < startDate) {
+      setError("De einddatum mag niet vóór de startdatum liggen.");
+      return;
+    }
+
+    const parsedTotalFee = parseFormattedNumber(totalFee);
+    const parsedAdvanceFee = parseFormattedNumber(advanceFee);
+    if (
+      parsedTotalFee !== "" &&
+      parsedAdvanceFee !== "" &&
+      parsedAdvanceFee > parsedTotalFee
+    ) {
+      setError("De voorfee mag niet hoger zijn dan de totale fee.");
+      return;
+    }
+
     setError(null);
 
     try {
@@ -163,12 +261,26 @@ export default function EditAssignmentDialog({
           vacation_days: vacationDays || null,
           bonus_percentage:
             bonusPercentage === "" ? null : bonusPercentage,
+          total_fee: parsedTotalFee === "" ? null : parsedTotalFee,
+          advance_fee: parsedAdvanceFee === "" ? null : parsedAdvanceFee,
           location: location.trim() || null,
           employment_type: employmentType || null,
+          hours_per_week_min: hoursPerWeekMin === "" ? null : hoursPerWeekMin,
+          hours_per_week_max: hoursPerWeekMax === "" ? null : hoursPerWeekMax,
           start_date: startDate || null,
+          end_date: endDate || null,
           benefits: benefits.length > 0 ? benefits : null,
         },
       });
+
+      if (roleProfileFile) {
+        await uploadRoleProfileMutation.mutateAsync({
+          uid: assignment.uid,
+          file: roleProfileFile,
+        });
+        setRoleProfileFile(null);
+      }
+
       handleClose();
     } catch (err: any) {
       console.error("Error updating assignment:", err);
@@ -279,7 +391,7 @@ export default function EditAssignmentDialog({
             </FormControl>
           </Stack>
 
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <TextField
               label="Startdatum"
               type="date"
@@ -287,6 +399,58 @@ export default function EditAssignmentDialog({
               onChange={(e) => setStartDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
               sx={{ width: 200 }}
+            />
+            <TextField
+              label="Einddatum"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ width: 200 }}
+              helperText={
+                employmentType.toLowerCase().includes("interim")
+                  ? "Voor interim opdrachten op het dashboard"
+                  : "Optioneel"
+              }
+            />
+          </Stack>
+
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <TextField
+              label="Werkuren per week min"
+              type="number"
+              fullWidth
+              value={hoursPerWeekMin}
+              onChange={(e) =>
+                setHoursPerWeekMin(
+                  e.target.value ? parseInt(e.target.value, 10) : ""
+                )
+              }
+              InputProps={{
+                inputProps: { min: 0, max: 168, step: 1 },
+                endAdornment: (
+                  <InputAdornment position="end">uur</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 24"
+            />
+            <TextField
+              label="Werkuren per week max"
+              type="number"
+              fullWidth
+              value={hoursPerWeekMax}
+              onChange={(e) =>
+                setHoursPerWeekMax(
+                  e.target.value ? parseInt(e.target.value, 10) : ""
+                )
+              }
+              InputProps={{
+                inputProps: { min: 0, max: 168, step: 1 },
+                endAdornment: (
+                  <InputAdornment position="end">uur</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 40"
             />
           </Stack>
 
@@ -316,6 +480,34 @@ export default function EditAssignmentDialog({
               placeholder="bijv. 60.000"
             />
           </Stack>
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <TextField
+              label="Totale fee"
+              fullWidth
+              value={totalFee}
+              onChange={(e) => setTotalFee(formatNumberInput(e.target.value))}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">€</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 25.000"
+            />
+            <TextField
+              label="Voorfee"
+              fullWidth
+              value={advanceFee}
+              onChange={(e) => setAdvanceFee(formatNumberInput(e.target.value))}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">€</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 5.000"
+              helperText="Mag niet hoger zijn dan de totale fee"
+            />
+          </Stack>
+
           <Stack direction="row" spacing={2} alignItems="flex-start">
             <TextField
               label="Vakantiedagen"
@@ -384,6 +576,73 @@ export default function EditAssignmentDialog({
             </Box>
           </Box>
 
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Rolprofiel
+            </Typography>
+            {assignment?.role_profile_url && (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                flexWrap="wrap"
+                sx={{ mb: 1 }}
+              >
+                <Button
+                  size="small"
+                  variant="outlined"
+                  href={assignment?.role_profile_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {assignment?.role_profile_original_filename ||
+                    "Bekijk rolprofiel"}
+                </Button>
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={handleDeleteRoleProfile}
+                  disabled={deleteRoleProfileMutation.isPending}
+                >
+                  Verwijderen
+                </Button>
+              </Stack>
+            )}
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              <Button
+                variant="outlined"
+                component="label"
+                size="small"
+                startIcon={<DescriptionIcon />}
+              >
+                Nieuw bestand
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleRoleProfileFileChange}
+                />
+              </Button>
+              {roleProfileFile && (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    {roleProfileFile.name}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    aria-label="Geselecteerd bestand wissen"
+                    onClick={() => setRoleProfileFile(null)}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </>
+              )}
+            </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+              PDF of Word, max. 15 MB. Opslaan uploadt een nieuw bestand en vervangt het vorige.
+            </Typography>
+          </Box>
+
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
@@ -392,15 +651,28 @@ export default function EditAssignmentDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={updateMutation.isPending}>
+        <Button
+          onClick={handleClose}
+          disabled={
+            updateMutation.isPending ||
+            uploadRoleProfileMutation.isPending ||
+            deleteRoleProfileMutation.isPending
+          }
+        >
           Annuleren
         </Button>
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={updateMutation.isPending}
+          disabled={
+            updateMutation.isPending ||
+            uploadRoleProfileMutation.isPending ||
+            deleteRoleProfileMutation.isPending
+          }
         >
-          {updateMutation.isPending ? "Bezig..." : "Opslaan"}
+          {updateMutation.isPending || uploadRoleProfileMutation.isPending
+            ? "Bezig..."
+            : "Opslaan"}
         </Button>
       </DialogActions>
     </Dialog>

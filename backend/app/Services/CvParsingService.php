@@ -37,6 +37,20 @@ class CvParsingService
     {
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
+        return $this->extractTextByExtension($filePath, $extension);
+    }
+
+    /**
+     * Extract text from a path while forcing a known extension (useful for UploadedFile temp paths).
+     */
+    public function extractTextWithExtension(string $filePath, string $extension): string
+    {
+        return $this->extractTextByExtension($filePath, strtolower($extension));
+    }
+
+    protected function extractTextByExtension(string $filePath, string $extension): string
+    {
+
         return match ($extension) {
             'pdf' => $this->extractFromPdf($filePath),
             'doc', 'docx' => $this->extractFromWord($filePath),
@@ -406,6 +420,179 @@ PROMPT;
                 'error' => 'Vertex AI Error: ' . $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Summarize a role profile document into a short Dutch paragraph.
+     *
+     * @return array{success: bool, summary?: string, error?: string}
+     */
+    public function summarizeRoleProfile(string $text): array
+    {
+        if (empty(trim($text))) {
+            return [
+                'success' => false,
+                'error' => 'Geen tekst om samen te vatten',
+            ];
+        }
+
+        $this->ensureGoogleCredentials();
+
+        $maxChars = 30000;
+        if (strlen($text) > $maxChars) {
+            $text = substr($text, 0, $maxChars);
+        }
+
+        $prompt = <<<PROMPT
+Je bent een recruitment-assistent.
+
+Maak van onderstaande rolprofieltekst een KORTE Nederlandse samenvatting voor in een CRM-opdrachtomschrijving.
+
+Regels:
+- Schrijf EXACT 6 zinnen.
+- Focus op: kern van de functie, belangrijkste verantwoordelijkheden, harde eisen, nice-to-haves en context/team.
+- Geen opsommingstekens of markdown.
+- Schrijf helder en compact in één lopend tekstblok.
+- Geef ALLEEN de samenvatting terug (geen inleiding, geen titel).
+
+ROLPROFIEL:
+{$text}
+PROMPT;
+
+        try {
+            $summary = $this->generateTextWithVertex($prompt, 1024, 0.2);
+            $summary = $this->sanitizeGeneratedText($summary);
+
+            // If output looks cut off mid-sentence, run one repair pass.
+            if ($this->looksTruncated($summary) || $this->sentenceCount($summary) !== 6) {
+                $repairPrompt = <<<PROMPT
+Herschrijf onderstaande samenvatting naar EXACT 6 volledige zinnen in correct Nederlands.
+De tekst lijkt afgekapt; maak hem compleet, helder en vloeiend.
+Geef ALLEEN de herstelde samenvatting terug.
+
+AFGEKAPTE SAMENVATTING:
+{$summary}
+
+BRONTEKST:
+{$text}
+PROMPT;
+
+                $summary = $this->generateTextWithVertex($repairPrompt, 1024, 0.1);
+                $summary = $this->sanitizeGeneratedText($summary);
+            }
+
+            // Last guard: force exactly 6 zinnen via one final normalization pass.
+            if ($this->sentenceCount($summary) !== 6) {
+                $finalPrompt = <<<PROMPT
+Zet onderstaande tekst om naar EXACT 6 volledige Nederlandse zinnen.
+Behoud de inhoud, maar maak de vorm exact 6 zinnen.
+Geef ALLEEN de 6-zinnenversie terug.
+
+TEKST:
+{$summary}
+PROMPT;
+                $summary = $this->generateTextWithVertex($finalPrompt, 1024, 0.1);
+                $summary = $this->sanitizeGeneratedText($summary);
+            }
+
+            if ($summary === '') {
+                return [
+                    'success' => false,
+                    'error' => 'Lege samenvatting ontvangen van AI',
+                ];
+            }
+
+            return [
+                'success' => true,
+                'summary' => $summary,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Role profile summary failed', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    protected function generateTextWithVertex(string $prompt, int $maxOutputTokens, float $temperature): string
+    {
+        $client = new PredictionServiceClient([
+            'apiEndpoint' => "{$this->location}-aiplatform.googleapis.com",
+        ]);
+
+        $part = (new Part())->setText($prompt);
+        $content = (new Content())
+            ->setRole('user')
+            ->setParts([$part]);
+
+        $generationConfig = (new GenerationConfig())
+            ->setTemperature($temperature)
+            ->setMaxOutputTokens($maxOutputTokens);
+
+        $endpoint = "projects/{$this->projectId}/locations/{$this->location}/publishers/google/models/{$this->modelId}";
+        $request = (new GenerateContentRequest())
+            ->setModel($endpoint)
+            ->setContents([$content])
+            ->setGenerationConfig($generationConfig);
+
+        $timeoutMs = (config('services.google_cloud.timeout_seconds', 180)) * 1000;
+        $response = $client->generateContent($request, [
+            'timeoutMillis' => $timeoutMs,
+        ]);
+
+        $result = '';
+        foreach ($response->getCandidates() as $candidate) {
+            foreach ($candidate->getContent()->getParts() as $part) {
+                $result .= $part->getText();
+            }
+        }
+
+        return trim($result);
+    }
+
+    protected function sanitizeGeneratedText(string $text): string
+    {
+        $text = preg_replace('/^```[a-z]*\s*/i', '', $text) ?? $text;
+        $text = preg_replace('/\s*```$/', '', $text) ?? $text;
+        $text = trim($text);
+
+        // If text ends abruptly, cut back to last sentence boundary.
+        if ($this->looksTruncated($text) && preg_match('/^(.+[.!?])[^.!?]*$/us', $text, $m)) {
+            return trim($m[1]);
+        }
+
+        return $text;
+    }
+
+    protected function looksTruncated(string $text): bool
+    {
+        $trimmed = trim($text);
+        if ($trimmed === '') {
+            return false;
+        }
+
+        return !preg_match('/[.!?]["»”\']?$/u', $trimmed);
+    }
+
+    protected function sentenceCount(string $text): int
+    {
+        $trimmed = trim($text);
+        if ($trimmed === '') {
+            return 0;
+        }
+
+        preg_match_all('/[^.!?]+[.!?](?:["»”\']+)?/u', $trimmed, $matches);
+        $count = count($matches[0] ?? []);
+
+        if ($count === 0 && $trimmed !== '') {
+            return 1;
+        }
+
+        return $count;
     }
 
     /**

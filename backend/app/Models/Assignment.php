@@ -23,21 +23,33 @@ class Assignment extends Model
         'salary_max',
         'vacation_days',
         'bonus_percentage',
+        'total_fee',
+        'advance_fee',
         'location',
         'employment_type',
+        'hours_per_week_min',
+        'hours_per_week_max',
         'benefits',
         'notes_image_path',
+        'role_profile_path',
+        'role_profile_original_filename',
         'start_date',
+        'end_date',
     ];
 
     protected $casts = [
         'uid' => 'string',
         'salary_min' => 'integer',
         'salary_max' => 'integer',
+        'hours_per_week_min' => 'integer',
+        'hours_per_week_max' => 'integer',
         'vacation_days' => 'integer',
         'bonus_percentage' => 'float',
+        'total_fee' => 'integer',
+        'advance_fee' => 'integer',
         'benefits' => 'array',
         'start_date' => 'date:Y-m-d',
+        'end_date' => 'date:Y-m-d',
     ];
 
     public function getRouteKeyName(): string
