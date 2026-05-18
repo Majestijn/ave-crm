@@ -73,6 +73,7 @@ import {
 import SmartBulkImportDialog from "../../components/features/SmartBulkImportDialog";
 import BatchImportDialog from "../../components/features/BatchImportDialog";
 import ExcelImportDialog from "../../components/features/ExcelImportDialog";
+import LinkedInImportDialog from "../../components/features/LinkedInImportDialog";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import type { Contact, ContactWorkExperience } from "../../types/contacts";
 import WorkExperienceSection, { formatDateRange } from "../../components/features/WorkExperienceSection";
@@ -1064,6 +1065,7 @@ export default function NetworkPage() {
   const bulkImport = useDisclosure();
   const smartImport = useDisclosure();
   const excelImport = useDisclosure();
+  const linkedInImport = useDisclosure();
   const deleteConfirm = useDisclosure();
   const cvViewer = useDisclosure();
   const workHistoryViewer = useDisclosure();
@@ -1608,6 +1610,11 @@ export default function NetworkPage() {
     excelImport.open();
   };
 
+  const handleLinkedInImport = () => {
+    handleImportMenuClose();
+    linkedInImport.open();
+  };
+
   const handleDeleteClick = (contact: Contact) => {
     setDeletingContact(contact);
     setDeleteError(null);
@@ -2148,6 +2155,19 @@ export default function NetworkPage() {
                 </Box>
               </Stack>
             </MenuItem>
+            <MenuItem onClick={handleLinkedInImport}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <LinkedInIcon fontSize="small" color="action" />
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>
+                    LinkedIn-import
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Plak profieltekst; AI vult het contact (optioneel opdracht)
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
           </Menu>
           <Button
             variant="contained"
@@ -2418,6 +2438,12 @@ export default function NetworkPage() {
       <ExcelImportDialog
         open={excelImport.isOpen}
         onClose={excelImport.close}
+        onSuccess={() => refetch()}
+      />
+
+      <LinkedInImportDialog
+        open={linkedInImport.isOpen}
+        onClose={linkedInImport.close}
         onSuccess={() => refetch()}
       />
 

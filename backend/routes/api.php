@@ -139,7 +139,7 @@ Route::prefix('/v1')->group(function () {
             Route::delete('/dropdown-options/{id}', [DropdownOptionController::class, 'destroy']);
         });
 
-        // LinkedIn import (browser extension)
+        // LinkedIn import (CRM modal + browser extension)
         Route::post('/linkedin-import', [LinkedInImportController::class, 'store']);
 
         // Batch CV import (Vertex AI)
