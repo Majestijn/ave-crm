@@ -45,6 +45,8 @@ Route::prefix('/v1')->group(function () {
         Route::put('/auth/password', [ChangePasswordController::class, 'update']);
         Route::post('/auth/logout', [LogoutController::class, 'destroy']);
 
+        Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index']);
+
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/{user}', [UserController::class, 'show']);
 

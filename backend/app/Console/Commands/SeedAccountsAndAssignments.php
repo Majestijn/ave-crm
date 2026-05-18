@@ -3,11 +3,14 @@
 namespace App\Console\Commands;
 
 use App\Models\Account;
+use App\Models\AccountActivity;
 use App\Models\Assignment;
+use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\DropdownOption;
 use App\Models\Tenant;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -108,10 +111,11 @@ class SeedAccountsAndAssignments extends Command
 
             $users = $this->seedUsers();
             $accounts = $this->seedAccounts($numAccounts);
-            $this->seedAssignments($accounts, $numAssignments, $users);
+            $assignments = $this->seedAssignments($accounts, $numAssignments, $users);
             $this->seedContacts($numContacts);
+            $this->seedDashboardDemoData($assignments, $users, $accounts);
 
-            $this->info("  ✓ " . count($users) . " gebruikers, {$numAccounts} klanten, {$numAssignments} opdrachten en {$numContacts} contacten aangemaakt.");
+            $this->info("  ✓ " . count($users) . " gebruikers, {$numAccounts} klanten, {$numAssignments} opdrachten en {$numContacts} contacten aangemaakt (incl. dashboard-demo).");
         }
 
         return 0;
@@ -196,17 +200,27 @@ class SeedAccountsAndAssignments extends Command
         return $users;
     }
 
-    private function seedAssignments(array $accounts, int $count, array $users): void
+    /**
+     * @return list<Assignment>
+     */
+    private function seedAssignments(array $accounts, int $count, array $users): array
     {
         $recruiterUsers = array_values(array_filter($users, fn($u) => in_array($u->role, ['recruiter', 'admin', 'management'])));
         $statusPool = $this->activeOptionValues('assignment_status');
         $employmentPool = $this->activeOptionValues('employment_type');
         $benefitPool = $this->activeOptionValues('benefit');
+        $assignments = [];
 
         for ($i = 0; $i < $count; $i++) {
             $account = $accounts[array_rand($accounts)];
 
             $leadRecruiter = !empty($recruiterUsers) ? $recruiterUsers[array_rand($recruiterUsers)] : null;
+            $employmentType = $this->randomFromPool($employmentPool, 'fulltime');
+            $startDate = rand(1, 4) <= 3 ? Carbon::today()->subWeeks(rand(2, 20)) : null;
+            $endDate = null;
+            if ($startDate && str_contains(strtolower($employmentType), 'interim')) {
+                $endDate = $startDate->copy()->addWeeks(rand(8, 52));
+            }
 
             $assignment = Assignment::create([
                 'account_id' => $account->id,
@@ -218,7 +232,9 @@ class SeedAccountsAndAssignments extends Command
                 'salary_max' => rand(70000, 120000),
                 'vacation_days' => rand(24, 36),
                 'location' => $this->randomLocation(),
-                'employment_type' => $this->randomFromPool($employmentPool, 'fulltime'),
+                'employment_type' => $employmentType,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
                 'benefits' => count($benefitPool) > 0
                     ? $this->randomSubset($benefitPool, 0, min(6, count($benefitPool)))
                     : null,
@@ -234,6 +250,139 @@ class SeedAccountsAndAssignments extends Command
                     $assignment->secondaryRecruiters()->attach($secondaryIds);
                 }
             }
+
+            $assignments[] = $assignment;
+        }
+
+        return $assignments;
+    }
+
+    /**
+     * Kandidaten op opdrachten, activiteiten (laatste contact) en agenda voor vandaag.
+     *
+     * @param  list<Assignment>  $assignments
+     * @param  list<User>  $users
+     * @param  list<Account>  $accounts
+     */
+    public function seedDashboardDemoData(array $assignments, array $users, array $accounts): void
+    {
+        if ($assignments === []) {
+            $assignments = Assignment::all()->all();
+        }
+        if ($assignments === []) {
+            return;
+        }
+
+        $closedAssignmentStatuses = [
+            'aangenomen', 'afgewezen', 'administratief_voltooid', 'voltooid', 'opdracht_on_hold',
+            'hired', 'completed', 'cancelled',
+        ];
+        $ongoingAssignments = array_values(array_filter(
+            $assignments,
+            fn (Assignment $a) => ! in_array($a->status, $closedAssignmentStatuses, true)
+        ));
+
+        $candidatePool = Contact::query()
+            ->where(function ($q) {
+                $q->whereJsonContains('network_roles', 'kandidaat')
+                    ->orWhereJsonContains('network_roles', 'candidate');
+            })
+            ->limit(200)
+            ->get();
+
+        if ($candidatePool->isEmpty()) {
+            $candidatePool = Contact::query()->limit(200)->get();
+        }
+
+        $inProcessStatuses = ['called', 'proposed', 'first_interview', 'second_interview'];
+        $activityTypes = $this->activeOptionValues('activity_type');
+        if ($activityTypes === []) {
+            $activityTypes = ['call', 'interview', 'proposal'];
+        }
+
+        $candidatesAttached = 0;
+        $activitiesCreated = 0;
+
+        foreach ($ongoingAssignments as $assignment) {
+            if ($candidatePool->isNotEmpty() && rand(1, 100) <= 65) {
+                $pick = $candidatePool->random(min(rand(1, 4), $candidatePool->count()));
+                $sync = [];
+                foreach ($pick as $contact) {
+                    $sync[$contact->id] = [
+                        'status' => $inProcessStatuses[array_rand($inProcessStatuses)],
+                    ];
+                }
+                $assignment->candidates()->syncWithoutDetaching($sync);
+                $candidatesAttached += count($sync);
+            }
+
+            if (rand(1, 100) <= 75) {
+                $recruiter = $assignment->recruiter_id
+                    ? User::find($assignment->recruiter_id)
+                    : ($users[array_rand($users)] ?? null);
+
+                AccountActivity::create([
+                    'account_id' => $assignment->account_id,
+                    'assignment_id' => $assignment->id,
+                    'user_id' => $recruiter?->id,
+                    'type' => $activityTypes[array_rand($activityTypes)],
+                    'description' => 'Demo: contact met klant over voortgang opdracht.',
+                    'date' => Carbon::today()->subDays(rand(0, 21)),
+                ]);
+                $activitiesCreated++;
+            }
+
+            if (
+                str_contains(strtolower((string) $assignment->employment_type), 'interim')
+                && ! $assignment->end_date
+            ) {
+                $start = $assignment->start_date ?? Carbon::today()->subWeeks(rand(4, 16));
+                $assignment->update([
+                    'start_date' => $start,
+                    'end_date' => $start->copy()->addWeeks(rand(12, 40)),
+                ]);
+            }
+        }
+
+        $recruiters = array_values(array_filter($users, fn ($u) => in_array($u->role, ['recruiter', 'admin', 'management', 'owner'], true)));
+        if ($recruiters === []) {
+            $recruiters = $users;
+        }
+
+        $eventTypes = $this->activeOptionValues('calendar_event_type');
+        if ($eventTypes === []) {
+            $eventTypes = ['meeting', 'call', 'interview'];
+        }
+
+        $today = Carbon::today();
+        $eventsCreated = 0;
+        foreach ($recruiters as $user) {
+            for ($e = 0; $e < rand(1, 3); $e++) {
+                $hour = rand(9, 16);
+                $start = $today->copy()->setTime($hour, rand(0, 1) * 30);
+                $account = $accounts[array_rand($accounts)] ?? null;
+                $assignment = $ongoingAssignments !== []
+                    ? $ongoingAssignments[array_rand($ongoingAssignments)]
+                    : null;
+
+                CalendarEvent::create([
+                    'title' => ['Intake gesprek', 'Follow-up klant', 'Kandidaat interview', 'Teams overleg'][array_rand(['Intake gesprek', 'Follow-up klant', 'Kandidaat interview', 'Teams overleg'])],
+                    'description' => 'Demo-agenda-item',
+                    'location' => rand(0, 1) ? 'Online' : $this->randomLocation(),
+                    'start_at' => $start,
+                    'end_at' => $start->copy()->addHour(),
+                    'all_day' => false,
+                    'user_id' => $user->id,
+                    'account_id' => $account?->id,
+                    'assignment_id' => $assignment?->id,
+                    'event_type' => $eventTypes[array_rand($eventTypes)],
+                ]);
+                $eventsCreated++;
+            }
+        }
+
+        if ($this->output !== null) {
+            $this->info("  -> Dashboard-demo: {$candidatesAttached} kandidaat-koppelingen, {$activitiesCreated} activiteiten, {$eventsCreated} agenda-items vandaag.");
         }
     }
 
