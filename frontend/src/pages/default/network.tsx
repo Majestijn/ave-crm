@@ -93,6 +93,8 @@ import {
   activeDropdownLabeled,
 } from "../../utils/dropdownValidation";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../api/queries/keys";
 import {
   benefitsOptions,
   formatNumberInput,
@@ -812,6 +814,7 @@ export default function NetworkPage() {
     refetch,
   } = useContacts(locationFilter, ageFilter);
   const { data: accounts = [] } = useAccounts();
+  const queryClient = useQueryClient();
   const { data: geocodeResult, isLoading: isGeocoding } = useGeocode(
     debouncedLocation || null
   );
@@ -1184,6 +1187,7 @@ export default function NetworkPage() {
     formState: { errors: editErrors, isSubmitting: isEditSubmitting },
     reset: editReset,
     control: editControl,
+    watch: editWatch,
   } = useForm<ContactForm>({
     resolver: zodResolver(contactSchema),
     mode: "onBlur",
@@ -1268,6 +1272,9 @@ export default function NetworkPage() {
         phone: editingContact.phone || "",
         linkedin_url: editingContact.linkedin_url || "",
         notes: editingContact.notes || "",
+        is_company_contact: (editingContact.account_contacts?.length ?? 0) > 0,
+        account_uid:
+          editingContact.account_contacts?.[0]?.account?.uid || "",
       });
     }
   }, [editingContact, editReset]);
@@ -1572,6 +1579,36 @@ export default function NetworkPage() {
         uid: editingContact.uid,
         data: payload,
       });
+
+      // Sync the company-contact link (contactpersoon van een bedrijf)
+      const currentLink = editingContact.account_contacts?.[0] ?? null;
+      const currentAccountUid = currentLink?.account?.uid ?? null;
+      const desiredAccountUid =
+        data.is_company_contact && data.account_uid ? data.account_uid : null;
+
+      if (currentAccountUid !== desiredAccountUid) {
+        try {
+          if (desiredAccountUid) {
+            await API.post(`/accounts/${desiredAccountUid}/contacts`, {
+              contact_uid: editingContact.uid,
+            });
+          }
+          if (currentLink) {
+            await API.delete(`/account-contacts/${currentLink.id}`);
+          }
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.contacts.all,
+          });
+        } catch (linkErr: any) {
+          console.error("Error updating company contact link:", linkErr);
+          setSubmitError(
+            linkErr?.response?.data?.message ??
+              "Contact opgeslagen, maar de bedrijfskoppeling kon niet worden bijgewerkt."
+          );
+          return;
+        }
+      }
+
       editContact.close();
       setEditingContact(null);
     } catch (err: any) {
@@ -3245,6 +3282,48 @@ export default function NetworkPage() {
               register={editRegister}
               errors={editErrors as any}
             />
+
+            {/* Company Contact Section */}
+            <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
+              <Controller
+                name="is_company_contact"
+                control={editControl}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={field.value || false}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Is contactpersoon van een bedrijf"
+                  />
+                )}
+              />
+              {editWatch("is_company_contact") && (
+                <Controller
+                  name="account_uid"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      label="Kies bedrijf"
+                      {...field}
+                      value={field.value || ""}
+                      fullWidth
+                      sx={{ mt: 1 }}
+                    >
+                      <MenuItem value="">Selecteer een bedrijf...</MenuItem>
+                      {accounts.map((account) => (
+                        <MenuItem key={account.uid} value={account.uid}>
+                          {account.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              )}
+            </Box>
 
             <TextField
               label="Notities"

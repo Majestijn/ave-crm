@@ -45,6 +45,14 @@ export type Contact = {
   cv_url?: string;
   notes?: string;
   work_experiences?: ContactWorkExperience[];
+  /** Bedrijfskoppelingen: contactpersoon-relaties met klanten */
+  account_contacts?: ContactAccountLink[];
+};
+
+export type ContactAccountLink = {
+  id: number;
+  account_id?: number;
+  account?: { uid: string; name?: string } | null;
 };
 
 export type Paginated<T> = {

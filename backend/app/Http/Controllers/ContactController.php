@@ -50,7 +50,10 @@ class ContactController extends Controller
             }
         }
 
-        $contacts = $query->with('workExperiences')->get()->toArray();
+        $contacts = $query
+            ->with(['workExperiences', 'accountContacts.account:id,uid,name'])
+            ->get()
+            ->toArray();
 
         return response()->json($contacts);
     }
@@ -126,7 +129,7 @@ class ContactController extends Controller
             abort(403, 'This action is unauthorized.');
         }
 
-        $contactModel->load('workExperiences');
+        $contactModel->load(['workExperiences', 'accountContacts.account:id,uid,name']);
 
         return response()->json($contactModel);
     }
@@ -216,7 +219,7 @@ class ContactController extends Controller
             $contactModel->syncCurrentRoleFromWorkExperiences();
         }
 
-        $contactModel->load('workExperiences');
+        $contactModel->load(['workExperiences', 'accountContacts.account:id,uid,name']);
 
         return response()->json($contactModel);
     }
