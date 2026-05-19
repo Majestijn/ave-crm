@@ -74,6 +74,7 @@ import SmartBulkImportDialog from "../../components/features/SmartBulkImportDial
 import BatchImportDialog from "../../components/features/BatchImportDialog";
 import ExcelImportDialog from "../../components/features/ExcelImportDialog";
 import LinkedInImportDialog from "../../components/features/LinkedInImportDialog";
+import ClassificationFields from "../../components/features/ClassificationFields";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import type { Contact, ContactWorkExperience } from "../../types/contacts";
 import WorkExperienceSection, { formatDateRange } from "../../components/features/WorkExperienceSection";
@@ -306,262 +307,6 @@ const CONTACT_ACCOUNT_LABEL_FALLBACK = [
   "convenience_ready_to_use",
 ] as const;
 
-/** Hoofd-/secundaire/tertiaire categorie, merken en labels (zelfde opties als bij klanten). */
-function ContactSectorFields({
-  control,
-  errors,
-  activeCategories,
-  activeSecondary,
-  activeTertiary,
-  activeBrands,
-  activeLabels,
-  isTertiaryPending,
-  isBrandsPending,
-  isLabelsPending,
-}: {
-  control: Control<ContactForm>;
-  errors: FieldErrors<ContactForm>;
-  activeCategories: { value: string; label: string }[];
-  activeSecondary: { value: string; label: string }[];
-  activeTertiary: { value: string; label: string }[];
-  activeBrands: { value: string; label: string }[];
-  activeLabels: { value: string; label: string }[];
-  isTertiaryPending: boolean;
-  isBrandsPending: boolean;
-  isLabelsPending: boolean;
-}) {
-  return (
-    <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
-      <Typography variant="subtitle2" sx={{ mb: 2 }}>
-        Sector & labels (zelfde opties als bij klanten)
-      </Typography>
-      <Stack spacing={2}>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <Controller
-            name="category"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                select
-                label="Hoofdcategorie"
-                {...field}
-                value={field.value || ""}
-                fullWidth
-                error={!!errors.category}
-                helperText={errors.category?.message ?? " "}
-              >
-                <MenuItem value="">Geen</MenuItem>
-                {activeCategories.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-          <Controller
-            name="secondary_category"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                select
-                label="Secundaire categorie"
-                {...field}
-                value={field.value || ""}
-                fullWidth
-                error={!!errors.secondary_category}
-                helperText={errors.secondary_category?.message ?? " "}
-              >
-                <MenuItem value="">Geen</MenuItem>
-                {activeSecondary.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-        </Stack>
-
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-            Tertiaire categorie
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              alignItems: "center",
-              minHeight: 36,
-            }}
-          >
-            {isTertiaryPending ? (
-              <CircularProgress size={22} />
-            ) : activeTertiary.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
-              </Typography>
-            ) : (
-              <Controller
-                name="tertiary_category"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {activeTertiary.map((opt) => {
-                      const selected = field.value || [];
-                      const isSelected = selected.includes(opt.value);
-                      return (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            const next = isSelected
-                              ? selected.filter((o) => o !== opt.value)
-                              : [...selected, opt.value];
-                            field.onChange(next);
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              />
-            )}
-          </Box>
-          {errors.tertiary_category && (
-            <Typography variant="caption" color="error">
-              {flattenRhfFieldErrorMessage(errors.tertiary_category) ?? "Ongeldige selectie."}
-            </Typography>
-          )}
-        </Box>
-
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-            Merken
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              alignItems: "center",
-              minHeight: 36,
-            }}
-          >
-            {isBrandsPending ? (
-              <CircularProgress size={22} />
-            ) : activeBrands.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
-              </Typography>
-            ) : (
-              <Controller
-                name="merken"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {activeBrands.map((opt) => {
-                      const selected = field.value || [];
-                      const isSelected = selected.includes(opt.value);
-                      return (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            const next = isSelected
-                              ? selected.filter((o) => o !== opt.value)
-                              : [...selected, opt.value];
-                            field.onChange(next);
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              />
-            )}
-          </Box>
-        </Box>
-
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-            Labels
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              alignItems: "center",
-              minHeight: 36,
-            }}
-          >
-            {isLabelsPending ? (
-              <CircularProgress size={22} />
-            ) : activeLabels.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
-              </Typography>
-            ) : (
-              <Controller
-                name="labels"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {activeLabels.map((opt) => {
-                      const selected = field.value || [];
-                      const isSelected = selected.includes(opt.value);
-                      return (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            const next = isSelected
-                              ? selected.filter((o) => o !== opt.value)
-                              : [...selected, opt.value];
-                            field.onChange(next);
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              />
-            )}
-          </Box>
-        </Box>
-      </Stack>
-    </Box>
-  );
-}
 
 function formatEURFromCents(cents: number | null | undefined): string {
   if (cents == null || cents === 0) return "-";
@@ -822,14 +567,14 @@ export default function NetworkPage() {
   const { data: dbEducation } = useDropdownOptions("education");
   const { data: dbGender } = useDropdownOptions("gender");
   const { data: dbBenefits } = useDropdownOptions("benefit");
-  const { data: dbAccountCategory } = useDropdownOptions("account_category");
-  const { data: dbAccountSecondary } = useDropdownOptions("account_secondary_category");
+  const { data: dbAccountCategory } = useDropdownOptions("sector_category");
+  const { data: dbAccountSecondary } = useDropdownOptions("sector_secondary_category");
   const { data: dbAccountTertiary, isPending: isTertiaryPending } =
-    useDropdownOptions("account_tertiary_category");
+    useDropdownOptions("sector_tertiary_category");
   const { data: dbAccountBrand, isPending: isBrandsPending } =
-    useDropdownOptions("account_brand");
+    useDropdownOptions("sector_brand");
   const { data: dbAccountLabel, isPending: isLabelsPending } =
-    useDropdownOptions("account_label");
+    useDropdownOptions("sector_label");
 
   const activeNetworkRoleOptions = React.useMemo(() => {
     if (dbNetworkRoles) return dbNetworkRoles.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
@@ -2685,18 +2430,7 @@ export default function NetworkPage() {
               />
             </Stack>
 
-            <ContactSectorFields
-              control={control}
-              errors={errors}
-              activeCategories={activeAccountCategories}
-              activeSecondary={activeAccountSecondary}
-              activeTertiary={activeAccountTertiaryLabeled}
-              activeBrands={activeAccountBrandLabeled}
-              activeLabels={activeAccountLabelLabeled}
-              isTertiaryPending={isTertiaryPending}
-              isBrandsPending={isBrandsPending}
-              isLabelsPending={isLabelsPending}
-            />
+            <ClassificationFields control={control} errors={errors} />
 
             <TextField
               label="LinkedIn URL"
@@ -3219,18 +2953,7 @@ export default function NetworkPage() {
               />
             </Stack>
 
-            <ContactSectorFields
-              control={editControl}
-              errors={editErrors}
-              activeCategories={activeAccountCategories}
-              activeSecondary={activeAccountSecondary}
-              activeTertiary={activeAccountTertiaryLabeled}
-              activeBrands={activeAccountBrandLabeled}
-              activeLabels={activeAccountLabelLabeled}
-              isTertiaryPending={isTertiaryPending}
-              isBrandsPending={isBrandsPending}
-              isLabelsPending={isLabelsPending}
-            />
+            <ClassificationFields control={editControl} errors={editErrors} />
 
             <Stack direction="row" spacing={2}>
               <Controller

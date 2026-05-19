@@ -41,14 +41,12 @@ import { queryKeys } from "../../api/queries/keys";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import API from "../../../axios-client";
 import type { Account } from "../../types/accounts";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
-import {
-  activeDropdownLabeled,
-  activeDropdownValues,
-} from "../../utils/dropdownValidation";
+import { activeDropdownLabeled } from "../../utils/dropdownValidation";
+import ClassificationFields from "../../components/features/ClassificationFields";
 function AccountCardLogo({
   logoUrl,
   name,
@@ -108,6 +106,10 @@ const AccountSchema = z.object({
   industry: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),
   secondary_category: z.string().optional().or(z.literal("")),
+  tertiary_category: z.array(z.string()).optional(),
+  merken: z.array(z.string()).optional(),
+  labels: z.array(z.string()).optional(),
+  sales_target: z.array(z.string()).optional(),
   fte_count: z.number().optional(),
   notes: z.string().optional().or(z.literal("")),
 });
@@ -165,48 +167,17 @@ export default function AccountsPage() {
     | "assignments_asc"
   >("name_asc");
   const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
-  const [tertiaryCategory, setTertiaryCategory] = useState<string[]>([]);
-  const [salesTargets, setSalesTargets] = useState<string[]>([]);
-  const [merken, setMerken] = useState<string[]>([]);
-  const [labels, setLabels] = useState<string[]>([]);
   const [activeOnlyFilter, setActiveOnlyFilter] = useState(false);
   const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
 
-  const { data: dbCategory } = useDropdownOptions("account_category");
-  const { data: dbSecondary } = useDropdownOptions("account_secondary_category");
-  const { data: dbTertiary, isPending: isTertiaryPending } =
-    useDropdownOptions("account_tertiary_category");
-  const { data: dbBrand, isPending: isBrandsPending } =
-    useDropdownOptions("account_brand");
-  const { data: dbLabel, isPending: isLabelsPending } =
-    useDropdownOptions("account_label");
+  const { data: dbCategory } = useDropdownOptions("sector_category");
   const { data: dbSalesTarget, isPending: isSalesTargetPending } =
     useDropdownOptions("sales_target");
 
   const activeCategories = React.useMemo(
     () => activeDropdownLabeled(dbCategory),
     [dbCategory]
-  );
-
-  const activeSecondary = React.useMemo(
-    () => activeDropdownLabeled(dbSecondary),
-    [dbSecondary]
-  );
-
-  const activeTertiary = React.useMemo(
-    () => activeDropdownValues(dbTertiary),
-    [dbTertiary]
-  );
-
-  const activeBrands = React.useMemo(
-    () => activeDropdownValues(dbBrand),
-    [dbBrand]
-  );
-
-  const activeLabels = React.useMemo(
-    () => activeDropdownValues(dbLabel),
-    [dbLabel]
   );
 
   const activeSalesTargets = React.useMemo(
@@ -221,6 +192,7 @@ export default function AccountsPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<AccountForm>({
@@ -236,6 +208,10 @@ export default function AccountsPage() {
       industry: "",
       category: "",
       secondary_category: "",
+      tertiary_category: [],
+      merken: [],
+      labels: [],
+      sales_target: [],
       fte_count: undefined,
       notes: "",
     },
@@ -248,12 +224,14 @@ export default function AccountsPage() {
         ...data,
         parent_company: data.parent_company?.trim() || undefined,
         secondary_category: data.secondary_category || undefined,
-        tertiary_category: tertiaryCategory.length
-          ? tertiaryCategory
+        tertiary_category: data.tertiary_category?.length
+          ? data.tertiary_category
           : undefined,
-        merken: merken.length ? merken : undefined,
-        labels: labels.length ? labels : undefined,
-        sales_target: salesTargets.length ? salesTargets : undefined,
+        merken: data.merken?.length ? data.merken : undefined,
+        labels: data.labels?.length ? data.labels : undefined,
+        sales_target: data.sales_target?.length
+          ? data.sales_target
+          : undefined,
         revenue_cents: revenueValue ? revenueValue * 100 : undefined,
       };
       await API.post("/accounts", submitData);
@@ -261,10 +239,6 @@ export default function AccountsPage() {
       reset();
       setRevenueInput("");
       setRevenueValue(undefined);
-      setTertiaryCategory([]);
-      setSalesTargets([]);
-      setMerken([]);
-      setLabels([]);
       await refresh();
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
     } catch (err: any) {
@@ -573,10 +547,6 @@ export default function AccountsPage() {
           addAccount.close();
           setSubmitError(null);
           reset();
-          setTertiaryCategory([]);
-          setSalesTargets([]);
-          setMerken([]);
-          setLabels([]);
         }}
       >
         <DialogTitle>Nieuw account</DialogTitle>
@@ -632,246 +602,73 @@ export default function AccountsPage() {
               />
             </Stack>
 
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Branche"
-                error={!!errors.industry}
-                helperText={errors.industry?.message ?? " "}
-                {...register("industry")}
-                fullWidth
-              />
-              <TextField
-                select
-                label="Categorie"
-                error={!!errors.category}
-                helperText={errors.category?.message ?? " "}
-                {...register("category")}
-                defaultValue=""
-                fullWidth
-              >
-                <MenuItem value="">Selecteer categorie...</MenuItem>
-                {activeCategories.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                label="Secundaire categorie"
-                error={!!errors.secondary_category}
-                helperText={errors.secondary_category?.message ?? " "}
-                {...register("secondary_category")}
-                defaultValue=""
-                fullWidth
-              >
-                <MenuItem value="">Selecteer secundaire categorie...</MenuItem>
-                {activeSecondary.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
+            <TextField
+              label="Branche"
+              error={!!errors.industry}
+              helperText={errors.industry?.message ?? " "}
+              {...register("industry")}
+              fullWidth
+            />
+
+            <ClassificationFields control={control} errors={errors} />
 
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
                 Sales doel
               </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 1,
-                  alignItems: "center",
-                  minHeight: 36,
-                }}
-              >
-                {isSalesTargetPending ? (
-                  <CircularProgress size={22} />
-                ) : activeSalesTargets.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                    Dropdown opties → Sales doel.
-                  </Typography>
-                ) : (
-                  activeSalesTargets.map((opt) => {
-                    const isSelected = salesTargets.includes(opt.value);
-                    return (
-                      <Chip
-                        key={opt.value}
-                        label={opt.label}
-                        size="small"
-                        variant={isSelected ? "filled" : "outlined"}
-                        color={isSelected ? "primary" : "default"}
-                        onClick={() => {
-                          setSalesTargets((prev) =>
-                            prev.includes(opt.value)
-                              ? prev.filter((o) => o !== opt.value)
-                              : [...prev, opt.value],
-                          );
-                        }}
-                        sx={{
-                          cursor: "pointer",
-                          "&:hover": {
-                            bgcolor: isSelected ? "primary.dark" : "action.hover",
-                          },
-                        }}
-                      />
-                    );
-                  })
+              <Controller
+                name="sales_target"
+                control={control}
+                render={({ field }) => (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 1,
+                      alignItems: "center",
+                      minHeight: 36,
+                    }}
+                  >
+                    {isSalesTargetPending ? (
+                      <CircularProgress size={22} />
+                    ) : activeSalesTargets.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Geen actieve opties. Stel ze in of zet ze aan bij
+                        Instellingen → Dropdown opties → Sales doel.
+                      </Typography>
+                    ) : (
+                      activeSalesTargets.map((opt) => {
+                        const selected: string[] = field.value || [];
+                        const isSelected = selected.includes(opt.value);
+                        return (
+                          <Chip
+                            key={opt.value}
+                            label={opt.label}
+                            size="small"
+                            variant={isSelected ? "filled" : "outlined"}
+                            color={isSelected ? "primary" : "default"}
+                            onClick={() =>
+                              field.onChange(
+                                isSelected
+                                  ? selected.filter((o) => o !== opt.value)
+                                  : [...selected, opt.value]
+                              )
+                            }
+                            sx={{
+                              cursor: "pointer",
+                              "&:hover": {
+                                bgcolor: isSelected
+                                  ? "primary.dark"
+                                  : "action.hover",
+                              },
+                            }}
+                          />
+                        );
+                      })
+                    )}
+                  </Box>
                 )}
-              </Box>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
-                Tertiaire categorie
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 1,
-                  alignItems: "center",
-                  minHeight: 36,
-                }}
-              >
-                {isTertiaryPending ? (
-                  <CircularProgress size={22} />
-                ) : activeTertiary.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                    Dropdown opties → Tertiaire categorie.
-                  </Typography>
-                ) : (
-                  activeTertiary.map((opt) => {
-                    const isSelected = tertiaryCategory.includes(opt);
-                    return (
-                      <Chip
-                        key={opt}
-                        label={opt}
-                        size="small"
-                        variant={isSelected ? "filled" : "outlined"}
-                        color={isSelected ? "primary" : "default"}
-                        onClick={() => {
-                          setTertiaryCategory((prev) =>
-                            prev.includes(opt)
-                              ? prev.filter((o) => o !== opt)
-                              : [...prev, opt],
-                          );
-                        }}
-                        sx={{
-                          cursor: "pointer",
-                          "&:hover": {
-                            bgcolor: isSelected ? "primary.dark" : "action.hover",
-                          },
-                        }}
-                      />
-                    );
-                  })
-                )}
-              </Box>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
-                Merken
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 1,
-                  alignItems: "center",
-                  minHeight: 36,
-                }}
-              >
-                {isBrandsPending ? (
-                  <CircularProgress size={22} />
-                ) : activeBrands.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                    Dropdown opties → Merken.
-                  </Typography>
-                ) : (
-                  activeBrands.map((opt) => {
-                    const isSelected = merken.includes(opt);
-                    return (
-                      <Chip
-                        key={opt}
-                        label={opt}
-                        size="small"
-                        variant={isSelected ? "filled" : "outlined"}
-                        color={isSelected ? "primary" : "default"}
-                        onClick={() => {
-                          setMerken((prev) =>
-                            prev.includes(opt)
-                              ? prev.filter((o) => o !== opt)
-                              : [...prev, opt],
-                          );
-                        }}
-                        sx={{
-                          cursor: "pointer",
-                          "&:hover": {
-                            bgcolor: isSelected ? "primary.dark" : "action.hover",
-                          },
-                        }}
-                      />
-                    );
-                  })
-                )}
-              </Box>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
-                Labels
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 1,
-                  alignItems: "center",
-                  minHeight: 36,
-                }}
-              >
-                {isLabelsPending ? (
-                  <CircularProgress size={22} />
-                ) : activeLabels.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                    Dropdown opties → Labels.
-                  </Typography>
-                ) : (
-                  activeLabels.map((opt) => {
-                    const isSelected = labels.includes(opt);
-                    return (
-                      <Chip
-                        key={opt}
-                        label={opt}
-                        size="small"
-                        variant={isSelected ? "filled" : "outlined"}
-                        color={isSelected ? "primary" : "default"}
-                        onClick={() => {
-                          setLabels((prev) =>
-                            prev.includes(opt)
-                              ? prev.filter((o) => o !== opt)
-                              : [...prev, opt],
-                          );
-                        }}
-                        sx={{
-                          cursor: "pointer",
-                          "&:hover": {
-                            bgcolor: isSelected ? "primary.dark" : "action.hover",
-                          },
-                        }}
-                      />
-                    );
-                  })
-                )}
-              </Box>
+              />
             </Box>
 
             <Stack direction="row" spacing={2}>
