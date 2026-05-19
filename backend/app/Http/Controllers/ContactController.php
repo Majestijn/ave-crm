@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use App\Models\DropdownOption;
+use App\Support\ClassificationRules;
 use App\Jobs\ProcessCvImport;
 use App\Services\ExcelImportService;
 use App\Services\GeocodingService;
@@ -157,14 +158,7 @@ class ContactController extends Controller
             'gender' => ['nullable', 'string', DropdownOption::validationRule('gender')],
             'location' => ['nullable', 'string', 'max:255'],
             'company_role' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
-            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
-            'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
-            'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
-            'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
+            ...ClassificationRules::rules(),
             'network_roles' => ['nullable', 'array'],
             'network_roles.*' => ['string', 'max:64', DropdownOption::validationRule('network_role')],
             'current_company' => ['nullable', 'string', 'max:255'],

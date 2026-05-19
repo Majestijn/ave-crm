@@ -109,13 +109,13 @@ class DropdownOptionSeeder extends Seeder
                 ['value' => 'Huisvestingsvergoeding', 'label' => 'Huisvestingsvergoeding'],
             ],
 
-            'account_category' => [
+            'sector_category' => [
                 ['value' => 'FMCG', 'label' => 'FMCG'],
                 ['value' => 'Foodservice', 'label' => 'Foodservice'],
                 ['value' => 'Overig', 'label' => 'Overig'],
             ],
 
-            'account_secondary_category' => [
+            'sector_secondary_category' => [
                 ['value' => 'Retailer', 'label' => 'Retailer'],
                 ['value' => 'Supermarkten', 'label' => 'Supermarkten'],
                 ['value' => 'Groothandel', 'label' => 'Groothandel'],
@@ -124,17 +124,17 @@ class DropdownOptionSeeder extends Seeder
                 ['value' => 'Andere', 'label' => 'Andere'],
             ],
 
-            'account_tertiary_category' => [
+            'sector_tertiary_category' => [
                 ['value' => 'Non-food', 'label' => 'Non-food'],
                 ['value' => 'Food', 'label' => 'Food'],
             ],
 
-            'account_brand' => [
+            'sector_brand' => [
                 ['value' => 'Merk', 'label' => 'Merk'],
                 ['value' => 'Private label', 'label' => 'Private label'],
             ],
 
-            'account_label' => [
+            'sector_label' => [
                 ['value' => 'Vers', 'label' => 'Vers'],
                 ['value' => 'Zuivel & eieren', 'label' => 'Zuivel & eieren'],
                 ['value' => 'Diepvries', 'label' => 'Diepvries'],

@@ -2,27 +2,27 @@ id,type,value,label,color,sort_order,is_active,created_at,updated_at
 1,education,mbo,Mbo,,0,true,2026-04-01 22:27:46,2026-04-01 22:27:46
 2,education,hbo,Hbo,,1,true,2026-04-01 22:27:50,2026-04-01 22:27:50
 3,education,uni,Uni,,2,true,2026-04-01 22:27:53,2026-04-01 22:27:53
-4,account_category,fmcg,FMCG,,0,true,2026-04-01 22:29:46,2026-04-01 22:29:46
-5,account_category,foodservice,Foodservice,,1,true,2026-04-01 22:29:52,2026-04-01 22:29:52
-6,account_category,andere,Andere,,2,true,2026-04-01 22:29:55,2026-04-01 22:29:55
-7,account_secondary_category,retailer,Retailer,,0,true,2026-04-01 22:30:03,2026-04-01 22:30:03
-8,account_secondary_category,groothandel,Groothandel,,1,true,2026-04-01 22:30:16,2026-04-01 22:30:16
-9,account_secondary_category,leverancier,Leverancier,,2,true,2026-04-01 22:30:23,2026-04-01 22:30:23
-10,account_secondary_category,industrie,Industrie,,3,true,2026-04-01 22:30:27,2026-04-01 22:30:27
-11,account_secondary_category,andere,Andere,,4,true,2026-04-01 22:30:30,2026-04-01 22:30:30
-12,account_tertiary_category,non_food,Non-food,,0,true,2026-04-01 22:30:38,2026-04-01 22:30:38
-13,account_tertiary_category,food,Food,,1,true,2026-04-01 22:30:41,2026-04-01 22:30:41
-14,account_brand,merk,Merk,,0,true,2026-04-01 22:30:50,2026-04-01 22:30:50
-15,account_brand,private_label,Private label,,1,true,2026-04-01 22:30:55,2026-04-01 22:30:55
-16,account_label,vers,Vers,,0,true,2026-04-01 22:31:03,2026-04-01 22:31:03
-17,account_label,zuivel_eieren,Zuivel & eieren,,1,true,2026-04-01 22:31:09,2026-04-01 22:31:09
-18,account_label,diepvries,Diepvries,,2,true,2026-04-01 22:31:12,2026-04-01 22:31:12
-19,account_label,dkw_houdbaar_voedsel,DKW (houdbaar voedsel),,3,true,2026-04-01 22:31:24,2026-04-01 22:31:24
-20,account_label,dranken,Dranken,,4,true,2026-04-01 22:31:29,2026-04-01 22:31:29
-21,account_label,snacks_snoep,Snacks & snoep,,5,true,2026-04-01 22:31:35,2026-04-01 22:31:35
-22,account_label,non_food,Non-food,,6,true,2026-04-01 22:31:39,2026-04-01 22:31:39
-23,account_label,verpakkingen,Verpakkingen,,7,true,2026-04-01 22:31:45,2026-04-01 22:31:45
-24,account_label,convenience_ready_to_use,Convenience & ready-to-use,,8,true,2026-04-01 22:31:54,2026-04-01 22:31:54
+4,sector_category,fmcg,FMCG,,0,true,2026-04-01 22:29:46,2026-04-01 22:29:46
+5,sector_category,foodservice,Foodservice,,1,true,2026-04-01 22:29:52,2026-04-01 22:29:52
+6,sector_category,andere,Andere,,2,true,2026-04-01 22:29:55,2026-04-01 22:29:55
+7,sector_secondary_category,retailer,Retailer,,0,true,2026-04-01 22:30:03,2026-04-01 22:30:03
+8,sector_secondary_category,groothandel,Groothandel,,1,true,2026-04-01 22:30:16,2026-04-01 22:30:16
+9,sector_secondary_category,leverancier,Leverancier,,2,true,2026-04-01 22:30:23,2026-04-01 22:30:23
+10,sector_secondary_category,industrie,Industrie,,3,true,2026-04-01 22:30:27,2026-04-01 22:30:27
+11,sector_secondary_category,andere,Andere,,4,true,2026-04-01 22:30:30,2026-04-01 22:30:30
+12,sector_tertiary_category,non_food,Non-food,,0,true,2026-04-01 22:30:38,2026-04-01 22:30:38
+13,sector_tertiary_category,food,Food,,1,true,2026-04-01 22:30:41,2026-04-01 22:30:41
+14,sector_brand,merk,Merk,,0,true,2026-04-01 22:30:50,2026-04-01 22:30:50
+15,sector_brand,private_label,Private label,,1,true,2026-04-01 22:30:55,2026-04-01 22:30:55
+16,sector_label,vers,Vers,,0,true,2026-04-01 22:31:03,2026-04-01 22:31:03
+17,sector_label,zuivel_eieren,Zuivel & eieren,,1,true,2026-04-01 22:31:09,2026-04-01 22:31:09
+18,sector_label,diepvries,Diepvries,,2,true,2026-04-01 22:31:12,2026-04-01 22:31:12
+19,sector_label,dkw_houdbaar_voedsel,DKW (houdbaar voedsel),,3,true,2026-04-01 22:31:24,2026-04-01 22:31:24
+20,sector_label,dranken,Dranken,,4,true,2026-04-01 22:31:29,2026-04-01 22:31:29
+21,sector_label,snacks_snoep,Snacks & snoep,,5,true,2026-04-01 22:31:35,2026-04-01 22:31:35
+22,sector_label,non_food,Non-food,,6,true,2026-04-01 22:31:39,2026-04-01 22:31:39
+23,sector_label,verpakkingen,Verpakkingen,,7,true,2026-04-01 22:31:45,2026-04-01 22:31:45
+24,sector_label,convenience_ready_to_use,Convenience & ready-to-use,,8,true,2026-04-01 22:31:54,2026-04-01 22:31:54
 25,gender,man,Man,,0,true,2026-04-01 22:32:16,2026-04-01 22:32:16
 26,gender,vrouw,Vrouw,,1,true,2026-04-01 22:32:18,2026-04-01 22:32:18
 27,employment_type,fulltime,Fulltime,,0,true,2026-04-01 22:32:32,2026-04-01 22:32:32

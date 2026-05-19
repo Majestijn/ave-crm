@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\DropdownOption;
+use App\Support\ClassificationRules;
 use Illuminate\Http\Request;
 
 class AccountController extends Controller
@@ -69,14 +70,7 @@ class AccountController extends Controller
             'website' => ['nullable', 'url', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
-            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
-            'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
-            'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
-            'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
+            ...ClassificationRules::rules(),
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
@@ -133,14 +127,7 @@ class AccountController extends Controller
             'website' => ['nullable', 'url', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
-            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
-            'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
-            'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
-            'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
+            ...ClassificationRules::rules(),
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],

@@ -126,11 +126,11 @@ class SeedAccountsAndAssignments extends Command
         $accounts = [];
         $usedNames = [];
         $faker = \Faker\Factory::create('nl_NL');
-        $catPool = $this->activeOptionValues('account_category');
-        $secPool = $this->activeOptionValues('account_secondary_category');
-        $terPool = $this->activeOptionValues('account_tertiary_category');
-        $brandPool = $this->activeOptionValues('account_brand');
-        $labelPool = $this->activeOptionValues('account_label');
+        $catPool = $this->activeOptionValues('sector_category');
+        $secPool = $this->activeOptionValues('sector_secondary_category');
+        $terPool = $this->activeOptionValues('sector_tertiary_category');
+        $brandPool = $this->activeOptionValues('sector_brand');
+        $labelPool = $this->activeOptionValues('sector_label');
         $salesTargetPool = $this->activeOptionValues('sales_target');
 
         for ($i = 0; $i < $count; $i++) {
@@ -440,27 +440,27 @@ class SeedAccountsAndAssignments extends Command
                 ['type' => 'education', 'value' => 'mbo', 'label' => 'Mbo', 'color' => null, 'sort_order' => 0, 'is_active' => true],
                 ['type' => 'education', 'value' => 'hbo', 'label' => 'Hbo', 'color' => null, 'sort_order' => 1, 'is_active' => true],
                 ['type' => 'education', 'value' => 'uni', 'label' => 'Uni', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_category', 'value' => 'fmcg', 'label' => 'FMCG', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_category', 'value' => 'foodservice', 'label' => 'Foodservice', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'retailer', 'label' => 'Retailer', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'groothandel', 'label' => 'Groothandel', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'leverancier', 'label' => 'Leverancier', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'industrie', 'label' => 'Industrie', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'account_tertiary_category', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_tertiary_category', 'value' => 'food', 'label' => 'Food', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_brand', 'value' => 'merk', 'label' => 'Merk', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_brand', 'value' => 'private_label', 'label' => 'Private label', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'vers', 'label' => 'Vers', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'zuivel_eieren', 'label' => 'Zuivel & eieren', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'diepvries', 'label' => 'Diepvries', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'dkw_houdbaar_voedsel', 'label' => 'DKW (houdbaar voedsel)', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'dranken', 'label' => 'Dranken', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'snacks_snoep', 'label' => 'Snacks & snoep', 'color' => null, 'sort_order' => 5, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 6, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'verpakkingen', 'label' => 'Verpakkingen', 'color' => null, 'sort_order' => 7, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'convenience_ready_to_use', 'label' => 'Convenience & ready-to-use', 'color' => null, 'sort_order' => 8, 'is_active' => true],
+                ['type' => 'sector_category', 'value' => 'fmcg', 'label' => 'FMCG', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+                ['type' => 'sector_category', 'value' => 'foodservice', 'label' => 'Foodservice', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+                ['type' => 'sector_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+                ['type' => 'sector_secondary_category', 'value' => 'retailer', 'label' => 'Retailer', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+                ['type' => 'sector_secondary_category', 'value' => 'groothandel', 'label' => 'Groothandel', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+                ['type' => 'sector_secondary_category', 'value' => 'leverancier', 'label' => 'Leverancier', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+                ['type' => 'sector_secondary_category', 'value' => 'industrie', 'label' => 'Industrie', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+                ['type' => 'sector_secondary_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+                ['type' => 'sector_tertiary_category', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+                ['type' => 'sector_tertiary_category', 'value' => 'food', 'label' => 'Food', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+                ['type' => 'sector_brand', 'value' => 'merk', 'label' => 'Merk', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+                ['type' => 'sector_brand', 'value' => 'private_label', 'label' => 'Private label', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'vers', 'label' => 'Vers', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'zuivel_eieren', 'label' => 'Zuivel & eieren', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'diepvries', 'label' => 'Diepvries', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'dkw_houdbaar_voedsel', 'label' => 'DKW (houdbaar voedsel)', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'dranken', 'label' => 'Dranken', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'snacks_snoep', 'label' => 'Snacks & snoep', 'color' => null, 'sort_order' => 5, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 6, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'verpakkingen', 'label' => 'Verpakkingen', 'color' => null, 'sort_order' => 7, 'is_active' => true],
+                ['type' => 'sector_label', 'value' => 'convenience_ready_to_use', 'label' => 'Convenience & ready-to-use', 'color' => null, 'sort_order' => 8, 'is_active' => true],
                 ['type' => 'gender', 'value' => 'man', 'label' => 'Man', 'color' => null, 'sort_order' => 0, 'is_active' => true],
                 ['type' => 'gender', 'value' => 'vrouw', 'label' => 'Vrouw', 'color' => null, 'sort_order' => 1, 'is_active' => true],
                 ['type' => 'employment_type', 'value' => 'fulltime', 'label' => 'Fulltime', 'color' => null, 'sort_order' => 0, 'is_active' => true],
@@ -604,11 +604,11 @@ class SeedAccountsAndAssignments extends Command
         $genderPool = $this->activeOptionValues('gender');
         $educationPool = $this->activeOptionValues('education');
         $benefitPool = $this->activeOptionValues('benefit');
-        $catPool = $this->activeOptionValues('account_category');
-        $secPool = $this->activeOptionValues('account_secondary_category');
-        $terPool = $this->activeOptionValues('account_tertiary_category');
-        $brandPool = $this->activeOptionValues('account_brand');
-        $labelPool = $this->activeOptionValues('account_label');
+        $catPool = $this->activeOptionValues('sector_category');
+        $secPool = $this->activeOptionValues('sector_secondary_category');
+        $terPool = $this->activeOptionValues('sector_tertiary_category');
+        $brandPool = $this->activeOptionValues('sector_brand');
+        $labelPool = $this->activeOptionValues('sector_label');
 
         $bar = $this->output->createProgressBar($count);
         $bar->start();
