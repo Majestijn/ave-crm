@@ -19,13 +19,23 @@ return new class extends Migration {
             $table->integer('salary_max')->nullable();
             $table->integer('vacation_days')->nullable();
             $table->decimal('bonus_percentage', 5, 2)->nullable();
+            $table->unsignedInteger('total_fee')->nullable();
+            $table->unsignedInteger('advance_fee')->nullable();
             $table->string('location')->nullable();
             $table->string('employment_type')->nullable();
+            $table->unsignedSmallInteger('hours_per_week_min')->nullable();
+            $table->unsignedSmallInteger('hours_per_week_max')->nullable();
             $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->json('benefits')->nullable();
             $table->string('notes_image_path')->nullable();
+            $table->string('role_profile_path')->nullable();
+            $table->string('role_profile_original_filename')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->index('account_id');
+            $table->index('recruiter_id');
+            $table->index('status');
         });
 
         Schema::create('assignment_contact', function (Blueprint $table) {
@@ -35,6 +45,7 @@ return new class extends Migration {
             $table->string('status')->default('called');
             $table->timestamps();
             $table->unique(['assignment_id', 'contact_id']);
+            $table->index('contact_id');
         });
 
         Schema::create('account_contacts', function (Blueprint $table) {

@@ -17,6 +17,11 @@ return new class extends Migration {
             $table->text('description');
             $table->date('date');
             $table->timestamps();
+            $table->index('account_id');
+            $table->index('contact_id');
+            $table->index('assignment_id');
+            $table->index('user_id');
+            $table->index('date');
         });
 
         Schema::create('calendar_events', function (Blueprint $table) {
