@@ -42,8 +42,7 @@ import {
   CANDIDATES_COLUMN_META,
   CANDIDATES_COLUMN_ORDER_KEY,
 } from "../../components/features/assignments/types";
-import CreateAssignmentDialog from "../../components/features/assignments/CreateAssignmentDialog";
-import EditAssignmentDialog from "../../components/features/assignments/EditAssignmentDialog";
+import AssignmentFormDialog from "../../components/features/assignments/AssignmentFormDialog";
 import AddCandidateDialog from "../../components/features/assignments/AddCandidateDialog";
 import AssignmentCard from "../../components/features/assignments/AssignmentCard";
 
@@ -792,14 +791,16 @@ export default function AssignmentsPage() {
         linkedCandidateUids={linkedCandidateUids}
       />
 
-      <CreateAssignmentDialog
+      <AssignmentFormDialog
+        mode="create"
         open={createAssignmentDialog.isOpen}
         onClose={createAssignmentDialog.close}
         accounts={accounts}
         users={users}
       />
 
-      <EditAssignmentDialog
+      <AssignmentFormDialog
+        mode="edit"
         open={editAssignmentDialog.isOpen}
         onClose={handleCloseEditDialog}
         assignment={editingAssignment}
