@@ -5,198 +5,160 @@ namespace Database\Seeders;
 use App\Models\DropdownOption;
 use Illuminate\Database\Seeder;
 
+/**
+ * Canonieke dropdown-opties voor een tenant (NL-set).
+ *
+ * Eén bron van waarheid: zowel de demo-seeder (`demo:seed-accounts`) als de
+ * legacy-import (`legacy:import --with-dropdowns`) gebruiken `seed()` hieronder.
+ * Draait per tenant (DropdownOption gebruikt de tenant-connectie), dus roep
+ * aan binnen tenant-context (`$tenant->makeCurrent()`).
+ */
 class DropdownOptionSeeder extends Seeder
 {
     public function run(): void
     {
-        $options = [
-            'education' => [
-                ['value' => 'MBO', 'label' => 'MBO'],
-                ['value' => 'HBO', 'label' => 'HBO'],
-                ['value' => 'UNI', 'label' => 'Universiteit'],
-            ],
+        self::seed();
+    }
 
-            'gender' => [
-                ['value' => 'man', 'label' => 'Man'],
-                ['value' => 'vrouw', 'label' => 'Vrouw'],
-            ],
+    /**
+     * Upsert alle canonieke dropdown-opties (idempotent op type+value).
+     *
+     * @return int aantal verwerkte opties
+     */
+    public static function seed(): int
+    {
+        $count = 0;
 
-            'network_role' => [
-                ['value' => 'invoice_contact', 'label' => 'Factuurcontact'],
-                ['value' => 'candidate', 'label' => 'Kandidaat'],
-                ['value' => 'interim', 'label' => 'Interimmer'],
-                ['value' => 'ambassador', 'label' => 'Ambassadeur'],
-                ['value' => 'potential_management', 'label' => 'Potentieel Management'],
-                ['value' => 'co_decision_maker', 'label' => 'Medebeslisser'],
-                ['value' => 'potential_directie', 'label' => 'Potentieel Directie'],
-                ['value' => 'candidate_reference', 'label' => 'Referentie van kandidaat'],
-                ['value' => 'hr_employment', 'label' => 'HR arbeidsvoorwaarden'],
-                ['value' => 'hr_recruiters', 'label' => 'HR recruiters'],
-                ['value' => 'directie', 'label' => 'Directie'],
-                ['value' => 'owner', 'label' => 'Eigenaar'],
-                ['value' => 'expert', 'label' => 'Expert'],
-                ['value' => 'coach', 'label' => 'Coach'],
-                ['value' => 'former_owner', 'label' => 'Oud eigenaar'],
-                ['value' => 'former_director', 'label' => 'Oud directeur'],
-                ['value' => 'commissioner', 'label' => 'Commissaris'],
-                ['value' => 'investor', 'label' => 'Investeerder'],
-                ['value' => 'network_group', 'label' => 'Netwerkgroep'],
-                ['value' => 'budget_holder', 'label' => 'Budgethouder'],
-                ['value' => 'candidate_placed', 'label' => 'Geplaatste kandidaat'],
-                ['value' => 'client_principal', 'label' => 'Opdrachtgever'],
-                ['value' => 'signing_authority', 'label' => 'Tekenbevoegdheid'],
-                ['value' => 'final_decision_maker', 'label' => 'Eindbeslisser'],
-            ],
-
-            'assignment_status' => [
-                ['value' => 'active', 'label' => 'Actief', 'color' => '#1976d2'],
-                ['value' => 'proposed', 'label' => 'Voorgesteld', 'color' => '#d32f2f'],
-                ['value' => 'hired', 'label' => 'Aangenomen', 'color' => '#2e7d32'],
-                ['value' => 'shadow_management', 'label' => 'Shadow Management', 'color' => '#ed6c02'],
-                ['value' => 'completed', 'label' => 'Voltooid', 'color' => '#2e7d32'],
-                ['value' => 'cancelled', 'label' => 'Geannuleerd', 'color' => '#d32f2f'],
-            ],
-
-            'candidate_assignment_status' => [
-                ['value' => 'called', 'label' => 'Gebeld', 'color' => '#2e7d32'],
-                ['value' => 'proposed', 'label' => 'Voorgesteld', 'color' => '#ed6c02'],
-                ['value' => 'first_interview', 'label' => '1e gesprek', 'color' => '#1976d2'],
-                ['value' => 'second_interview', 'label' => '2e gesprek', 'color' => '#1976d2'],
-                ['value' => 'hired', 'label' => 'Aangenomen', 'color' => '#2e7d32'],
-                ['value' => 'rejected', 'label' => 'Afgewezen', 'color' => '#d32f2f'],
-            ],
-
-            'employment_type' => [
-                ['value' => 'Fulltime', 'label' => 'Fulltime'],
-                ['value' => 'Parttime', 'label' => 'Parttime'],
-                ['value' => 'Freelance', 'label' => 'Freelance'],
-                ['value' => 'Interim', 'label' => 'Interim'],
-                ['value' => 'ZZP', 'label' => 'ZZP'],
-            ],
-
-            'benefit' => [
-                ['value' => 'Reiskostenvergoeding', 'label' => 'Reiskostenvergoeding'],
-                ['value' => 'Pensioen', 'label' => 'Pensioen'],
-                ['value' => 'Dienstreizen vergoeding', 'label' => 'Dienstreizen vergoeding'],
-                ['value' => 'Mogelijkheid tot promotie', 'label' => 'Mogelijkheid tot promotie'],
-                ['value' => 'Flexibele werkuren', 'label' => 'Flexibele werkuren'],
-                ['value' => 'Personeelskorting', 'label' => 'Personeelskorting'],
-                ['value' => 'Bedrijfsfeesten', 'label' => 'Bedrijfsfeesten'],
-                ['value' => 'Productkorting werknemers', 'label' => 'Productkorting werknemers'],
-                ['value' => 'Auto van de zaak', 'label' => 'Auto van de zaak'],
-                ['value' => 'Budget voor professionele ontwikkeling', 'label' => 'Budget voor professionele ontwikkeling'],
-                ['value' => 'Zorgverzekering', 'label' => 'Zorgverzekering'],
-                ['value' => 'Collectieve zorgverzekering', 'label' => 'Collectieve zorgverzekering'],
-                ['value' => 'Bedrijfsopleiding', 'label' => 'Bedrijfsopleiding'],
-                ['value' => 'Vrijdagmiddagborrel', 'label' => 'Vrijdagmiddagborrel'],
-                ['value' => 'Kerstpakket', 'label' => 'Kerstpakket'],
-                ['value' => 'Extra vakantiedagen', 'label' => 'Extra vakantiedagen'],
-                ['value' => 'Fietsplan', 'label' => 'Fietsplan'],
-                ['value' => 'Bedrijfsfitness', 'label' => 'Bedrijfsfitness'],
-                ['value' => 'Winstdeling', 'label' => 'Winstdeling'],
-                ['value' => 'Werk vanuit huis', 'label' => 'Werk vanuit huis'],
-                ['value' => 'Telefoon van de zaak', 'label' => 'Telefoon van de zaak'],
-                ['value' => 'Telefoonplan', 'label' => 'Telefoonplan'],
-                ['value' => 'Aanvullend pensioen', 'label' => 'Aanvullend pensioen'],
-                ['value' => 'Gezondheidsprogramma', 'label' => 'Gezondheidsprogramma'],
-                ['value' => 'Lunchkorting', 'label' => 'Lunchkorting'],
-                ['value' => 'Kosteloos parkeren', 'label' => 'Kosteloos parkeren'],
-                ['value' => 'Levensverzekering', 'label' => 'Levensverzekering'],
-                ['value' => 'Aandelenopties', 'label' => 'Aandelenopties'],
-                ['value' => 'Taaltraining aangeboden', 'label' => 'Taaltraining aangeboden'],
-                ['value' => 'Kinderopvang', 'label' => 'Kinderopvang'],
-                ['value' => 'Verhuisvergoeding', 'label' => 'Verhuisvergoeding'],
-                ['value' => 'Huisvestingsvergoeding', 'label' => 'Huisvestingsvergoeding'],
-            ],
-
-            'sector_category' => [
-                ['value' => 'FMCG', 'label' => 'FMCG'],
-                ['value' => 'Foodservice', 'label' => 'Foodservice'],
-                ['value' => 'Overig', 'label' => 'Overig'],
-            ],
-
-            'sector_secondary_category' => [
-                ['value' => 'Retailer', 'label' => 'Retailer'],
-                ['value' => 'Supermarkten', 'label' => 'Supermarkten'],
-                ['value' => 'Groothandel', 'label' => 'Groothandel'],
-                ['value' => 'Leverancier', 'label' => 'Leverancier'],
-                ['value' => 'Industrie', 'label' => 'Industrie'],
-                ['value' => 'Andere', 'label' => 'Andere'],
-            ],
-
-            'sector_tertiary_category' => [
-                ['value' => 'Non-food', 'label' => 'Non-food'],
-                ['value' => 'Food', 'label' => 'Food'],
-            ],
-
-            'sector_brand' => [
-                ['value' => 'Merk', 'label' => 'Merk'],
-                ['value' => 'Private label', 'label' => 'Private label'],
-            ],
-
-            'sector_label' => [
-                ['value' => 'Vers', 'label' => 'Vers'],
-                ['value' => 'Zuivel & eieren', 'label' => 'Zuivel & eieren'],
-                ['value' => 'Diepvries', 'label' => 'Diepvries'],
-                ['value' => 'DKW (houdbaar voedsel)', 'label' => 'DKW (houdbaar voedsel)'],
-                ['value' => 'Dranken', 'label' => 'Dranken'],
-                ['value' => 'Snacks & snoep', 'label' => 'Snacks & snoep'],
-                ['value' => 'Non-food', 'label' => 'Non-food'],
-                ['value' => 'Verpakkingen', 'label' => 'Verpakkingen'],
-                ['value' => 'Convenience & ready-to-use', 'label' => 'Convenience & ready-to-use'],
-            ],
-
-            'sales_target' => [
-                ['value' => 'Marketing', 'label' => 'Marketing'],
-                ['value' => 'Sales', 'label' => 'Sales'],
-                ['value' => 'Inkoop', 'label' => 'Inkoop'],
-                ['value' => 'Supply Chain', 'label' => 'Supply Chain'],
-                ['value' => 'Finance', 'label' => 'Finance'],
-                ['value' => 'Directie', 'label' => 'Directie'],
-                ['value' => 'Category Management', 'label' => 'Category Management'],
-            ],
-
-            'client_status' => [
-                ['value' => 'potential', 'label' => 'Potentieel'],
-                ['value' => 'potential_first_assignment', 'label' => 'Potentieel (1e opdracht)'],
-                ['value' => 'new_client', 'label' => 'Nieuwe klant'],
-                ['value' => 'active_client', 'label' => 'Actieve klant'],
-                ['value' => 'inactive', 'label' => 'Inactief'],
-                ['value' => 'lost', 'label' => 'Verloren'],
-            ],
-
-            'activity_type' => [
-                ['value' => 'call', 'label' => 'Gebeld'],
-                ['value' => 'proposal', 'label' => 'Voorgesteld'],
-                ['value' => 'interview', 'label' => 'Gesprek'],
-                ['value' => 'hired', 'label' => 'Aangenomen'],
-                ['value' => 'rejected', 'label' => 'Afgewezen'],
-                ['value' => 'personality_test', 'label' => 'Persoonlijkheidstest afgenomen'],
-                ['value' => 'test', 'label' => 'Test afgenomen'],
-                ['value' => 'interview_training', 'label' => 'Sollicitatie training'],
-            ],
-
-            'calendar_event_type' => [
-                ['value' => 'meeting', 'label' => 'Afspraak', 'color' => '#818cf8'],
-                ['value' => 'call', 'label' => 'Bellen', 'color' => '#38bdf8'],
-                ['value' => 'interview', 'label' => 'Interview', 'color' => '#a78bfa'],
-                ['value' => 'reminder', 'label' => 'Herinnering', 'color' => '#fb923c'],
-                ['value' => 'other', 'label' => 'Anders', 'color' => '#94a3b8'],
-            ],
-        ];
-
-        foreach ($options as $type => $items) {
-            foreach ($items as $index => $item) {
-                DropdownOption::updateOrCreate(
-                    ['type' => $type, 'value' => $item['value']],
-                    [
-                        'label' => $item['label'],
-                        'color' => $item['color'] ?? null,
-                        'sort_order' => $index,
-                        'is_active' => true,
-                    ],
-                );
-            }
+        foreach (self::definitions() as $row) {
+            DropdownOption::updateOrCreate(
+                ['type' => $row['type'], 'value' => $row['value']],
+                [
+                    'label' => $row['label'],
+                    'color' => $row['color'],
+                    'sort_order' => $row['sort_order'],
+                    'is_active' => $row['is_active'],
+                ]
+            );
+            $count++;
         }
+
+        return $count;
+    }
+
+    /**
+     * @return list<array{type: string, value: string, label: string, color: ?string, sort_order: int, is_active: bool}>
+     */
+    public static function definitions(): array
+    {
+        return [
+            ['type' => 'education', 'value' => 'mbo', 'label' => 'Mbo', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'education', 'value' => 'hbo', 'label' => 'Hbo', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'education', 'value' => 'uni', 'label' => 'Uni', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'sector_category', 'value' => 'fmcg', 'label' => 'FMCG', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'sector_category', 'value' => 'foodservice', 'label' => 'Foodservice', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'sector_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'sector_secondary_category', 'value' => 'retailer', 'label' => 'Retailer', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'sector_secondary_category', 'value' => 'groothandel', 'label' => 'Groothandel', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'sector_secondary_category', 'value' => 'leverancier', 'label' => 'Leverancier', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'sector_secondary_category', 'value' => 'industrie', 'label' => 'Industrie', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'sector_secondary_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'sector_tertiary_category', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'sector_tertiary_category', 'value' => 'food', 'label' => 'Food', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'sector_brand', 'value' => 'merk', 'label' => 'Merk', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'sector_brand', 'value' => 'private_label', 'label' => 'Private label', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'vers', 'label' => 'Vers', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'zuivel_eieren', 'label' => 'Zuivel & eieren', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'diepvries', 'label' => 'Diepvries', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'dkw_houdbaar_voedsel', 'label' => 'DKW (houdbaar voedsel)', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'dranken', 'label' => 'Dranken', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'snacks_snoep', 'label' => 'Snacks & snoep', 'color' => null, 'sort_order' => 5, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 6, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'verpakkingen', 'label' => 'Verpakkingen', 'color' => null, 'sort_order' => 7, 'is_active' => true],
+            ['type' => 'sector_label', 'value' => 'convenience_ready_to_use', 'label' => 'Convenience & ready-to-use', 'color' => null, 'sort_order' => 8, 'is_active' => true],
+            ['type' => 'gender', 'value' => 'man', 'label' => 'Man', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'gender', 'value' => 'vrouw', 'label' => 'Vrouw', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'employment_type', 'value' => 'fulltime', 'label' => 'Fulltime', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'employment_type', 'value' => 'parttime', 'label' => 'Parttime', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'employment_type', 'value' => 'interim', 'label' => 'Interim', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'factuurcontact', 'label' => 'Factuurcontact', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'kandidaat', 'label' => 'Kandidaat', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'interimmer', 'label' => 'Interimmer', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'ambassadeur', 'label' => 'Ambassadeur', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'potentieel_management', 'label' => 'Potentieel Management', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'medebeslisser', 'label' => 'Medebeslisser', 'color' => null, 'sort_order' => 5, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'potentieel_directie', 'label' => 'Potentieel Directie', 'color' => null, 'sort_order' => 6, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'referentie_van_kandidaat', 'label' => 'Referentie van kandidaat', 'color' => null, 'sort_order' => 7, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'hr_eerste_contact_arbeidsvoorwaarden', 'label' => 'HR eerste contact arbeidsvoorwaarden', 'color' => null, 'sort_order' => 8, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'hr_recruiters', 'label' => 'HR Recruiters', 'color' => null, 'sort_order' => 9, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'directie', 'label' => 'Directie', 'color' => null, 'sort_order' => 10, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'eigenaar', 'label' => 'Eigenaar', 'color' => null, 'sort_order' => 11, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'expert', 'label' => 'Expert', 'color' => null, 'sort_order' => 12, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'coach', 'label' => 'Coach', 'color' => null, 'sort_order' => 13, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'oud_eigenaar', 'label' => 'Oud Eigenaar', 'color' => null, 'sort_order' => 14, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'oud_directeur', 'label' => 'Oud Directeur', 'color' => null, 'sort_order' => 15, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'commissaris', 'label' => 'Commissaris', 'color' => null, 'sort_order' => 16, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'investeerder', 'label' => 'Investeerder', 'color' => null, 'sort_order' => 17, 'is_active' => true],
+            ['type' => 'network_role', 'value' => 'netwerk_groep', 'label' => 'Netwerk Groep', 'color' => null, 'sort_order' => 18, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => '1e_contact_moment', 'label' => '1e contact moment', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => '1e_gesprek_online_of_offline', 'label' => '1e gesprek online of offline', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'test_afnemen', 'label' => 'Test afnemen', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'sollicitatietraining', 'label' => 'Sollicitatietraining', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => '1e_gesprek_klant', 'label' => '1e gesprek klant', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => '2e_gesprek_klant', 'label' => '2e gesprek klant', 'color' => null, 'sort_order' => 5, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'arbeidsvoorwaardengesprek', 'label' => 'Arbeidsvoorwaardengesprek', 'color' => null, 'sort_order' => 6, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'eindgesprek_klant', 'label' => 'Eindgesprek klant', 'color' => null, 'sort_order' => 7, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'bedrijfstest_afnemen', 'label' => 'Bedrijfstest afnemen', 'color' => null, 'sort_order' => 8, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'aangenomen', 'label' => 'Aangenomen', 'color' => null, 'sort_order' => 9, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'afgewezen', 'label' => 'Afgewezen', 'color' => null, 'sort_order' => 10, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'opdracht_on_hold', 'label' => 'Opdracht on hold', 'color' => null, 'sort_order' => 11, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'administratief_voltooid', 'label' => 'Administratief voltooid', 'color' => null, 'sort_order' => 12, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'schaduwmanagement', 'label' => 'Schaduwmanagement', 'color' => null, 'sort_order' => 13, 'is_active' => true],
+            ['type' => 'assignment_status', 'value' => 'voltooid', 'label' => 'Voltooid', 'color' => null, 'sort_order' => 14, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'reiskostenvergoeding', 'label' => 'Reiskostenvergoeding', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'pensioen', 'label' => 'Pensioen', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'dienstreizen_vergoeding', 'label' => 'Dienstreizen vergoeding', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'mogelijkheid_tot_promotie', 'label' => 'Mogelijkheid tot promotie', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'flexibele_werkuren', 'label' => 'Flexibele werkuren', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'personeelskorting', 'label' => 'Personeelskorting', 'color' => null, 'sort_order' => 5, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'bedrijfsfeesten', 'label' => 'Bedrijfsfeesten', 'color' => null, 'sort_order' => 6, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'productkorting_werknemers', 'label' => 'Productkorting werknemers', 'color' => null, 'sort_order' => 7, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'auto_van_de_zaak', 'label' => 'Auto van de zaak', 'color' => null, 'sort_order' => 8, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'budget_voor_professionele_ontwikkeling', 'label' => 'Budget voor professionele ontwikkeling', 'color' => null, 'sort_order' => 9, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'zorgverzekering', 'label' => 'Zorgverzekering', 'color' => null, 'sort_order' => 10, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'collectieve_zorgverzekering', 'label' => 'Collectieve zorgverzekering', 'color' => null, 'sort_order' => 11, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'bedrijfsopleiding', 'label' => 'Bedrijfsopleiding', 'color' => null, 'sort_order' => 12, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'vrijdagmiddagborrel', 'label' => 'Vrijdagmiddagborrel', 'color' => null, 'sort_order' => 13, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'kerstpakket', 'label' => 'Kerstpakket', 'color' => null, 'sort_order' => 14, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'extra_vakantiedagen', 'label' => 'Extra vakantiedagen', 'color' => null, 'sort_order' => 15, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'fietsplan', 'label' => 'Fietsplan', 'color' => null, 'sort_order' => 16, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'bedrijfsfitness', 'label' => 'Bedrijfsfitness', 'color' => null, 'sort_order' => 17, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'winstdeling', 'label' => 'Winstdeling', 'color' => null, 'sort_order' => 18, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'werk_vanuit_huis', 'label' => 'Werk vanuit huis', 'color' => null, 'sort_order' => 19, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'telefoon_van_de_zaak', 'label' => 'Telefoon van de zaak', 'color' => null, 'sort_order' => 20, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'telefoonplan', 'label' => 'Telefoonplan', 'color' => null, 'sort_order' => 21, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'aanvullend_pensioen', 'label' => 'Aanvullend pensioen', 'color' => null, 'sort_order' => 22, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'gezondeheidsprogramma', 'label' => 'Gezondeheidsprogramma', 'color' => null, 'sort_order' => 23, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'lunchkorting', 'label' => 'Lunchkorting', 'color' => null, 'sort_order' => 24, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'kosteloos_parkeren', 'label' => 'Kosteloos parkeren', 'color' => null, 'sort_order' => 25, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'levensverzekering', 'label' => 'Levensverzekering', 'color' => null, 'sort_order' => 26, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'aandelenopties', 'label' => 'Aandelenopties', 'color' => null, 'sort_order' => 27, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'taaltraining_aangeboden', 'label' => 'Taaltraining aangeboden', 'color' => null, 'sort_order' => 28, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'kinderopvang', 'label' => 'Kinderopvang', 'color' => null, 'sort_order' => 29, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'verhuisvergoeding', 'label' => 'Verhuisvergoeding', 'color' => null, 'sort_order' => 30, 'is_active' => true],
+            ['type' => 'benefit', 'value' => 'huisvestingsvergoeding', 'label' => 'Huisvestingsvergoeding', 'color' => null, 'sort_order' => 31, 'is_active' => true],
+            ['type' => 'sales_target', 'value' => 'Marketing', 'label' => 'Marketing', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'sales_target', 'value' => 'Sales', 'label' => 'Sales', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'sales_target', 'value' => 'Inkoop', 'label' => 'Inkoop', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'sales_target', 'value' => 'Supply Chain', 'label' => 'Supply Chain', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'sales_target', 'value' => 'Finance', 'label' => 'Finance', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'sales_target', 'value' => 'Directie', 'label' => 'Directie', 'color' => null, 'sort_order' => 5, 'is_active' => true],
+            ['type' => 'sales_target', 'value' => 'Category Management', 'label' => 'Category Management', 'color' => null, 'sort_order' => 6, 'is_active' => true],
+            ['type' => 'client_status', 'value' => 'potential', 'label' => 'Potentieel', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'client_status', 'value' => 'potential_first_assignment', 'label' => 'Potentieel (1e opdracht)', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'client_status', 'value' => 'new_client', 'label' => 'Nieuwe klant', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'client_status', 'value' => 'active_client', 'label' => 'Actieve klant', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'client_status', 'value' => 'inactive', 'label' => 'Inactief', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'client_status', 'value' => 'lost', 'label' => 'Verloren', 'color' => null, 'sort_order' => 5, 'is_active' => true],
+        ];
     }
 }
