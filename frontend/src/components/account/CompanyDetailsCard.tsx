@@ -18,43 +18,33 @@ import {
   Chip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import { useForm, Controller } from "react-hook-form";
 import type { Account } from "../../types/accounts";
 import { formatRevenueFullEuro } from "../../utils/formatters";
-
-// Helper function to format number with thousand separators (Dutch format)
-const formatNumberInput = (value: string): string => {
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  return parseInt(digits, 10).toLocaleString("nl-NL");
-};
-import { useUpdateAccount, type UpdateAccountData } from "../../api/mutations/accounts";
+import {
+  useUpdateAccount,
+  type UpdateAccountData,
+} from "../../api/mutations/accounts";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
 import {
   activeDropdownLabeled,
   activeDropdownLabeledWithColor,
-  activeDropdownValues,
 } from "../../utils/dropdownValidation";
+import ClassificationFields from "../features/ClassificationFields";
 
 /** Normaliseert API-waarde (legacy string of array) naar opgeslagen waarden. */
 function accountSalesTargetsAsValues(
   value: string | string[] | null | undefined,
-): string[] | null {
-  if (value == null) return null;
-  if (Array.isArray(value)) {
-    const next = value.filter(Boolean);
-    return next.length ? next : null;
-  }
+): string[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
   const s = String(value).trim();
-  return s ? [s] : null;
+  return s ? [s] : [];
 }
 
-type Props = {
-  account: Account;
-};
-
-export default function CompanyDetailsCard({ account }: Props) {
-  const [editOpen, setEditOpen] = useState(false);
-  const [formData, setFormData] = useState<UpdateAccountData>({
+/** Bouwt de formulierwaarden op uit een account. */
+function accountToForm(account: Account): UpdateAccountData {
+  return {
     name: account.name,
     parent_company: account.parent_company || "",
     logo_url: account.logo_url || "",
@@ -66,93 +56,50 @@ export default function CompanyDetailsCard({ account }: Props) {
     secondary_category: account.secondary_category || "",
     sales_target: accountSalesTargetsAsValues(account.sales_target),
     client_status: account.client_status || "",
-    tertiary_category: account.tertiary_category || null,
-    merken: account.merken || null,
-    labels: account.labels || null,
-    fte_count: account.fte_count || null,
-    revenue_cents: account.revenue_cents || null,
+    tertiary_category: account.tertiary_category || [],
+    merken: account.merken || [],
+    labels: account.labels || [],
+    fte_count: account.fte_count ?? null,
+    revenue_cents: account.revenue_cents ?? null,
     notes: account.notes || "",
-  });
-  const [revenueInput, setRevenueInput] = useState(
-    account.revenue_cents ? Math.round(account.revenue_cents / 100).toLocaleString("nl-NL") : ""
-  );
-  const [fteInput, setFteInput] = useState(
-    account.fte_count ? account.fte_count.toString() : ""
-  );
+  };
+}
 
+type Props = {
+  account: Account;
+};
+
+export default function CompanyDetailsCard({ account }: Props) {
+  const [editOpen, setEditOpen] = useState(false);
   const updateAccountMutation = useUpdateAccount();
 
-  const { data: dbCategory } = useDropdownOptions("account_category");
-  const { data: dbSecondary } = useDropdownOptions("account_secondary_category");
-  const { data: dbTertiary, isPending: isTertiaryPending } =
-    useDropdownOptions("account_tertiary_category");
-  const { data: dbBrand, isPending: isBrandsPending } =
-    useDropdownOptions("account_brand");
-  const { data: dbLabel, isPending: isLabelsPending } =
-    useDropdownOptions("account_label");
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm<UpdateAccountData>({
+    defaultValues: accountToForm(account),
+  });
+
   const { data: dbSalesTarget, isPending: isSalesTargetPending } =
     useDropdownOptions("sales_target");
   const { data: dbClientStatus } = useDropdownOptions("client_status");
 
-  const activeCategories = React.useMemo(
-    () => activeDropdownLabeled(dbCategory),
-    [dbCategory]
-  );
-
-  const activeSecondary = React.useMemo(
-    () => activeDropdownLabeled(dbSecondary),
-    [dbSecondary]
-  );
-
-  const activeTertiary = React.useMemo(
-    () => activeDropdownValues(dbTertiary),
-    [dbTertiary]
-  );
-
-  const activeBrands = React.useMemo(
-    () => activeDropdownValues(dbBrand),
-    [dbBrand]
-  );
-
-  const activeLabels = React.useMemo(
-    () => activeDropdownValues(dbLabel),
-    [dbLabel]
-  );
-
   const activeSalesTargets = React.useMemo(
     () => activeDropdownLabeled(dbSalesTarget),
-    [dbSalesTarget]
+    [dbSalesTarget],
   );
 
   const activeClientStatus = React.useMemo(
     () => activeDropdownLabeledWithColor(dbClientStatus),
-    [dbClientStatus]
+    [dbClientStatus],
   );
 
   const handleOpen = () => {
-    setFormData({
-      name: account.name,
-      parent_company: account.parent_company || "",
-      logo_url: account.logo_url || "",
-      location: account.location || "",
-      website: account.website || "",
-      phone: account.phone || "",
-      industry: account.industry || "",
-      category: account.category || "",
-      secondary_category: account.secondary_category || "",
-      sales_target: accountSalesTargetsAsValues(account.sales_target),
-      client_status: account.client_status || "",
-      tertiary_category: account.tertiary_category || null,
-      merken: account.merken || null,
-      labels: account.labels || null,
-      fte_count: account.fte_count || null,
-      revenue_cents: account.revenue_cents || null,
-      notes: account.notes || "",
-    });
-    setRevenueInput(
-      account.revenue_cents ? Math.round(account.revenue_cents / 100).toLocaleString("nl-NL") : ""
-    );
-    setFteInput(account.fte_count ? account.fte_count.toString() : "");
+    reset(accountToForm(account));
     setEditOpen(true);
   };
 
@@ -161,48 +108,34 @@ export default function CompanyDetailsCard({ account }: Props) {
     updateAccountMutation.reset();
   };
 
-  const handleRevenueChange = (value: string) => {
-    const formatted = formatNumberInput(value);
-    setRevenueInput(formatted);
-    const digits = value.replace(/\D/g, "");
-    if (digits) {
-      setFormData((prev) => ({ ...prev, revenue_cents: parseInt(digits, 10) * 100 }));
-    } else {
-      setFormData((prev) => ({ ...prev, revenue_cents: null }));
-    }
-  };
-
-  const handleFteChange = (value: string) => {
-    setFteInput(value);
-    const parsed = parseInt(value.replace(/[^\d]/g, ""), 10);
-    if (!isNaN(parsed)) {
-      setFormData((prev) => ({ ...prev, fte_count: parsed }));
-    } else if (value === "") {
-      setFormData((prev) => ({ ...prev, fte_count: null }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: UpdateAccountData) => {
     const dataToSubmit: UpdateAccountData = {
-      name: formData.name,
-      parent_company: formData.parent_company?.trim() || null,
-      logo_url: formData.logo_url || null,
-      location: formData.location || null,
-      website: formData.website || null,
-      phone: formData.phone || null,
-      industry: formData.industry || null,
-      category: formData.category || null,
-      secondary_category: formData.secondary_category || null,
-      sales_target: formData.sales_target?.length ? formData.sales_target : null,
-      client_status: formData.client_status || null,
-      tertiary_category: formData.tertiary_category,
-      merken: formData.merken,
-      labels: formData.labels,
-      fte_count: formData.fte_count,
-      revenue_cents: formData.revenue_cents,
-      notes: formData.notes || null,
+      name: data.name,
+      parent_company: data.parent_company?.trim() || null,
+      logo_url: data.logo_url || null,
+      location: data.location || null,
+      website: data.website || null,
+      phone: data.phone || null,
+      industry: data.industry || null,
+      category: data.category || null,
+      secondary_category: data.secondary_category || null,
+      sales_target: data.sales_target?.length ? data.sales_target : null,
+      client_status: data.client_status || null,
+      tertiary_category: data.tertiary_category?.length
+        ? data.tertiary_category
+        : null,
+      merken: data.merken?.length ? data.merken : null,
+      labels: data.labels?.length ? data.labels : null,
+      fte_count:
+        typeof data.fte_count === "number" && Number.isFinite(data.fte_count)
+          ? data.fte_count
+          : null,
+      revenue_cents:
+        typeof data.revenue_cents === "number" &&
+        Number.isFinite(data.revenue_cents)
+          ? data.revenue_cents
+          : null,
+      notes: data.notes || null,
     };
 
     try {
@@ -215,6 +148,8 @@ export default function CompanyDetailsCard({ account }: Props) {
       console.error("Failed to update account:", error);
     }
   };
+
+  const nameValue = watch("name");
 
   return (
     <>
@@ -284,7 +219,7 @@ export default function CompanyDetailsCard({ account }: Props) {
             </Typography>
             {(() => {
               const values = accountSalesTargetsAsValues(account.sales_target);
-              if (!values?.length) {
+              if (!values.length) {
                 return <Typography fontWeight="bold">-</Typography>;
               }
               return (
@@ -387,7 +322,7 @@ export default function CompanyDetailsCard({ account }: Props) {
       </Paper>
 
       <Dialog open={editOpen} onClose={handleClose} maxWidth="sm" fullWidth>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <DialogTitle>Bedrijfsgegevens bewerken</DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 1 }}>
@@ -399,26 +334,22 @@ export default function CompanyDetailsCard({ account }: Props) {
 
               <TextField
                 label="Bedrijfsnaam"
-                value={formData.name || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                {...register("name", { required: true })}
                 fullWidth
                 required
+                error={!!errors.name}
               />
 
               <TextField
                 label="Moederbedrijf"
-                value={formData.parent_company || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, parent_company: e.target.value }))
-                }
+                {...register("parent_company")}
                 fullWidth
                 placeholder="Vrij veld, bijv. naam van de holding"
               />
 
               <TextField
                 label="Logo URL"
-                value={formData.logo_url || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, logo_url: e.target.value }))}
+                {...register("logo_url")}
                 fullWidth
                 placeholder="https://example.com/logo.png"
                 type="url"
@@ -426,16 +357,14 @@ export default function CompanyDetailsCard({ account }: Props) {
 
               <TextField
                 label="Locatie"
-                value={formData.location || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                {...register("location")}
                 fullWidth
                 placeholder="bijv. Amsterdam, Nederland"
               />
 
               <TextField
                 label="Website"
-                value={formData.website || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
+                {...register("website")}
                 fullWidth
                 placeholder="https://www.voorbeeld.nl"
                 type="url"
@@ -443,308 +372,142 @@ export default function CompanyDetailsCard({ account }: Props) {
 
               <TextField
                 label="Telefoon"
-                value={formData.phone || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                {...register("phone")}
                 fullWidth
                 placeholder="bijv. +31 20 123 4567"
               />
 
               <TextField
                 label="Branche"
-                value={formData.industry || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
+                {...register("industry")}
                 fullWidth
                 placeholder="bijv. IT, Financiën, Logistiek"
               />
 
-              <TextField
-                select
-                label="Categorie"
-                value={formData.category || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                fullWidth
-              >
-                <MenuItem value="">Geen categorie</MenuItem>
-                {activeCategories.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                select
-                label="Secundaire categorie"
-                value={formData.secondary_category || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, secondary_category: e.target.value }))
-                }
-                fullWidth
-              >
-                <MenuItem value="">Geen secundaire categorie</MenuItem>
-                {activeSecondary.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <ClassificationFields control={control} errors={errors} />
 
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                   Sales doel
                 </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 1,
-                    alignItems: "center",
-                    minHeight: 36,
-                  }}
-                >
-                  {isSalesTargetPending ? (
-                    <CircularProgress size={22} />
-                  ) : activeSalesTargets.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                      Dropdown opties → Sales doel.
-                    </Typography>
-                  ) : (
-                    activeSalesTargets.map((opt) => {
-                      const isSelected = (formData.sales_target || []).includes(opt.value);
-                      return (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            setFormData((prev) => {
-                              const current = prev.sales_target || [];
-                              const next = current.includes(opt.value)
-                                ? current.filter((o) => o !== opt.value)
-                                : [...current, opt.value];
-                              return { ...prev, sales_target: next.length ? next : null };
-                            });
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })
-                  )}
-                </Box>
-              </Box>
-
-              <TextField
-                select
-                label="Klant status"
-                value={formData.client_status || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, client_status: e.target.value }))
-                }
-                fullWidth
-              >
-                <MenuItem value="">Geen status</MenuItem>
-                {activeClientStatus.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: opt.color, flexShrink: 0 }} />
-                      {opt.label}
+                <Controller
+                  name="sales_target"
+                  control={control}
+                  render={({ field }) => (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 1,
+                        alignItems: "center",
+                        minHeight: 36,
+                      }}
+                    >
+                      {isSalesTargetPending ? (
+                        <CircularProgress size={22} />
+                      ) : activeSalesTargets.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                          Geen actieve opties. Stel ze in of zet ze aan bij
+                          Instellingen → Dropdown opties → Sales doel.
+                        </Typography>
+                      ) : (
+                        activeSalesTargets.map((opt) => {
+                          const selected: string[] = field.value || [];
+                          const isSelected = selected.includes(opt.value);
+                          return (
+                            <Chip
+                              key={opt.value}
+                              label={opt.label}
+                              size="small"
+                              variant={isSelected ? "filled" : "outlined"}
+                              color={isSelected ? "primary" : "default"}
+                              onClick={() =>
+                                field.onChange(
+                                  isSelected
+                                    ? selected.filter((o) => o !== opt.value)
+                                    : [...selected, opt.value],
+                                )
+                              }
+                              sx={{
+                                cursor: "pointer",
+                                "&:hover": {
+                                  bgcolor: isSelected
+                                    ? "primary.dark"
+                                    : "action.hover",
+                                },
+                              }}
+                            />
+                          );
+                        })
+                      )}
                     </Box>
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Tertiaire categorie
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 1,
-                    alignItems: "center",
-                    minHeight: 36,
-                  }}
-                >
-                  {isTertiaryPending ? (
-                    <CircularProgress size={22} />
-                  ) : activeTertiary.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                      Dropdown opties → Tertiaire categorie.
-                    </Typography>
-                  ) : (
-                    activeTertiary.map((opt) => {
-                      const isSelected = (formData.tertiary_category || []).includes(
-                        opt
-                      );
-                      return (
-                        <Chip
-                          key={opt}
-                          label={opt}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            setFormData((prev) => {
-                              const current = prev.tertiary_category || [];
-                              const next = current.includes(opt)
-                                ? current.filter((o) => o !== opt)
-                                : [...current, opt];
-                              return { ...prev, tertiary_category: next };
-                            });
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })
                   )}
-                </Box>
+                />
               </Box>
 
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Merken
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 1,
-                    alignItems: "center",
-                    minHeight: 36,
-                  }}
-                >
-                  {isBrandsPending ? (
-                    <CircularProgress size={22} />
-                  ) : activeBrands.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                      Dropdown opties → Merken.
-                    </Typography>
-                  ) : (
-                    activeBrands.map((opt) => {
-                      const isSelected = (formData.merken || []).includes(opt);
-                      return (
-                        <Chip
-                          key={opt}
-                          label={opt}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            setFormData((prev) => {
-                              const current = prev.merken || [];
-                              const next = current.includes(opt)
-                                ? current.filter((o) => o !== opt)
-                                : [...current, opt];
-                              return { ...prev, merken: next };
-                            });
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })
-                  )}
-                </Box>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Labels
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 1,
-                    alignItems: "center",
-                    minHeight: 36,
-                  }}
-                >
-                  {isLabelsPending ? (
-                    <CircularProgress size={22} />
-                  ) : activeLabels.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      Geen actieve opties. Stel ze in of zet ze aan bij Instellingen →
-                      Dropdown opties → Labels.
-                    </Typography>
-                  ) : (
-                    activeLabels.map((opt) => {
-                      const isSelected = (formData.labels || []).includes(opt);
-                      return (
-                        <Chip
-                          key={opt}
-                          label={opt}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            setFormData((prev) => {
-                              const current = prev.labels || [];
-                              const next = current.includes(opt)
-                                ? current.filter((o) => o !== opt)
-                                : [...current, opt];
-                              return { ...prev, labels: next };
-                            });
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })
-                  )}
-                </Box>
-              </Box>
+              <Controller
+                name="client_status"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    label="Klant status"
+                    {...field}
+                    value={field.value || ""}
+                    fullWidth
+                  >
+                    <MenuItem value="">Geen status</MenuItem>
+                    {activeClientStatus.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: opt.color, flexShrink: 0 }} />
+                          {opt.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
 
               <TextField
                 label="Aantal FTE"
-                value={fteInput}
-                onChange={(e) => handleFteChange(e.target.value)}
+                {...register("fte_count", { valueAsNumber: true })}
                 fullWidth
                 placeholder="50"
                 type="number"
                 inputProps={{ min: 0 }}
               />
 
-              <TextField
-                label="Jaaromzet"
-                value={revenueInput}
-                onChange={(e) => handleRevenueChange(e.target.value)}
-                fullWidth
-                placeholder="1000000"
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
-                }}
-                helperText="Voer het bedrag in euro's in"
+              <Controller
+                name="revenue_cents"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label="Jaaromzet"
+                    value={
+                      typeof field.value === "number"
+                        ? Math.round(field.value / 100).toLocaleString("nl-NL")
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      field.onChange(digits ? parseInt(digits, 10) * 100 : null);
+                    }}
+                    fullWidth
+                    placeholder="1000000"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">€</InputAdornment>
+                      ),
+                    }}
+                    helperText="Voer het bedrag in euro's in"
+                  />
+                )}
               />
 
               <TextField
                 label="Notities"
-                value={formData.notes || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                {...register("notes")}
                 fullWidth
                 multiline
                 rows={4}
@@ -759,7 +522,7 @@ export default function CompanyDetailsCard({ account }: Props) {
             <Button
               type="submit"
               variant="contained"
-              disabled={updateAccountMutation.isPending || !formData.name?.trim()}
+              disabled={updateAccountMutation.isPending || !nameValue?.trim()}
               startIcon={updateAccountMutation.isPending ? <CircularProgress size={16} /> : null}
             >
               {updateAccountMutation.isPending ? "Opslaan..." : "Opslaan"}

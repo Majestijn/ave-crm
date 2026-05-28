@@ -44,6 +44,7 @@ export const useAddAssignmentCandidates = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.assignments.candidates(variables.assignmentUid),
       });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 };
@@ -70,6 +71,7 @@ export const useUpdateAssignmentCandidateStatus = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.assignments.candidates(variables.assignmentUid),
       });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 };
@@ -93,6 +95,7 @@ export const useRemoveAssignmentCandidate = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.assignments.candidates(variables.assignmentUid),
       });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 };

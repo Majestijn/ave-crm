@@ -132,7 +132,7 @@ async function importProfile(crmUrl, apiToken, assignmentUid, profileText, linke
     body: JSON.stringify({
       profile_text: profileText,
       linkedin_url: linkedinUrl || null,
-      assignment_uid: assignmentUid,
+      ...(assignmentUid ? { assignment_uid: assignmentUid } : {}),
     }),
   });
 
@@ -159,7 +159,7 @@ async function init() {
     try {
       const assignments = await fetchAssignments(crmUrl, apiToken);
       const select = document.getElementById('assignment-select');
-      select.innerHTML = '<option value="">Kies een opdracht...</option>';
+      select.innerHTML = '<option value="">Geen — alleen contact (optioneel opdracht)</option>';
       assignments.forEach((a) => {
         const opt = document.createElement('option');
         opt.value = a.uid;
@@ -206,11 +206,7 @@ document.getElementById('save-settings').addEventListener('click', async () => {
 });
 
 document.getElementById('import-btn').addEventListener('click', async () => {
-  const assignmentUid = document.getElementById('assignment-select').value;
-  if (!assignmentUid) {
-    alert('Kies eerst een opdracht.');
-    return;
-  }
+  const assignmentUid = document.getElementById('assignment-select').value?.trim() || '';
 
   const { crmUrl, apiToken } = await getStoredSettings();
   if (!crmUrl || !apiToken) {
@@ -227,7 +223,10 @@ document.getElementById('import-btn').addEventListener('click', async () => {
     showStatus('Importeren via AI...', 'loading');
 
     await importProfile(crmUrl, apiToken, assignmentUid, profileText, linkedinUrl);
-    showStatus('Contact aangemaakt en gekoppeld aan opdracht!', 'success');
+    showStatus(
+      assignmentUid ? 'Contact aangemaakt en gekoppeld aan opdracht!' : 'Contact aangemaakt!',
+      'success'
+    );
   } catch (err) {
     showStatus(err.message, 'error');
   } finally {

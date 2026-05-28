@@ -1,3 +1,5 @@
 /stage
 /node_modules
 /portfolio
+# Geëxporteerde legacy-data: bevat PII + wachtwoord-hashes, nooit committen
+/old_data

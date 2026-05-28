@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DescriptionIcon from "@mui/icons-material/Description";
 
 import type { Account } from "../../../types/accounts";
 import type { User } from "../../../types/users";
@@ -34,6 +35,8 @@ const EMPLOYMENT_TYPE_FALLBACK = [
   "Freelance",
   "Interim",
 ] as const;
+
+const ROLE_PROFILE_MAX_BYTES = 15 * 1024 * 1024;
 
 type CreateAssignmentDialogProps = {
   open: boolean;
@@ -105,14 +108,20 @@ export default function CreateAssignmentDialog({
   const [salaryMax, setSalaryMax] = useState("");
   const [vacationDays, setVacationDays] = useState<number | "">("");
   const [bonusPercentage, setBonusPercentage] = useState<number | "">("");
+  const [totalFee, setTotalFee] = useState("");
+  const [advanceFee, setAdvanceFee] = useState("");
   const [location, setLocation] = useState("");
   const [employmentType, setEmploymentType] = useState("");
+  const [hoursPerWeekMin, setHoursPerWeekMin] = useState<number | "">("");
+  const [hoursPerWeekMax, setHoursPerWeekMax] = useState<number | "">("");
   const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [benefits, setBenefits] = useState<string[]>([]);
   const [notesImageFile, setNotesImageFile] = useState<File | null>(null);
   const [notesImagePreview, setNotesImagePreview] = useState<string | null>(
     null
   );
+  const [roleProfileFile, setRoleProfileFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const selectedSecondaryRecruiters = useMemo(() => {
@@ -134,12 +143,18 @@ export default function CreateAssignmentDialog({
       setSalaryMax("");
       setVacationDays("");
       setBonusPercentage("");
+      setTotalFee("");
+      setAdvanceFee("");
       setLocation("");
       setEmploymentType("");
+      setHoursPerWeekMin("");
+      setHoursPerWeekMax("");
       setStartDate("");
+      setEndDate("");
       setBenefits([]);
       setNotesImageFile(null);
       setNotesImagePreview(null);
+      setRoleProfileFile(null);
       setError(null);
       return;
     }
@@ -180,6 +195,28 @@ export default function CreateAssignmentDialog({
     setNotesImagePreview(null);
   };
 
+  const handleRoleProfileUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.toLowerCase().split(".").pop();
+    const allowed = ["pdf", "doc", "docx"];
+    if (!ext || !allowed.includes(ext)) {
+      setError("Alleen PDF of Word (.doc, .docx) zijn toegestaan voor het rolprofiel.");
+      return;
+    }
+
+    if (file.size > ROLE_PROFILE_MAX_BYTES) {
+      setError("Rolprofiel mag maximaal 15 MB zijn.");
+      return;
+    }
+
+    setRoleProfileFile(file);
+    setError(null);
+  };
+
   const handleCreateAssignment = async () => {
     if (!accountUid) {
       setError("Selecteer een klant");
@@ -199,6 +236,33 @@ export default function CreateAssignmentDialog({
       setError(
         "Een of meer arbeidsvoorwaarden zijn ongeldig. Kies opties uit de lijst."
       );
+      return;
+    }
+
+    if (
+      hoursPerWeekMin !== "" &&
+      hoursPerWeekMax !== "" &&
+      hoursPerWeekMin > hoursPerWeekMax
+    ) {
+      setError(
+        "Het minimum aantal werkuren per week mag niet hoger zijn dan het maximum."
+      );
+      return;
+    }
+
+    if (startDate && endDate && endDate < startDate) {
+      setError("De einddatum mag niet vóór de startdatum liggen.");
+      return;
+    }
+
+    const parsedTotalFee = parseFormattedNumber(totalFee);
+    const parsedAdvanceFee = parseFormattedNumber(advanceFee);
+    if (
+      parsedTotalFee !== "" &&
+      parsedAdvanceFee !== "" &&
+      parsedAdvanceFee > parsedTotalFee
+    ) {
+      setError("De voorfee mag niet hoger zijn dan de totale fee.");
       return;
     }
 
@@ -222,11 +286,17 @@ export default function CreateAssignmentDialog({
         vacation_days: vacationDays === "" ? null : vacationDays,
         bonus_percentage:
           bonusPercentage === "" ? null : bonusPercentage,
+        total_fee: parsedTotalFee === "" ? null : parsedTotalFee,
+        advance_fee: parsedAdvanceFee === "" ? null : parsedAdvanceFee,
         location: location.trim() || null,
         employment_type: employmentType || null,
+        hours_per_week_min: hoursPerWeekMin === "" ? null : hoursPerWeekMin,
+        hours_per_week_max: hoursPerWeekMax === "" ? null : hoursPerWeekMax,
         start_date: startDate || null,
+        end_date: endDate || null,
         benefits: benefits.length > 0 ? benefits : null,
         notes_image: notesImageFile,
+        role_profile: roleProfileFile ?? undefined,
       });
 
       onClose();
@@ -372,7 +442,7 @@ export default function CreateAssignmentDialog({
             </FormControl>
           </Stack>
 
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <TextField
               label="Startdatum"
               type="date"
@@ -380,6 +450,58 @@ export default function CreateAssignmentDialog({
               onChange={(e) => setStartDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
               sx={{ width: 200 }}
+            />
+            <TextField
+              label="Einddatum"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ width: 200 }}
+              helperText={
+                employmentType.toLowerCase().includes("interim")
+                  ? "Voor interim opdrachten op het dashboard"
+                  : "Optioneel"
+              }
+            />
+          </Stack>
+
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <TextField
+              label="Werkuren per week min"
+              type="number"
+              fullWidth
+              value={hoursPerWeekMin}
+              onChange={(e) =>
+                setHoursPerWeekMin(
+                  e.target.value ? parseInt(e.target.value, 10) : ""
+                )
+              }
+              InputProps={{
+                inputProps: { min: 0, max: 168, step: 1 },
+                endAdornment: (
+                  <InputAdornment position="end">uur</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 24"
+            />
+            <TextField
+              label="Werkuren per week max"
+              type="number"
+              fullWidth
+              value={hoursPerWeekMax}
+              onChange={(e) =>
+                setHoursPerWeekMax(
+                  e.target.value ? parseInt(e.target.value, 10) : ""
+                )
+              }
+              InputProps={{
+                inputProps: { min: 0, max: 168, step: 1 },
+                endAdornment: (
+                  <InputAdornment position="end">uur</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 40"
             />
           </Stack>
 
@@ -407,6 +529,34 @@ export default function CreateAssignmentDialog({
                 ),
               }}
               placeholder="bijv. 60.000"
+            />
+          </Stack>
+
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <TextField
+              label="Totale fee"
+              fullWidth
+              value={totalFee}
+              onChange={(e) => setTotalFee(formatNumberInput(e.target.value))}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">€</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 25.000"
+            />
+            <TextField
+              label="Voorfee"
+              fullWidth
+              value={advanceFee}
+              onChange={(e) => setAdvanceFee(formatNumberInput(e.target.value))}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">€</InputAdornment>
+                ),
+              }}
+              placeholder="bijv. 5.000"
+              helperText="Mag niet hoger zijn dan de totale fee"
             />
           </Stack>
 
@@ -477,6 +627,50 @@ export default function CreateAssignmentDialog({
                 );
               })}
             </Box>
+          </Box>
+
+          {/* Rolprofiel */}
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Rolprofiel (optioneel)
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<DescriptionIcon />}
+                sx={{ flexShrink: 0 }}
+              >
+                PDF of Word uploaden
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleRoleProfileUpload}
+                />
+              </Button>
+              {roleProfileFile && (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    {roleProfileFile.name}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    aria-label="Rolprofiel verwijderen"
+                    onClick={() => setRoleProfileFile(null)}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </>
+              )}
+            </Stack>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", mt: 0.5 }}
+            >
+              PDF of Word (max. 15 MB). Het document wordt bij de opdracht getoond.
+            </Typography>
           </Box>
 
           {/* Notes Image Upload */}

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use App\Models\Contact;
 use App\Models\DropdownOption;
 use App\Models\User;
+use App\Support\ClassificationRules;
 
 class StoreContactRequest extends FormRequest
 {
@@ -33,14 +34,7 @@ class StoreContactRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'current_company' => ['nullable', 'string', 'max:255'],
             'company_role' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
-            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
-            'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
-            'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
-            'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
+            ...ClassificationRules::rules(),
             'network_roles' => ['nullable', 'array'],
             'network_roles.*' => ['string', 'max:64', DropdownOption::validationRule('network_role')],
             'annual_salary_cents' => ['nullable', 'integer', 'min:0'],

@@ -11,6 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->ulid('uid')->unique();
             $table->string('name');
+            $table->string('parent_company')->nullable();
             $table->string('logo_url')->nullable();
             $table->string('location')->nullable();
             $table->string('website')->nullable();
@@ -24,7 +25,7 @@ return new class extends Migration {
             $table->integer('fte_count')->nullable();
             $table->bigInteger('revenue_cents')->nullable();
             $table->text('notes')->nullable();
-            $table->json('sales_target')->nullable();
+            $table->jsonb('sales_target')->nullable();
             $table->string('client_status')->nullable();
             $table->timestamps();
             $table->softDeletes();
@@ -45,7 +46,17 @@ return new class extends Migration {
             $table->decimal('longitude', 10, 7)->nullable();
             $table->string('current_company')->nullable();
             $table->string('company_role')->nullable();
+            $table->string('category')->nullable();
+            $table->string('secondary_category')->nullable();
+            $table->json('tertiary_category')->nullable();
+            $table->json('merken')->nullable();
+            $table->json('labels')->nullable();
             $table->json('network_roles')->nullable();
+            $table->unsignedBigInteger('annual_salary_cents')->nullable();
+            $table->unsignedInteger('hourly_rate_cents')->nullable();
+            $table->unsignedSmallInteger('vacation_days')->nullable();
+            $table->decimal('bonus_percentage', 5, 2)->nullable();
+            $table->json('benefits')->nullable();
             $table->string('education')->nullable();
             $table->date('availability_date')->nullable();
             $table->string('linkedin_url')->nullable();
@@ -53,6 +64,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
             $table->index(['latitude', 'longitude']);
+            $table->index('last_name');
         });
     }
 

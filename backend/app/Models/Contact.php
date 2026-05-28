@@ -178,6 +178,14 @@ class Contact extends Model
     }
 
     /**
+     * Get the account links (contact-person relationships) for this contact.
+     */
+    public function accountContacts(): HasMany
+    {
+        return $this->hasMany(AccountContact::class);
+    }
+
+    /**
      * Get only CV documents for this contact
      */
     public function cvDocuments(): HasMany

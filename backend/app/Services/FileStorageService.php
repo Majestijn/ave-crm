@@ -41,6 +41,45 @@ class FileStorageService
     }
 
     /**
+     * Upload assignment rolprofiel (PDF or Word).
+     */
+    public function uploadAssignmentRoleProfile(
+        string $tenantId,
+        string $assignmentUid,
+        UploadedFile $file
+    ): array {
+        $extension = strtolower($file->getClientOriginalExtension());
+        $allowed = ['pdf', 'doc', 'docx'];
+        if (!in_array($extension, $allowed, true)) {
+            throw new \InvalidArgumentException('Alleen PDF en Word (.doc, .docx) zijn toegestaan.');
+        }
+
+        $filename = sprintf(
+            'rolprofiel-%s.%s',
+            now()->format('Y-m-d-His'),
+            $extension
+        );
+
+        $path = sprintf(
+            '%s/assignments/%s/%s',
+            $tenantId,
+            $assignmentUid,
+            $filename
+        );
+
+        Storage::disk($this->disk)->put(
+            $path,
+            $file->getContent(),
+            'private'
+        );
+
+        return [
+            'path' => $path,
+            'original_filename' => $file->getClientOriginalName(),
+        ];
+    }
+
+    /**
      * Upload contact document (CV, certificate, etc.)
      */
     public function uploadContactDocument(

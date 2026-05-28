@@ -25,6 +25,8 @@ import {
   getStatusColor,
   candidateStatusOptions,
   getCandidateStatusColor,
+  formatFeeSummary,
+  formatAssignmentDateSummary,
 } from "./types";
 import { AssignmentCandidatesLoader } from "./AssignmentExpandedContent";
 import AssignmentExpandedContent from "./AssignmentExpandedContent";
@@ -95,6 +97,15 @@ const AssignmentCard = React.memo(function AssignmentCard({
   onNavigateToAccount,
   onCandidatesLoaded,
 }: AssignmentCardProps) {
+  const feeSummary = formatFeeSummary(
+    assignment.total_fee,
+    assignment.advance_fee,
+  );
+  const dateSummary = formatAssignmentDateSummary(
+    assignment.start_date,
+    assignment.end_date,
+  );
+
   return (
     <React.Fragment>
       <AssignmentCandidatesLoader
@@ -156,6 +167,26 @@ const AssignmentCard = React.memo(function AssignmentCard({
                         .join(", ")}
                     </>
                   )}
+              </Typography>
+            )}
+            {dateSummary && (
+              <Typography
+                variant="caption"
+                display="block"
+                color="text.secondary"
+                sx={{ mt: 0.5 }}
+              >
+                {dateSummary}
+              </Typography>
+            )}
+            {feeSummary && (
+              <Typography
+                variant="caption"
+                display="block"
+                color="text.secondary"
+                sx={{ mt: 0.5, fontWeight: 500 }}
+              >
+                {feeSummary}
               </Typography>
             )}
           </Box>

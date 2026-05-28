@@ -73,6 +73,8 @@ import {
 import SmartBulkImportDialog from "../../components/features/SmartBulkImportDialog";
 import BatchImportDialog from "../../components/features/BatchImportDialog";
 import ExcelImportDialog from "../../components/features/ExcelImportDialog";
+import LinkedInImportDialog from "../../components/features/LinkedInImportDialog";
+import ClassificationFields from "../../components/features/ClassificationFields";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import type { Contact, ContactWorkExperience } from "../../types/contacts";
 import WorkExperienceSection, { formatDateRange } from "../../components/features/WorkExperienceSection";
@@ -92,6 +94,8 @@ import {
   activeDropdownLabeled,
 } from "../../utils/dropdownValidation";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../api/queries/keys";
 import {
   benefitsOptions,
   formatNumberInput,
@@ -303,262 +307,6 @@ const CONTACT_ACCOUNT_LABEL_FALLBACK = [
   "convenience_ready_to_use",
 ] as const;
 
-/** Hoofd-/secundaire/tertiaire categorie, merken en labels (zelfde opties als bij klanten). */
-function ContactSectorFields({
-  control,
-  errors,
-  activeCategories,
-  activeSecondary,
-  activeTertiary,
-  activeBrands,
-  activeLabels,
-  isTertiaryPending,
-  isBrandsPending,
-  isLabelsPending,
-}: {
-  control: Control<ContactForm>;
-  errors: FieldErrors<ContactForm>;
-  activeCategories: { value: string; label: string }[];
-  activeSecondary: { value: string; label: string }[];
-  activeTertiary: { value: string; label: string }[];
-  activeBrands: { value: string; label: string }[];
-  activeLabels: { value: string; label: string }[];
-  isTertiaryPending: boolean;
-  isBrandsPending: boolean;
-  isLabelsPending: boolean;
-}) {
-  return (
-    <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
-      <Typography variant="subtitle2" sx={{ mb: 2 }}>
-        Sector & labels (zelfde opties als bij klanten)
-      </Typography>
-      <Stack spacing={2}>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <Controller
-            name="category"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                select
-                label="Hoofdcategorie"
-                {...field}
-                value={field.value || ""}
-                fullWidth
-                error={!!errors.category}
-                helperText={errors.category?.message ?? " "}
-              >
-                <MenuItem value="">Geen</MenuItem>
-                {activeCategories.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-          <Controller
-            name="secondary_category"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                select
-                label="Secundaire categorie"
-                {...field}
-                value={field.value || ""}
-                fullWidth
-                error={!!errors.secondary_category}
-                helperText={errors.secondary_category?.message ?? " "}
-              >
-                <MenuItem value="">Geen</MenuItem>
-                {activeSecondary.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-        </Stack>
-
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-            Tertiaire categorie
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              alignItems: "center",
-              minHeight: 36,
-            }}
-          >
-            {isTertiaryPending ? (
-              <CircularProgress size={22} />
-            ) : activeTertiary.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
-              </Typography>
-            ) : (
-              <Controller
-                name="tertiary_category"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {activeTertiary.map((opt) => {
-                      const selected = field.value || [];
-                      const isSelected = selected.includes(opt.value);
-                      return (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            const next = isSelected
-                              ? selected.filter((o) => o !== opt.value)
-                              : [...selected, opt.value];
-                            field.onChange(next);
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              />
-            )}
-          </Box>
-          {errors.tertiary_category && (
-            <Typography variant="caption" color="error">
-              {flattenRhfFieldErrorMessage(errors.tertiary_category) ?? "Ongeldige selectie."}
-            </Typography>
-          )}
-        </Box>
-
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-            Merken
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              alignItems: "center",
-              minHeight: 36,
-            }}
-          >
-            {isBrandsPending ? (
-              <CircularProgress size={22} />
-            ) : activeBrands.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
-              </Typography>
-            ) : (
-              <Controller
-                name="merken"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {activeBrands.map((opt) => {
-                      const selected = field.value || [];
-                      const isSelected = selected.includes(opt.value);
-                      return (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            const next = isSelected
-                              ? selected.filter((o) => o !== opt.value)
-                              : [...selected, opt.value];
-                            field.onChange(next);
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              />
-            )}
-          </Box>
-        </Box>
-
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-            Labels
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              alignItems: "center",
-              minHeight: 36,
-            }}
-          >
-            {isLabelsPending ? (
-              <CircularProgress size={22} />
-            ) : activeLabels.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Geen actieve opties. Configureer ze onder Instellingen → Dropdown opties.
-              </Typography>
-            ) : (
-              <Controller
-                name="labels"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {activeLabels.map((opt) => {
-                      const selected = field.value || [];
-                      const isSelected = selected.includes(opt.value);
-                      return (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          onClick={() => {
-                            const next = isSelected
-                              ? selected.filter((o) => o !== opt.value)
-                              : [...selected, opt.value];
-                            field.onChange(next);
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                              bgcolor: isSelected ? "primary.dark" : "action.hover",
-                            },
-                          }}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              />
-            )}
-          </Box>
-        </Box>
-      </Stack>
-    </Box>
-  );
-}
 
 function formatEURFromCents(cents: number | null | undefined): string {
   if (cents == null || cents === 0) return "-";
@@ -811,6 +559,7 @@ export default function NetworkPage() {
     refetch,
   } = useContacts(locationFilter, ageFilter);
   const { data: accounts = [] } = useAccounts();
+  const queryClient = useQueryClient();
   const { data: geocodeResult, isLoading: isGeocoding } = useGeocode(
     debouncedLocation || null
   );
@@ -818,14 +567,14 @@ export default function NetworkPage() {
   const { data: dbEducation } = useDropdownOptions("education");
   const { data: dbGender } = useDropdownOptions("gender");
   const { data: dbBenefits } = useDropdownOptions("benefit");
-  const { data: dbAccountCategory } = useDropdownOptions("account_category");
-  const { data: dbAccountSecondary } = useDropdownOptions("account_secondary_category");
+  const { data: dbAccountCategory } = useDropdownOptions("sector_category");
+  const { data: dbAccountSecondary } = useDropdownOptions("sector_secondary_category");
   const { data: dbAccountTertiary, isPending: isTertiaryPending } =
-    useDropdownOptions("account_tertiary_category");
+    useDropdownOptions("sector_tertiary_category");
   const { data: dbAccountBrand, isPending: isBrandsPending } =
-    useDropdownOptions("account_brand");
+    useDropdownOptions("sector_brand");
   const { data: dbAccountLabel, isPending: isLabelsPending } =
-    useDropdownOptions("account_label");
+    useDropdownOptions("sector_label");
 
   const activeNetworkRoleOptions = React.useMemo(() => {
     if (dbNetworkRoles) return dbNetworkRoles.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
@@ -1064,6 +813,7 @@ export default function NetworkPage() {
   const bulkImport = useDisclosure();
   const smartImport = useDisclosure();
   const excelImport = useDisclosure();
+  const linkedInImport = useDisclosure();
   const deleteConfirm = useDisclosure();
   const cvViewer = useDisclosure();
   const workHistoryViewer = useDisclosure();
@@ -1182,6 +932,7 @@ export default function NetworkPage() {
     formState: { errors: editErrors, isSubmitting: isEditSubmitting },
     reset: editReset,
     control: editControl,
+    watch: editWatch,
   } = useForm<ContactForm>({
     resolver: zodResolver(contactSchema),
     mode: "onBlur",
@@ -1266,6 +1017,9 @@ export default function NetworkPage() {
         phone: editingContact.phone || "",
         linkedin_url: editingContact.linkedin_url || "",
         notes: editingContact.notes || "",
+        is_company_contact: (editingContact.account_contacts?.length ?? 0) > 0,
+        account_uid:
+          editingContact.account_contacts?.[0]?.account?.uid || "",
       });
     }
   }, [editingContact, editReset]);
@@ -1570,6 +1324,36 @@ export default function NetworkPage() {
         uid: editingContact.uid,
         data: payload,
       });
+
+      // Sync the company-contact link (contactpersoon van een bedrijf)
+      const currentLink = editingContact.account_contacts?.[0] ?? null;
+      const currentAccountUid = currentLink?.account?.uid ?? null;
+      const desiredAccountUid =
+        data.is_company_contact && data.account_uid ? data.account_uid : null;
+
+      if (currentAccountUid !== desiredAccountUid) {
+        try {
+          if (desiredAccountUid) {
+            await API.post(`/accounts/${desiredAccountUid}/contacts`, {
+              contact_uid: editingContact.uid,
+            });
+          }
+          if (currentLink) {
+            await API.delete(`/account-contacts/${currentLink.id}`);
+          }
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.contacts.all,
+          });
+        } catch (linkErr: any) {
+          console.error("Error updating company contact link:", linkErr);
+          setSubmitError(
+            linkErr?.response?.data?.message ??
+              "Contact opgeslagen, maar de bedrijfskoppeling kon niet worden bijgewerkt."
+          );
+          return;
+        }
+      }
+
       editContact.close();
       setEditingContact(null);
     } catch (err: any) {
@@ -1606,6 +1390,11 @@ export default function NetworkPage() {
   const handleExcelImport = () => {
     handleImportMenuClose();
     excelImport.open();
+  };
+
+  const handleLinkedInImport = () => {
+    handleImportMenuClose();
+    linkedInImport.open();
   };
 
   const handleDeleteClick = (contact: Contact) => {
@@ -2148,6 +1937,19 @@ export default function NetworkPage() {
                 </Box>
               </Stack>
             </MenuItem>
+            <MenuItem onClick={handleLinkedInImport}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <LinkedInIcon fontSize="small" color="action" />
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>
+                    LinkedIn-import
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Plak profieltekst; AI vult het contact (optioneel opdracht)
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
           </Menu>
           <Button
             variant="contained"
@@ -2421,6 +2223,12 @@ export default function NetworkPage() {
         onSuccess={() => refetch()}
       />
 
+      <LinkedInImportDialog
+        open={linkedInImport.isOpen}
+        onClose={linkedInImport.close}
+        onSuccess={() => refetch()}
+      />
+
       {/* Add Contact Dialog */}
       <Dialog
         open={addContact.isOpen}
@@ -2622,18 +2430,7 @@ export default function NetworkPage() {
               />
             </Stack>
 
-            <ContactSectorFields
-              control={control}
-              errors={errors}
-              activeCategories={activeAccountCategories}
-              activeSecondary={activeAccountSecondary}
-              activeTertiary={activeAccountTertiaryLabeled}
-              activeBrands={activeAccountBrandLabeled}
-              activeLabels={activeAccountLabelLabeled}
-              isTertiaryPending={isTertiaryPending}
-              isBrandsPending={isBrandsPending}
-              isLabelsPending={isLabelsPending}
-            />
+            <ClassificationFields control={control} errors={errors} />
 
             <TextField
               label="LinkedIn URL"
@@ -3156,18 +2953,7 @@ export default function NetworkPage() {
               />
             </Stack>
 
-            <ContactSectorFields
-              control={editControl}
-              errors={editErrors}
-              activeCategories={activeAccountCategories}
-              activeSecondary={activeAccountSecondary}
-              activeTertiary={activeAccountTertiaryLabeled}
-              activeBrands={activeAccountBrandLabeled}
-              activeLabels={activeAccountLabelLabeled}
-              isTertiaryPending={isTertiaryPending}
-              isBrandsPending={isBrandsPending}
-              isLabelsPending={isLabelsPending}
-            />
+            <ClassificationFields control={editControl} errors={editErrors} />
 
             <Stack direction="row" spacing={2}>
               <Controller
@@ -3219,6 +3005,48 @@ export default function NetworkPage() {
               register={editRegister}
               errors={editErrors as any}
             />
+
+            {/* Company Contact Section */}
+            <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
+              <Controller
+                name="is_company_contact"
+                control={editControl}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={field.value || false}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Is contactpersoon van een bedrijf"
+                  />
+                )}
+              />
+              {editWatch("is_company_contact") && (
+                <Controller
+                  name="account_uid"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      label="Kies bedrijf"
+                      {...field}
+                      value={field.value || ""}
+                      fullWidth
+                      sx={{ mt: 1 }}
+                    >
+                      <MenuItem value="">Selecteer een bedrijf...</MenuItem>
+                      {accounts.map((account) => (
+                        <MenuItem key={account.uid} value={account.uid}>
+                          {account.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              )}
+            </Box>
 
             <TextField
               label="Notities"

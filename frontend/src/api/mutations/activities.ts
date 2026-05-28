@@ -32,6 +32,7 @@ export const useCreateActivity = (assignmentUid: string | undefined) => {
         queryClient.invalidateQueries({
           queryKey: queryKeys.assignments.activities(assignmentUid),
         });
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       }
     },
   });
@@ -115,6 +116,7 @@ export const useUpdateAssignmentActivity = (assignmentUid: string | undefined) =
         queryClient.invalidateQueries({
           queryKey: queryKeys.assignments.activities(assignmentUid),
         });
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       }
     },
   });
@@ -132,6 +134,7 @@ export const useDeleteAssignmentActivity = (assignmentUid: string | undefined) =
         queryClient.invalidateQueries({
           queryKey: queryKeys.assignments.activities(assignmentUid),
         });
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       }
     },
   });

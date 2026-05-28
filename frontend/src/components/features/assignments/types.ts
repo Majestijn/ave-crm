@@ -17,12 +17,21 @@ export type AssignmentWithDetails = Assignment & {
   }[];
   location?: string;
   employment_type?: string;
+  hours_per_week_min?: number | null;
+  hours_per_week_max?: number | null;
   salary_min?: number;
   salary_max?: number;
   vacation_days?: number;
   bonus_percentage?: number | null;
+  total_fee?: number | null;
+  advance_fee?: number | null;
   start_date?: string;
+  end_date?: string | null;
   notes_image_url?: string | null;
+  role_profile_url?: string | null;
+  role_profile_download_url?: string | null;
+  role_profile_original_filename?: string | null;
+  role_profile_kind?: "pdf" | "word" | null;
   benefits?: string[];
   candidates?: CandidateAssignment[];
 };
@@ -37,6 +46,41 @@ export const parseFormattedNumber = (value: string): number | "" => {
   const digits = value.replace(/\D/g, "");
   if (!digits) return "";
   return parseInt(digits, 10);
+};
+
+export const formatEuro = (amount: number | null | undefined): string | null => {
+  if (amount == null) return null;
+  return `€${amount.toLocaleString("nl-NL")}`;
+};
+
+export const formatFeeSummary = (
+  totalFee?: number | null,
+  advanceFee?: number | null
+): string | null => {
+  const parts: string[] = [];
+  const total = formatEuro(totalFee);
+  const advance = formatEuro(advanceFee);
+  if (total) parts.push(`Totale fee ${total}`);
+  if (advance) parts.push(`Voorfee ${advance}`);
+  return parts.length > 0 ? parts.join(" · ") : null;
+};
+
+const formatDateNlShort = (iso: string): string =>
+  new Date(iso + (iso.length === 10 ? "T12:00:00" : "")).toLocaleDateString(
+    "nl-NL",
+    { day: "numeric", month: "short", year: "numeric" }
+  );
+
+export const formatAssignmentDateSummary = (
+  startDate?: string | null,
+  endDate?: string | null
+): string | null => {
+  if (!startDate && !endDate) return null;
+  if (startDate && endDate) {
+    return `${formatDateNlShort(startDate)} – ${formatDateNlShort(endDate)}`;
+  }
+  if (startDate) return `Start ${formatDateNlShort(startDate)}`;
+  return `Eindigt ${formatDateNlShort(endDate!)}`;
 };
 
 export const benefitsOptions = [

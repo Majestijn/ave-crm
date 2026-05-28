@@ -24,7 +24,7 @@ export type Contact = {
   distance?: number; // Distance in km (only present when filtering by radius)
   current_company?: string;
   company_role?: string;
-  /** Zelfde dropdown_types als bij klanten (account_category, …) */
+  /** Zelfde dropdown_types als bij klanten (sector_category, …) */
   category?: string | null;
   secondary_category?: string | null;
   tertiary_category?: string[] | null;
@@ -45,6 +45,14 @@ export type Contact = {
   cv_url?: string;
   notes?: string;
   work_experiences?: ContactWorkExperience[];
+  /** Bedrijfskoppelingen: contactpersoon-relaties met klanten */
+  account_contacts?: ContactAccountLink[];
+};
+
+export type ContactAccountLink = {
+  id: number;
+  account_id?: number;
+  account?: { uid: string; name?: string } | null;
 };
 
 export type Paginated<T> = {

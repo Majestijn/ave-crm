@@ -53,11 +53,11 @@ const DROPDOWN_TYPE_GROUPS: {
   {
     label: "Accounts",
     types: [
-      { type: "account_category", label: "Categorie" },
-      { type: "account_secondary_category", label: "Secundaire categorie" },
-      { type: "account_tertiary_category", label: "Tertiaire categorie" },
-      { type: "account_brand", label: "Merken" },
-      { type: "account_label", label: "Labels" },
+      { type: "sector_category", label: "Categorie" },
+      { type: "sector_secondary_category", label: "Secundaire categorie" },
+      { type: "sector_tertiary_category", label: "Tertiaire categorie" },
+      { type: "sector_brand", label: "Merken" },
+      { type: "sector_label", label: "Labels" },
       { type: "sales_target", label: "Sales doel" },
       { type: "client_status", label: "Klant status" },
     ],

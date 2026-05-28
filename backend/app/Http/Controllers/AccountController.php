@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\DropdownOption;
+use App\Support\AssignmentStatus;
+use App\Support\ClassificationRules;
 use Illuminate\Http\Request;
 
 class AccountController extends Controller
@@ -33,12 +35,12 @@ class AccountController extends Controller
                     // No assignments means non-active
                     $accountArray['has_active_assignments'] = false;
                 } else {
-                    // Check if all assignments are completed or cancelled
+                    // Count assignments that are closed (completed/cancelled/...)
                     $nonActiveCount = \App\Models\Assignment::where('account_id', $account->id)
-                        ->whereIn('status', ['completed', 'cancelled'])
+                        ->whereIn('status', AssignmentStatus::CLOSED)
                         ->count();
-                    
-                    // Account is active if not all assignments are completed/cancelled
+
+                    // Account is active if not all assignments are closed
                     $accountArray['has_active_assignments'] = $nonActiveCount < $totalAssignments;
                 }
                 
@@ -69,14 +71,7 @@ class AccountController extends Controller
             'website' => ['nullable', 'url', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
-            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
-            'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
-            'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
-            'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
+            ...ClassificationRules::rules(),
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
@@ -133,14 +128,7 @@ class AccountController extends Controller
             'website' => ['nullable', 'url', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', DropdownOption::validationRule('account_category')],
-            'secondary_category' => ['nullable', 'string', DropdownOption::validationRule('account_secondary_category')],
-            'tertiary_category' => ['nullable', 'array'],
-            'tertiary_category.*' => ['string', DropdownOption::validationRule('account_tertiary_category')],
-            'merken' => ['nullable', 'array'],
-            'merken.*' => ['string', DropdownOption::validationRule('account_brand')],
-            'labels' => ['nullable', 'array'],
-            'labels.*' => ['string', DropdownOption::validationRule('account_label')],
+            ...ClassificationRules::rules(),
             'fte_count' => ['nullable', 'integer', 'min:0'],
             'revenue_cents' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],

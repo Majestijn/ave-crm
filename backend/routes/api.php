@@ -45,6 +45,8 @@ Route::prefix('/v1')->group(function () {
         Route::put('/auth/password', [ChangePasswordController::class, 'update']);
         Route::post('/auth/logout', [LogoutController::class, 'destroy']);
 
+        Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index']);
+
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/{user}', [UserController::class, 'show']);
 
@@ -99,6 +101,9 @@ Route::prefix('/v1')->group(function () {
         Route::get('/accounts/{account}/assignments', [AssignmentController::class, 'byAccount']);
         Route::apiResource('assignments', AssignmentController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
         Route::delete('/assignments/{assignment}/notes-image', [AssignmentController::class, 'deleteNotesImage']);
+        Route::post('/assignments/{assignment}/role-profile', [AssignmentController::class, 'uploadRoleProfile']);
+        Route::get('/assignments/{assignment}/role-profile/download', [AssignmentController::class, 'downloadRoleProfile'])->withoutMiddleware('auth:sanctum');
+        Route::delete('/assignments/{assignment}/role-profile', [AssignmentController::class, 'deleteRoleProfile']);
 
         // Assignment activities (per opdracht)
         Route::get('/assignments/{assignment}/activities', [AssignmentActivityController::class, 'index']);
@@ -134,7 +139,7 @@ Route::prefix('/v1')->group(function () {
             Route::delete('/dropdown-options/{id}', [DropdownOptionController::class, 'destroy']);
         });
 
-        // LinkedIn import (browser extension)
+        // LinkedIn import (CRM modal + browser extension)
         Route::post('/linkedin-import', [LinkedInImportController::class, 'store']);
 
         // Batch CV import (Vertex AI)

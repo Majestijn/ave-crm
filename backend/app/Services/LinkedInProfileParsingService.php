@@ -52,27 +52,35 @@ class LinkedInProfileParsingService
         ]);
 
         $prompt = <<<PROMPT
-Je bent een parser voor LinkedIn-profielen. Analyseer de volgende LinkedIn-profieltekst en extraheer de kandidaatgegevens.
+Je bent een parser voor LinkedIn-profielen. Analyseer de volgende ruwe tekst (vaak een volledige pagina-kopie) en extraheer persoons- en carrièregegevens.
 
-Geef het resultaat terug als JSON met ALLEEN deze velden:
+Geef het resultaat terug als JSON met deze velden (alleen velden waarvoor je iets hebt):
 - first_name: voornaam (VERPLICHT)
 - prefix: tussenvoegsel zoals "van", "de", "van der" (optioneel)
 - last_name: achternaam (VERPLICHT)
-- date_of_birth: geboortedatum in formaat YYYY-MM-DD (optioneel)
-- email: e-mailadres (optioneel, vaak niet op LinkedIn)
-- phone: telefoonnummer (optioneel, vaak niet op LinkedIn)
-- location: woonplaats of stad (optioneel)
-- education: hoogst genoten opleiding: "MBO", "HBO", of "UNI" (optioneel)
-- current_company: huidige of meest recente werkgever (optioneel)
-- company_role: huidige of meest recente functietitel (optioneel)
-- notes: korte samenvatting van ervaring/vaardigheden uit het profiel (optioneel)
+- date_of_birth: geboortedatum YYYY-MM-DD (optioneel, zelden op LinkedIn)
+- email: e-mailadres (optioneel)
+- phone: telefoonnummer (optioneel)
+- location: woonplaats of regio (optioneel)
+- education: hoogst genoten opleiding, exact één van: "MBO", "HBO", "UNI" (optioneel)
+- current_company: huidige werkgever (optioneel; headline of bovenste ervaring)
+- company_role: huidige functietitel (optioneel)
+- skills: relevante vaardigheden, komma-gescheiden (optioneel)
+- notes: korte professionele samenvatting (About/headline/ervaring; optioneel)
+- work_experiences: array van werkervaringen, nieuwste eerst. Elk item:
+  - job_title: functietitel (verplicht per item)
+  - company_name: bedrijfsnaam (verplicht per item)
+  - start_date: YYYY-MM-DD (bij alleen jaar: YYYY-01-01)
+  - end_date: YYYY-MM-DD, of null bij "heden"/huidige functie
+  - location: (optioneel)
+  - description: korte taken/samenvatting (optioneel)
 
 BELANGRIJK:
-- Retourneer ALLEEN geldige JSON, geen andere tekst.
-- Als je een veld niet kunt vinden, laat het dan weg.
+- Retourneer ALLEEN geldige JSON, geen markdown of uitleg.
 - first_name en last_name zijn VERPLICHT.
-- Nederlandse namen correct parsen.
-- LinkedIn-headlines en "About" secties bevatten vaak de huidige rol.
+- Negeer navigatie, cookies, voettekst en UI-ruis zoveel mogelijk.
+- Nederlandse namen correct splitsen (voornaam / tussenvoegsel / achternaam).
+- Als werkervaring onduidelijk is, laat dat item weg.
 
 PROFIEL TEKST:
 {$profileText}
@@ -92,7 +100,7 @@ PROMPT;
 
             $generationConfig = (new GenerationConfig())
                 ->setTemperature(0.1)
-                ->setMaxOutputTokens(4096);
+                ->setMaxOutputTokens(8192);
 
             $endpoint = "projects/{$this->projectId}/locations/{$this->location}/publishers/google/models/{$this->modelId}";
             $request = (new GenerateContentRequest())
@@ -119,7 +127,12 @@ PROMPT;
             $data = json_decode($responseText, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error('LinkedIn parse JSON error', ['content' => $responseText]);
+                $repaired = $this->repairTruncatedJson($responseText);
+                $data = json_decode($repaired, true);
+            }
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('LinkedIn parse JSON error', ['content' => substr($responseText, 0, 2000)]);
                 return [
                     'success' => false,
                     'error' => 'Ongeldige JSON van AI',
@@ -164,6 +177,20 @@ PROMPT;
             );
         }
         putenv('GOOGLE_APPLICATION_CREDENTIALS=' . $credentialsPath);
+    }
+
+    /**
+     * Probeer JSON te sluiten als het model halverwege stopte (tokenlimiet).
+     */
+    protected function repairTruncatedJson(string $json): string
+    {
+        $openBraces = substr_count($json, '{') - substr_count($json, '}');
+        $openBrackets = substr_count($json, '[') - substr_count($json, ']');
+        if ($openBraces < 0 || $openBrackets < 0) {
+            return $json;
+        }
+
+        return $json . str_repeat(']', max(0, $openBrackets)) . str_repeat('}', max(0, $openBraces));
     }
 
     protected function normalizeEducation(?string $education): ?string

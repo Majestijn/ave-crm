@@ -3,11 +3,15 @@
 namespace App\Console\Commands;
 
 use App\Models\Account;
+use App\Models\AccountActivity;
 use App\Models\Assignment;
+use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\DropdownOption;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\AssignmentStatus;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -108,10 +112,11 @@ class SeedAccountsAndAssignments extends Command
 
             $users = $this->seedUsers();
             $accounts = $this->seedAccounts($numAccounts);
-            $this->seedAssignments($accounts, $numAssignments, $users);
+            $assignments = $this->seedAssignments($accounts, $numAssignments, $users);
             $this->seedContacts($numContacts);
+            $this->seedDashboardDemoData($assignments, $users, $accounts);
 
-            $this->info("  ✓ " . count($users) . " gebruikers, {$numAccounts} klanten, {$numAssignments} opdrachten en {$numContacts} contacten aangemaakt.");
+            $this->info("  ✓ " . count($users) . " gebruikers, {$numAccounts} klanten, {$numAssignments} opdrachten en {$numContacts} contacten aangemaakt (incl. dashboard-demo).");
         }
 
         return 0;
@@ -122,11 +127,11 @@ class SeedAccountsAndAssignments extends Command
         $accounts = [];
         $usedNames = [];
         $faker = \Faker\Factory::create('nl_NL');
-        $catPool = $this->activeOptionValues('account_category');
-        $secPool = $this->activeOptionValues('account_secondary_category');
-        $terPool = $this->activeOptionValues('account_tertiary_category');
-        $brandPool = $this->activeOptionValues('account_brand');
-        $labelPool = $this->activeOptionValues('account_label');
+        $catPool = $this->activeOptionValues('sector_category');
+        $secPool = $this->activeOptionValues('sector_secondary_category');
+        $terPool = $this->activeOptionValues('sector_tertiary_category');
+        $brandPool = $this->activeOptionValues('sector_brand');
+        $labelPool = $this->activeOptionValues('sector_label');
         $salesTargetPool = $this->activeOptionValues('sales_target');
 
         for ($i = 0; $i < $count; $i++) {
@@ -196,17 +201,27 @@ class SeedAccountsAndAssignments extends Command
         return $users;
     }
 
-    private function seedAssignments(array $accounts, int $count, array $users): void
+    /**
+     * @return list<Assignment>
+     */
+    private function seedAssignments(array $accounts, int $count, array $users): array
     {
         $recruiterUsers = array_values(array_filter($users, fn($u) => in_array($u->role, ['recruiter', 'admin', 'management'])));
         $statusPool = $this->activeOptionValues('assignment_status');
         $employmentPool = $this->activeOptionValues('employment_type');
         $benefitPool = $this->activeOptionValues('benefit');
+        $assignments = [];
 
         for ($i = 0; $i < $count; $i++) {
             $account = $accounts[array_rand($accounts)];
 
             $leadRecruiter = !empty($recruiterUsers) ? $recruiterUsers[array_rand($recruiterUsers)] : null;
+            $employmentType = $this->randomFromPool($employmentPool, 'fulltime');
+            $startDate = rand(1, 4) <= 3 ? Carbon::today()->subWeeks(rand(2, 20)) : null;
+            $endDate = null;
+            if ($startDate && str_contains(strtolower($employmentType), 'interim')) {
+                $endDate = $startDate->copy()->addWeeks(rand(8, 52));
+            }
 
             $assignment = Assignment::create([
                 'account_id' => $account->id,
@@ -218,7 +233,9 @@ class SeedAccountsAndAssignments extends Command
                 'salary_max' => rand(70000, 120000),
                 'vacation_days' => rand(24, 36),
                 'location' => $this->randomLocation(),
-                'employment_type' => $this->randomFromPool($employmentPool, 'fulltime'),
+                'employment_type' => $employmentType,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
                 'benefits' => count($benefitPool) > 0
                     ? $this->randomSubset($benefitPool, 0, min(6, count($benefitPool)))
                     : null,
@@ -234,6 +251,135 @@ class SeedAccountsAndAssignments extends Command
                     $assignment->secondaryRecruiters()->attach($secondaryIds);
                 }
             }
+
+            $assignments[] = $assignment;
+        }
+
+        return $assignments;
+    }
+
+    /**
+     * Kandidaten op opdrachten, activiteiten (laatste contact) en agenda voor vandaag.
+     *
+     * @param  list<Assignment>  $assignments
+     * @param  list<User>  $users
+     * @param  list<Account>  $accounts
+     */
+    public function seedDashboardDemoData(array $assignments, array $users, array $accounts): void
+    {
+        if ($assignments === []) {
+            $assignments = Assignment::all()->all();
+        }
+        if ($assignments === []) {
+            return;
+        }
+
+        $ongoingAssignments = array_values(array_filter(
+            $assignments,
+            fn (Assignment $a) => ! AssignmentStatus::isClosed($a->status)
+        ));
+
+        $candidatePool = Contact::query()
+            ->where(function ($q) {
+                $q->whereJsonContains('network_roles', 'kandidaat')
+                    ->orWhereJsonContains('network_roles', 'candidate');
+            })
+            ->limit(200)
+            ->get();
+
+        if ($candidatePool->isEmpty()) {
+            $candidatePool = Contact::query()->limit(200)->get();
+        }
+
+        $inProcessStatuses = ['called', 'proposed', 'first_interview', 'second_interview'];
+        $activityTypes = $this->activeOptionValues('activity_type');
+        if ($activityTypes === []) {
+            $activityTypes = ['call', 'interview', 'proposal'];
+        }
+
+        $candidatesAttached = 0;
+        $activitiesCreated = 0;
+
+        foreach ($ongoingAssignments as $assignment) {
+            if ($candidatePool->isNotEmpty() && rand(1, 100) <= 65) {
+                $pick = $candidatePool->random(min(rand(1, 4), $candidatePool->count()));
+                $sync = [];
+                foreach ($pick as $contact) {
+                    $sync[$contact->id] = [
+                        'status' => $inProcessStatuses[array_rand($inProcessStatuses)],
+                    ];
+                }
+                $assignment->candidates()->syncWithoutDetaching($sync);
+                $candidatesAttached += count($sync);
+            }
+
+            if (rand(1, 100) <= 75) {
+                $recruiter = $assignment->recruiter_id
+                    ? User::find($assignment->recruiter_id)
+                    : ($users[array_rand($users)] ?? null);
+
+                AccountActivity::create([
+                    'account_id' => $assignment->account_id,
+                    'assignment_id' => $assignment->id,
+                    'user_id' => $recruiter?->id,
+                    'type' => $activityTypes[array_rand($activityTypes)],
+                    'description' => 'Demo: contact met klant over voortgang opdracht.',
+                    'date' => Carbon::today()->subDays(rand(0, 21)),
+                ]);
+                $activitiesCreated++;
+            }
+
+            if (
+                str_contains(strtolower((string) $assignment->employment_type), 'interim')
+                && ! $assignment->end_date
+            ) {
+                $start = $assignment->start_date ?? Carbon::today()->subWeeks(rand(4, 16));
+                $assignment->update([
+                    'start_date' => $start,
+                    'end_date' => $start->copy()->addWeeks(rand(12, 40)),
+                ]);
+            }
+        }
+
+        $recruiters = array_values(array_filter($users, fn ($u) => in_array($u->role, ['recruiter', 'admin', 'management', 'owner'], true)));
+        if ($recruiters === []) {
+            $recruiters = $users;
+        }
+
+        $eventTypes = $this->activeOptionValues('calendar_event_type');
+        if ($eventTypes === []) {
+            $eventTypes = ['meeting', 'call', 'interview'];
+        }
+
+        $today = Carbon::today();
+        $eventsCreated = 0;
+        foreach ($recruiters as $user) {
+            for ($e = 0; $e < rand(1, 3); $e++) {
+                $hour = rand(9, 16);
+                $start = $today->copy()->setTime($hour, rand(0, 1) * 30);
+                $account = $accounts[array_rand($accounts)] ?? null;
+                $assignment = $ongoingAssignments !== []
+                    ? $ongoingAssignments[array_rand($ongoingAssignments)]
+                    : null;
+
+                CalendarEvent::create([
+                    'title' => ['Intake gesprek', 'Follow-up klant', 'Kandidaat interview', 'Teams overleg'][array_rand(['Intake gesprek', 'Follow-up klant', 'Kandidaat interview', 'Teams overleg'])],
+                    'description' => 'Demo-agenda-item',
+                    'location' => rand(0, 1) ? 'Online' : $this->randomLocation(),
+                    'start_at' => $start,
+                    'end_at' => $start->copy()->addHour(),
+                    'all_day' => false,
+                    'user_id' => $user->id,
+                    'account_id' => $account?->id,
+                    'assignment_id' => $assignment?->id,
+                    'event_type' => $eventTypes[array_rand($eventTypes)],
+                ]);
+                $eventsCreated++;
+            }
+        }
+
+        if ($this->output !== null) {
+            $this->info("  -> Dashboard-demo: {$candidatesAttached} kandidaat-koppelingen, {$activitiesCreated} activiteiten, {$eventsCreated} agenda-items vandaag.");
         }
     }
 
@@ -255,153 +401,13 @@ class SeedAccountsAndAssignments extends Command
     }
 
     /**
-     * Zelfde inhoud als database/seeders/data/public_dropdown_options_export.csv (hardcoded),
-     * plus sales_target (niet in die export) inclusief Category Management,
-     * en client_status (nodig voor validatie op klanten; stond niet in die CSV-export).
+     * Canonieke dropdown-set, gedeeld met de legacy-import.
      *
      * @return int Aantal upserts
      */
     private function seedDemoDropdownOptions(): int
     {
-        $imported = 0;
-
-        foreach ($this->demoDropdownOptionDefinitions() as $row) {
-            DropdownOption::updateOrCreate(
-                ['type' => $row['type'], 'value' => $row['value']],
-                [
-                    'label' => $row['label'],
-                    'color' => $row['color'],
-                    'sort_order' => $row['sort_order'],
-                    'is_active' => $row['is_active'],
-                ]
-            );
-            $imported++;
-        }
-
-        return $imported;
-    }
-
-    /**
-     * @return list<array{type: string, value: string, label: string, color: ?string, sort_order: int, is_active: bool}>
-     */
-    private function demoDropdownOptionDefinitions(): array
-    {
-        return array_merge(
-            [
-                ['type' => 'education', 'value' => 'mbo', 'label' => 'Mbo', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'education', 'value' => 'hbo', 'label' => 'Hbo', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'education', 'value' => 'uni', 'label' => 'Uni', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_category', 'value' => 'fmcg', 'label' => 'FMCG', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_category', 'value' => 'foodservice', 'label' => 'Foodservice', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'retailer', 'label' => 'Retailer', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'groothandel', 'label' => 'Groothandel', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'leverancier', 'label' => 'Leverancier', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'industrie', 'label' => 'Industrie', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'account_secondary_category', 'value' => 'andere', 'label' => 'Andere', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'account_tertiary_category', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_tertiary_category', 'value' => 'food', 'label' => 'Food', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_brand', 'value' => 'merk', 'label' => 'Merk', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_brand', 'value' => 'private_label', 'label' => 'Private label', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'vers', 'label' => 'Vers', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'zuivel_eieren', 'label' => 'Zuivel & eieren', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'diepvries', 'label' => 'Diepvries', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'dkw_houdbaar_voedsel', 'label' => 'DKW (houdbaar voedsel)', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'dranken', 'label' => 'Dranken', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'snacks_snoep', 'label' => 'Snacks & snoep', 'color' => null, 'sort_order' => 5, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'non_food', 'label' => 'Non-food', 'color' => null, 'sort_order' => 6, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'verpakkingen', 'label' => 'Verpakkingen', 'color' => null, 'sort_order' => 7, 'is_active' => true],
-                ['type' => 'account_label', 'value' => 'convenience_ready_to_use', 'label' => 'Convenience & ready-to-use', 'color' => null, 'sort_order' => 8, 'is_active' => true],
-                ['type' => 'gender', 'value' => 'man', 'label' => 'Man', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'gender', 'value' => 'vrouw', 'label' => 'Vrouw', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'employment_type', 'value' => 'fulltime', 'label' => 'Fulltime', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'employment_type', 'value' => 'parttime', 'label' => 'Parttime', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'employment_type', 'value' => 'interim', 'label' => 'Interim', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'factuurcontact', 'label' => 'Factuurcontact', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'kandidaat', 'label' => 'Kandidaat', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'interimmer', 'label' => 'Interimmer', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'ambassadeur', 'label' => 'Ambassadeur', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'potentieel_management', 'label' => 'Potentieel Management', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'medebeslisser', 'label' => 'Medebeslisser', 'color' => null, 'sort_order' => 5, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'potentieel_directie', 'label' => 'Potentieel Directie', 'color' => null, 'sort_order' => 6, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'referentie_van_kandidaat', 'label' => 'Referentie van kandidaat', 'color' => null, 'sort_order' => 7, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'hr_eerste_contact_arbeidsvoorwaarden', 'label' => 'HR eerste contact arbeidsvoorwaarden', 'color' => null, 'sort_order' => 8, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'hr_recruiters', 'label' => 'HR Recruiters', 'color' => null, 'sort_order' => 9, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'directie', 'label' => 'Directie', 'color' => null, 'sort_order' => 10, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'eigenaar', 'label' => 'Eigenaar', 'color' => null, 'sort_order' => 11, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'expert', 'label' => 'Expert', 'color' => null, 'sort_order' => 12, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'coach', 'label' => 'Coach', 'color' => null, 'sort_order' => 13, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'oud_eigenaar', 'label' => 'Oud Eigenaar', 'color' => null, 'sort_order' => 14, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'oud_directeur', 'label' => 'Oud Directeur', 'color' => null, 'sort_order' => 15, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'commissaris', 'label' => 'Commissaris', 'color' => null, 'sort_order' => 16, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'investeerder', 'label' => 'Investeerder', 'color' => null, 'sort_order' => 17, 'is_active' => true],
-                ['type' => 'network_role', 'value' => 'netwerk_groep', 'label' => 'Netwerk Groep', 'color' => null, 'sort_order' => 18, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => '1e_contact_moment', 'label' => '1e contact moment', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => '1e_gesprek_online_of_offline', 'label' => '1e gesprek online of offline', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'test_afnemen', 'label' => 'Test afnemen', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'sollicitatietraining', 'label' => 'Sollicitatietraining', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => '1e_gesprek_klant', 'label' => '1e gesprek klant', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => '2e_gesprek_klant', 'label' => '2e gesprek klant', 'color' => null, 'sort_order' => 5, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'arbeidsvoorwaardengesprek', 'label' => 'Arbeidsvoorwaardengesprek', 'color' => null, 'sort_order' => 6, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'eindgesprek_klant', 'label' => 'Eindgesprek klant', 'color' => null, 'sort_order' => 7, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'bedrijfstest_afnemen', 'label' => 'Bedrijfstest afnemen', 'color' => null, 'sort_order' => 8, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'aangenomen', 'label' => 'Aangenomen', 'color' => null, 'sort_order' => 9, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'afgewezen', 'label' => 'Afgewezen', 'color' => null, 'sort_order' => 10, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'opdracht_on_hold', 'label' => 'Opdracht on hold', 'color' => null, 'sort_order' => 11, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'administratief_voltooid', 'label' => 'Administratief voltooid', 'color' => null, 'sort_order' => 12, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'schaduwmanagement', 'label' => 'Schaduwmanagement', 'color' => null, 'sort_order' => 13, 'is_active' => true],
-                ['type' => 'assignment_status', 'value' => 'voltooid', 'label' => 'Voltooid', 'color' => null, 'sort_order' => 14, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'reiskostenvergoeding', 'label' => 'Reiskostenvergoeding', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'pensioen', 'label' => 'Pensioen', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'dienstreizen_vergoeding', 'label' => 'Dienstreizen vergoeding', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'mogelijkheid_tot_promotie', 'label' => 'Mogelijkheid tot promotie', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'flexibele_werkuren', 'label' => 'Flexibele werkuren', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'personeelskorting', 'label' => 'Personeelskorting', 'color' => null, 'sort_order' => 5, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'bedrijfsfeesten', 'label' => 'Bedrijfsfeesten', 'color' => null, 'sort_order' => 6, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'productkorting_werknemers', 'label' => 'Productkorting werknemers', 'color' => null, 'sort_order' => 7, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'auto_van_de_zaak', 'label' => 'Auto van de zaak', 'color' => null, 'sort_order' => 8, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'budget_voor_professionele_ontwikkeling', 'label' => 'Budget voor professionele ontwikkeling', 'color' => null, 'sort_order' => 9, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'zorgverzekering', 'label' => 'Zorgverzekering', 'color' => null, 'sort_order' => 10, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'collectieve_zorgverzekering', 'label' => 'Collectieve zorgverzekering', 'color' => null, 'sort_order' => 11, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'bedrijfsopleiding', 'label' => 'Bedrijfsopleiding', 'color' => null, 'sort_order' => 12, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'vrijdagmiddagborrel', 'label' => 'Vrijdagmiddagborrel', 'color' => null, 'sort_order' => 13, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'kerstpakket', 'label' => 'Kerstpakket', 'color' => null, 'sort_order' => 14, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'extra_vakantiedagen', 'label' => 'Extra vakantiedagen', 'color' => null, 'sort_order' => 15, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'fietsplan', 'label' => 'Fietsplan', 'color' => null, 'sort_order' => 16, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'bedrijfsfitness', 'label' => 'Bedrijfsfitness', 'color' => null, 'sort_order' => 17, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'winstdeling', 'label' => 'Winstdeling', 'color' => null, 'sort_order' => 18, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'werk_vanuit_huis', 'label' => 'Werk vanuit huis', 'color' => null, 'sort_order' => 19, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'telefoon_van_de_zaak', 'label' => 'Telefoon van de zaak', 'color' => null, 'sort_order' => 20, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'telefoonplan', 'label' => 'Telefoonplan', 'color' => null, 'sort_order' => 21, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'aanvullend_pensioen', 'label' => 'Aanvullend pensioen', 'color' => null, 'sort_order' => 22, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'gezondeheidsprogramma', 'label' => 'Gezondeheidsprogramma', 'color' => null, 'sort_order' => 23, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'lunchkorting', 'label' => 'Lunchkorting', 'color' => null, 'sort_order' => 24, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'kosteloos_parkeren', 'label' => 'Kosteloos parkeren', 'color' => null, 'sort_order' => 25, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'levensverzekering', 'label' => 'Levensverzekering', 'color' => null, 'sort_order' => 26, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'aandelenopties', 'label' => 'Aandelenopties', 'color' => null, 'sort_order' => 27, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'taaltraining_aangeboden', 'label' => 'Taaltraining aangeboden', 'color' => null, 'sort_order' => 28, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'kinderopvang', 'label' => 'Kinderopvang', 'color' => null, 'sort_order' => 29, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'verhuisvergoeding', 'label' => 'Verhuisvergoeding', 'color' => null, 'sort_order' => 30, 'is_active' => true],
-                ['type' => 'benefit', 'value' => 'huisvestingsvergoeding', 'label' => 'Huisvestingsvergoeding', 'color' => null, 'sort_order' => 31, 'is_active' => true],
-            ],
-            [
-                ['type' => 'sales_target', 'value' => 'Marketing', 'label' => 'Marketing', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'sales_target', 'value' => 'Sales', 'label' => 'Sales', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'sales_target', 'value' => 'Inkoop', 'label' => 'Inkoop', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'sales_target', 'value' => 'Supply Chain', 'label' => 'Supply Chain', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'sales_target', 'value' => 'Finance', 'label' => 'Finance', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'sales_target', 'value' => 'Directie', 'label' => 'Directie', 'color' => null, 'sort_order' => 5, 'is_active' => true],
-                ['type' => 'sales_target', 'value' => 'Category Management', 'label' => 'Category Management', 'color' => null, 'sort_order' => 6, 'is_active' => true],
-            ],
-            [
-                ['type' => 'client_status', 'value' => 'potential', 'label' => 'Potentieel', 'color' => null, 'sort_order' => 0, 'is_active' => true],
-                ['type' => 'client_status', 'value' => 'potential_first_assignment', 'label' => 'Potentieel (1e opdracht)', 'color' => null, 'sort_order' => 1, 'is_active' => true],
-                ['type' => 'client_status', 'value' => 'new_client', 'label' => 'Nieuwe klant', 'color' => null, 'sort_order' => 2, 'is_active' => true],
-                ['type' => 'client_status', 'value' => 'active_client', 'label' => 'Actieve klant', 'color' => null, 'sort_order' => 3, 'is_active' => true],
-                ['type' => 'client_status', 'value' => 'inactive', 'label' => 'Inactief', 'color' => null, 'sort_order' => 4, 'is_active' => true],
-                ['type' => 'client_status', 'value' => 'lost', 'label' => 'Verloren', 'color' => null, 'sort_order' => 5, 'is_active' => true],
-            ]
-        );
+        return \Database\Seeders\DropdownOptionSeeder::seed();
     }
 
     /** @return list<string> */
@@ -455,11 +461,11 @@ class SeedAccountsAndAssignments extends Command
         $genderPool = $this->activeOptionValues('gender');
         $educationPool = $this->activeOptionValues('education');
         $benefitPool = $this->activeOptionValues('benefit');
-        $catPool = $this->activeOptionValues('account_category');
-        $secPool = $this->activeOptionValues('account_secondary_category');
-        $terPool = $this->activeOptionValues('account_tertiary_category');
-        $brandPool = $this->activeOptionValues('account_brand');
-        $labelPool = $this->activeOptionValues('account_label');
+        $catPool = $this->activeOptionValues('sector_category');
+        $secPool = $this->activeOptionValues('sector_secondary_category');
+        $terPool = $this->activeOptionValues('sector_tertiary_category');
+        $brandPool = $this->activeOptionValues('sector_brand');
+        $labelPool = $this->activeOptionValues('sector_label');
 
         $bar = $this->output->createProgressBar($count);
         $bar->start();
