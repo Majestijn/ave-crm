@@ -10,6 +10,7 @@ use App\Models\Contact;
 use App\Models\DropdownOption;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\AssignmentStatus;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
@@ -273,13 +274,9 @@ class SeedAccountsAndAssignments extends Command
             return;
         }
 
-        $closedAssignmentStatuses = [
-            'aangenomen', 'afgewezen', 'administratief_voltooid', 'voltooid', 'opdracht_on_hold',
-            'hired', 'completed', 'cancelled',
-        ];
         $ongoingAssignments = array_values(array_filter(
             $assignments,
-            fn (Assignment $a) => ! in_array($a->status, $closedAssignmentStatuses, true)
+            fn (Assignment $a) => ! AssignmentStatus::isClosed($a->status)
         ));
 
         $candidatePool = Contact::query()

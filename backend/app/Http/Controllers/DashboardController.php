@@ -6,24 +6,13 @@ use App\Models\AccountActivity;
 use App\Models\Assignment;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Support\AssignmentStatus;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    /** Opdrachtstatussen die niet meer als "lopend" tellen (NL + legacy EN). */
-    private const CLOSED_ASSIGNMENT_STATUSES = [
-        'aangenomen',
-        'afgewezen',
-        'administratief_voltooid',
-        'voltooid',
-        'opdracht_on_hold',
-        'hired',
-        'completed',
-        'cancelled',
-    ];
-
     private const CLOSED_CANDIDATE_STATUSES = ['rejected', 'hired', 'afgewezen', 'aangenomen'];
 
     public function index(Request $request): JsonResponse
@@ -46,7 +35,7 @@ class DashboardController extends Controller
     {
         return Assignment::query()
             ->with(['account:id,uid,name'])
-            ->whereNotIn('status', self::CLOSED_ASSIGNMENT_STATUSES)
+            ->whereNotIn('status', AssignmentStatus::CLOSED)
             ->where(function ($q) {
                 $q->whereRaw('LOWER(employment_type) = ?', ['interim'])
                     ->orWhereRaw('LOWER(employment_type) LIKE ?', ['%interim%']);
@@ -112,7 +101,7 @@ class DashboardController extends Controller
                     $q->whereNotIn('assignment_contact.status', self::CLOSED_CANDIDATE_STATUSES);
                 },
             ])
-            ->whereNotIn('status', self::CLOSED_ASSIGNMENT_STATUSES)
+            ->whereNotIn('status', AssignmentStatus::CLOSED)
             ->orderBy('title')
             ->get()
             ->map(function (Assignment $assignment) use ($latestActivities) {
@@ -168,7 +157,7 @@ class DashboardController extends Controller
                         ]);
                 },
             ])
-            ->whereNotIn('status', self::CLOSED_ASSIGNMENT_STATUSES)
+            ->whereNotIn('status', AssignmentStatus::CLOSED)
             ->get()
             ->flatMap(function (Assignment $assignment) {
                 return $assignment->candidates->map(function (Contact $contact) use ($assignment) {

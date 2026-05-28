@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\DropdownOption;
+use App\Support\AssignmentStatus;
 use App\Support\ClassificationRules;
 use Illuminate\Http\Request;
 
@@ -34,12 +35,12 @@ class AccountController extends Controller
                     // No assignments means non-active
                     $accountArray['has_active_assignments'] = false;
                 } else {
-                    // Check if all assignments are completed or cancelled
+                    // Count assignments that are closed (completed/cancelled/...)
                     $nonActiveCount = \App\Models\Assignment::where('account_id', $account->id)
-                        ->whereIn('status', ['completed', 'cancelled'])
+                        ->whereIn('status', AssignmentStatus::CLOSED)
                         ->count();
-                    
-                    // Account is active if not all assignments are completed/cancelled
+
+                    // Account is active if not all assignments are closed
                     $accountArray['has_active_assignments'] = $nonActiveCount < $totalAssignments;
                 }
                 

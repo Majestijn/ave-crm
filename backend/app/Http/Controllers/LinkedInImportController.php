@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assignment;
 use App\Models\Contact;
 use App\Services\LinkedInProfileParsingService;
+use App\Support\AssignmentStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +47,7 @@ class LinkedInImportController extends Controller
                     'message' => 'Opdracht niet gevonden',
                 ], 404);
             }
-            if (in_array($assignment->status, ['completed', 'cancelled'], true)) {
+            if (AssignmentStatus::isClosed($assignment->status)) {
                 return response()->json([
                     'message' => 'Deze opdracht is afgerond of geannuleerd; kies een andere opdracht of laat leeg.',
                 ], 422);
