@@ -12,6 +12,9 @@ import {
   MenuItem,
   Checkbox,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogActions,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -19,6 +22,7 @@ import {
   Sort as SortIcon,
   Add as AddIcon,
   Close as CloseIcon,
+  DeleteOutline as DeleteOutlineIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -28,7 +32,10 @@ import {
 import { useAccounts } from "../../api/queries/accounts";
 import { useUsersForDropdown } from "../../api/queries/users";
 import { useDropdownOptions } from "../../api/queries/dropdownOptions";
-import { useUpdateAssignment } from "../../api/mutations/assignments";
+import {
+  useUpdateAssignment,
+  useDeleteAssignment,
+} from "../../api/mutations/assignments";
 import {
   useUpdateAssignmentCandidateStatus,
   useRemoveAssignmentCandidate,
@@ -175,6 +182,12 @@ export default function AssignmentsPage() {
   const editAssignmentDialog = useDisclosure();
   const [editingAssignment, setEditingAssignment] =
     useState<AssignmentWithDetails | null>(null);
+
+  const deleteAssignmentDialog = useDisclosure();
+  const [assignmentToDelete, setAssignmentToDelete] =
+    useState<AssignmentWithDetails | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleteAssignmentMutation = useDeleteAssignment();
 
   const [addCandidateDialogOpen, setAddCandidateDialogOpen] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<
@@ -420,6 +433,37 @@ export default function AssignmentsPage() {
     editAssignmentDialog.close();
     setEditingAssignment(null);
   }, [editAssignmentDialog]);
+
+  // --- Delete dialog ---
+
+  const handleOpenDeleteDialog = useCallback(
+    (assignment: AssignmentWithDetails) => {
+      setAssignmentToDelete(assignment);
+      setDeleteError(null);
+      deleteAssignmentDialog.open();
+    },
+    [deleteAssignmentDialog],
+  );
+
+  const handleCloseDeleteDialog = useCallback(() => {
+    deleteAssignmentDialog.close();
+    setAssignmentToDelete(null);
+    setDeleteError(null);
+  }, [deleteAssignmentDialog]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!assignmentToDelete?.uid) return;
+    setDeleteError(null);
+    try {
+      await deleteAssignmentMutation.mutateAsync(assignmentToDelete.uid);
+      handleCloseDeleteDialog();
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      setDeleteError(
+        ax.response?.data?.message ?? "Opdracht verwijderen is mislukt.",
+      );
+    }
+  }, [assignmentToDelete, deleteAssignmentMutation, handleCloseDeleteDialog]);
 
   // --- Add candidate dialog ---
 
@@ -757,6 +801,7 @@ export default function AssignmentsPage() {
               onToggleExpanded={toggleExpanded}
               onToggleNotesImageExpanded={toggleNotesImageExpanded}
               onOpenEditDialog={handleOpenEditDialog}
+              onDeleteAssignment={handleOpenDeleteDialog}
               onStatusMenuOpen={handleStatusMenuOpen}
               onStatusMenuClose={handleStatusMenuClose}
               onStatusChange={handleStatusChange}
@@ -806,6 +851,47 @@ export default function AssignmentsPage() {
         assignment={editingAssignment}
         users={users}
       />
+
+      {/* Delete Assignment Confirmation Dialog */}
+      <Dialog
+        open={deleteAssignmentDialog.isOpen}
+        onClose={handleCloseDeleteDialog}
+      >
+        <DialogTitle>Opdracht verwijderen</DialogTitle>
+        <Box sx={{ px: 3, pb: 1 }}>
+          <Typography>
+            Weet je zeker dat je de opdracht
+            {assignmentToDelete?.title ? ` "${assignmentToDelete.title}"` : ""}{" "}
+            wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+          </Typography>
+          {deleteError && (
+            <Alert
+              severity="error"
+              onClose={() => setDeleteError(null)}
+              sx={{ mt: 2 }}
+            >
+              {deleteError}
+            </Alert>
+          )}
+        </Box>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            disabled={deleteAssignmentMutation.isPending}
+          >
+            Annuleren
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={handleConfirmDelete}
+            disabled={deleteAssignmentMutation.isPending}
+          >
+            {deleteAssignmentMutation.isPending ? "Bezig..." : "Verwijderen"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ColumnOrderDialog
         open={candidateColumnOrderDialog.isOpen}
