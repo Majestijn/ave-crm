@@ -42,6 +42,24 @@ docker-compose exec backend-php php artisan migrate --path=database/migrations/l
 docker-compose exec backend-php php artisan tenants:migrate
 ```
 
+**Fresh migrate** — het project draait nog niet in productie. De tenant-migraties zijn gesquasht tot 4 create-bestanden; er zijn géén losse `add_*`/`change_*`-migraties meer. Schema wijzigen = de bestaande create-migratie aanpassen en daarna fresh migraten:
+
+```bash
+docker-compose exec backend-php php artisan tenants:artisan "migrate:fresh --path=database/migrations/tenant --database=tenant --force"
+```
+
+### Demo-data seeden
+
+```bash
+# Dropdown-opties + demo-klanten/opdrachten/contacten + dashboard-demo
+docker-compose exec backend-php php artisan demo:seed-accounts
+
+# Reset: verwijdert ALLE tenants en hun databases (landlord wordt fresh gemigreerd)
+docker-compose exec backend-php php artisan demo:reset
+```
+
+Demo-login na `demo:seed-accounts`: `stijn@aveconsult.nl` / `Aveconsult1!` (alle `@aveconsult.nl`-gebruikers; `@demo.nl`-gebruikers hebben wachtwoord `password`).
+
 ### Frontend
 
 ```bash
@@ -91,6 +109,7 @@ npm run lint        # ESLint
 - **Data fetching:** Custom hooks (`useAccounts`, `useContacts`, etc.) wrapping Axios
 - **IDs:** ULIDs for all public-facing identifiers (prevents enumeration)
 - **Soft deletes:** Enabled on sensitive models (Account, Candidate/Contact)
+- **Sector/classification fields:** `category`, `secondary_category`, `tertiary_category`, `merken`, `labels` exist on both Account and Contact, validated via `App\Support\ClassificationRules` against `sector_*` dropdown types. Frontend uses the shared `ClassificationFields` component (`components/features/`).
 
 ### Core Entities
 
