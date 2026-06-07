@@ -2,14 +2,20 @@ import React from "react";
 import { Box, Paper, Stack, Typography, IconButton } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import type { Account } from "../../types/accounts";
+import type { Contact } from "../../types/contacts";
 import { formatNetworkRoles } from "../../utils/formatters";
 
 type Props = {
   account: Account;
   onAddContact: () => void;
+  onSelectContact?: (contact: Contact) => void;
 };
 
-export default function AccountContactsCard({ account, onAddContact }: Props) {
+export default function AccountContactsCard({
+  account,
+  onAddContact,
+  onSelectContact,
+}: Props) {
   return (
     <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
       <Box
@@ -40,13 +46,36 @@ export default function AccountContactsCard({ account, onAddContact }: Props) {
 
       <Stack spacing={3}>
         {account.contacts && account.contacts.length > 0 ? (
-          account.contacts.map((ac) => (
+          account.contacts.map((ac) => {
+            const clickable = !!onSelectContact && !!ac.contact;
+            return (
             <Box
               key={ac.id}
+              onClick={
+                clickable ? () => onSelectContact!(ac.contact!) : undefined
+              }
+              role={clickable ? "button" : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onKeyDown={
+                clickable
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSelectContact!(ac.contact!);
+                      }
+                    }
+                  : undefined
+              }
               sx={{
                 borderLeft: "3px solid",
                 borderColor: "error.main",
                 pl: 2,
+                ...(clickable && {
+                  cursor: "pointer",
+                  borderRadius: 1,
+                  transition: "background-color 0.15s",
+                  "&:hover": { bgcolor: "action.hover" },
+                }),
               }}
             >
               <Typography fontWeight="bold">
@@ -71,7 +100,8 @@ export default function AccountContactsCard({ account, onAddContact }: Props) {
                 {ac.contact?.phone || "-"}
               </Typography>
             </Box>
-          ))
+            );
+          })
         ) : (
           <Typography variant="body2" color="text.secondary">
             Geen contactpersonen

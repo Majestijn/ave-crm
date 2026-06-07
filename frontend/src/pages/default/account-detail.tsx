@@ -46,8 +46,10 @@ import {
   AssignmentSelector,
   AddActivityDialog,
   AddContactDialog,
+  ContactPersonDetailDialog,
   disabledButtonSx,
 } from "../../components/account";
+import type { Contact } from "../../types/contacts";
 import { useDeleteAccount } from "../../api/mutations/accounts";
 import { useDisclosure } from "../../hooks/useDisclosure";
 
@@ -114,6 +116,8 @@ export default function AccountDetailPage() {
   // Dialog state
   const [openActivityDialog, setOpenActivityDialog] = useState(false);
   const [openContactDialog, setOpenContactDialog] = useState(false);
+  const [selectedContactPerson, setSelectedContactPerson] =
+    useState<Contact | null>(null);
 
   // Set first assignment as selected when assignments are loaded
   useEffect(() => {
@@ -185,6 +189,7 @@ export default function AccountDetailPage() {
             <AccountContactsCard
               account={account}
               onAddContact={() => setOpenContactDialog(true)}
+              onSelectContact={setSelectedContactPerson}
             />
           </Stack>
         </Grid>
@@ -496,6 +501,13 @@ export default function AccountDetailPage() {
             accountUid={uid}
             contacts={contacts}
             existingContactUids={existingContactUids}
+          />
+
+          {/* Contact Person Detail Modal */}
+          <ContactPersonDetailDialog
+            open={!!selectedContactPerson}
+            contact={selectedContactPerson}
+            onClose={() => setSelectedContactPerson(null)}
           />
 
           {/* Delete Account Confirmation Dialog */}
