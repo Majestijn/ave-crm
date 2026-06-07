@@ -30,6 +30,8 @@ docker-compose exec backend-php php artisan test        # Run tests
 docker-compose logs -f backend-php                      # View logs
 ```
 
+> **Lokale poort-override (deze machine):** een ander project (`htf-dashboard`) bezet de host-poorten **5432** (postgres) en **6379** (redis). Daarom staat er een **untracked** `docker-compose.override.yml` die db→**5433** en redis→**6380** remapt met de `!override` YAML-tag (Compose mergt `ports`-lijsten anders i.p.v. ze te vervangen). Intern blijft alles 5432/6379 (services praten via servicenaam over het docker-netwerk), dus géén `.env`-wijziging nodig. Host-tools (psql/TablePlus/Adminer-extern) op de ave-crm DB moeten poort **5433** gebruiken. App blijft op **8080**, Adminer op **8081**. Niet committen — machine-specifiek.
+
 ### Migrations (multi-tenant)
 
 Migrations staan in `database/migrations/landlord/` en `database/migrations/tenant/`. Laravel kijkt standaard alleen in `database/migrations/` (geen subdirs), dus `migrate` zonder path vindt niets.
@@ -124,6 +126,8 @@ Een uitgebreide audit van het hele systeem (security, performance, UI/UX, devops
 - **Soft deletes:** Enabled on sensitive models (Account, Candidate/Contact)
 - **Sector/classification fields:** `category`, `secondary_category`, `tertiary_category`, `merken`, `labels` exist on both Account and Contact, validated via `App\Support\ClassificationRules` against `sector_*` dropdown types. Frontend uses the shared `ClassificationFields` component (`components/features/`).
 - **Conditional Contact fields:** `availability_date` is only rendered (and only sent to the API) when `network_roles` includes the interim role. In edit mode, unchecking interim clears the value on save.
+- **Excel export:** `ExportController` (3 routes `GET /api/v1/exports/{contacts,accounts,assignments}`) streamt per entiteit een los `.xlsx` via **OpenSpout** (`OpenSpout\Writer\XLSX\Writer`). OpenSpout's XLSX-writer heeft een echt seekbaar bestand nodig (zip-container), dus schrijf naar een tempfile en `response()->download(...)->deleteFileAfterSend(true)` — niet naar `php://output`. Array-velden join met `; `, datums `Y-m-d`, `*_cents`→euro's. Gegate op `owner/admin/management` in de controller. Frontend: `api/exports.ts` (`downloadExport(kind)` blob-download) + sectie "Data exporteren" in de Overzicht-tab van `settings.tsx` (zelfde rol-gate, UI verborgen voor anderen).
+- **Assignment deep-link:** vanaf de klant-detailpagina (`account-detail.tsx`) navigeert "Ga naar opdracht" naar `/assignments` met `location.state.assignmentUid`. `assignments.tsx` matcht op `uid`, klapt de kaart open én scrollt ernaartoe (elke kaart in een `Box` met `id="assignment-card-{id}"` + `scrollMarginTop`; scroll via kort-vertraagd effect). State wordt daarna gewist.
 
 ### Known gotchas
 
@@ -136,5 +140,5 @@ Een uitgebreide audit van het hele systeem (security, performance, UI/UX, devops
 - **User** (tenant): Roles: `owner`, `admin`, `management`, `recruiter`, `viewer` (helpers `isAdmin/isManagement/isRecruiter/isViewer` on the model; new tenants register their first user as `owner`). The first four are "writers"; `viewer` is read-only.
 - **Account**: Client companies. Holding-relatie via free-text `parent_company` + bijhorende `parent_logo_url` naast de eigen `logo_url`. `AccountHeader` rendert beide logo's naast elkaar met een grijze chevron `›` ertussen (holding 48px + opacity 0.85, brand 60px). Lijstkaart toont alleen de brand-logo. Geen FK-relatie tussen accounts — bewuste vrije-tekst keuze.
 - **Contact**: Candidates/people (formerly called Candidate). Heeft `work_experiences` (hasMany `ContactWorkExperience`); `current_company` + `company_role` worden gesynct vanuit de meest recente werkervaring via `syncCurrentRoleFromWorkExperiences()`. Demo-seeder (`SeedAccountsAndAssignments::buildWorkExperiences`) geeft elk contact 2–4 werkervaringen uit een top-20 NL-bedrijven lijst — gedeeld met de Account-seeder zodat de "Heeft gewerkt bij"-filter op `/network` overlap heeft.
-- **Assignment**: Links accounts to contacts
+- **Assignment**: Links accounts to contacts. `salary_min/salary_max/total_fee/advance_fee` zijn **hele euro's** (geen `_cents`), in tegenstelling tot Account `revenue_cents` en Contact `annual_salary_cents/hourly_rate_cents` (centen). Belangrijk bij export/formatting.
 - **AccountActivity**: Activity log for accounts
