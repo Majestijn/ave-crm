@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Account;
 use App\Models\AccountActivity;
+use App\Models\AccountContact;
 use App\Models\Assignment;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
@@ -120,9 +121,10 @@ class SeedAccountsAndAssignments extends Command
             $accounts = $this->seedAccounts($numAccounts);
             $assignments = $this->seedAssignments($accounts, $numAssignments, $users);
             $this->seedContacts($numContacts);
+            $numAccountContacts = $this->seedAccountContacts($accounts);
             $this->seedDashboardDemoData($assignments, $users, $accounts);
 
-            $this->info("  ✓ " . count($users) . " gebruikers, {$numAccounts} klanten, {$numAssignments} opdrachten en {$numContacts} contacten aangemaakt (incl. dashboard-demo).");
+            $this->info("  ✓ " . count($users) . " gebruikers, {$numAccounts} klanten, {$numAssignments} opdrachten, {$numContacts} contacten en {$numAccountContacts} contactpersoon-koppelingen aangemaakt (incl. dashboard-demo).");
         }
 
         return 0;
@@ -575,5 +577,38 @@ class SeedAccountsAndAssignments extends Command
         }
 
         return $exps;
+    }
+
+    /**
+     * Link 1-3 random contacts to each account as contact persons, so the
+     * "Contactpersonen" card (and its detail modal) has demo data to show.
+     *
+     * @param  array<int, Account>  $accounts
+     * @return int  Total number of account-contact links created.
+     */
+    private function seedAccountContacts(array $accounts): int
+    {
+        $contactIds = Contact::pluck('id')->all();
+
+        if ($contactIds === []) {
+            return 0;
+        }
+
+        $created = 0;
+
+        foreach ($accounts as $account) {
+            $count = min(rand(1, 3), count($contactIds));
+            $pickedKeys = (array) array_rand($contactIds, $count);
+
+            foreach ($pickedKeys as $key) {
+                AccountContact::create([
+                    'account_id' => $account->id,
+                    'contact_id' => $contactIds[$key],
+                ]);
+                $created++;
+            }
+        }
+
+        return $created;
     }
 }

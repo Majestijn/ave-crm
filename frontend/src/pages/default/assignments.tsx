@@ -128,6 +128,10 @@ export default function AssignmentsPage() {
   const [expandedAssignments, setExpandedAssignments] = useState<Set<number>>(
     new Set(),
   );
+  // Assignment to scroll into view after navigating from the account detail page
+  const [scrollToAssignmentId, setScrollToAssignmentId] = useState<
+    number | null
+  >(null);
   const [expandedNotesImages, setExpandedNotesImages] = useState<Set<number>>(
     new Set(),
   );
@@ -244,15 +248,28 @@ export default function AssignmentsPage() {
     }));
   }, [apiAssignments]);
 
-  // Auto-expand from navigation state
+  // Auto-expand from navigation state (and queue a scroll to that card)
   useEffect(() => {
     if (!assignmentUidFromState || apiAssignments.length === 0) return;
     const match = apiAssignments.find((a) => a.uid === assignmentUidFromState);
     if (match) {
       setExpandedAssignments((prev) => new Set(prev).add(match.id));
+      setScrollToAssignmentId(match.id);
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [assignmentUidFromState, apiAssignments, navigate, location.pathname]);
+
+  // Scroll the targeted card into view once it has rendered
+  useEffect(() => {
+    if (scrollToAssignmentId === null) return;
+    const timer = setTimeout(() => {
+      document
+        .getElementById(`assignment-card-${scrollToAssignmentId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollToAssignmentId(null);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [scrollToAssignmentId]);
 
   const getCurrentStatus = (a: AssignmentWithDetails) =>
     assignmentStatuses[a.id] || a.status || "active";
@@ -785,37 +802,42 @@ export default function AssignmentsPage() {
             currentStatus;
 
           return (
-            <AssignmentCard
+            <Box
               key={assignment.id}
-              assignment={assignment}
-              currentStatus={currentStatus}
-              statusLabel={statusLabel}
-              isExpanded={expandedAssignments.has(assignment.id)}
-              assignmentCandidates={
-                localCandidateAssignments[assignment.id] || []
-              }
-              expandedNotesImages={expandedNotesImages}
-              candidatesColumnOrder={candidatesColumnOrder}
-              candidateStatusMenuAnchor={candidateStatusMenuAnchor}
-              statusMenuAnchorEl={statusMenuAnchor[assignment.id] ?? null}
-              onToggleExpanded={toggleExpanded}
-              onToggleNotesImageExpanded={toggleNotesImageExpanded}
-              onOpenEditDialog={handleOpenEditDialog}
-              onDeleteAssignment={handleOpenDeleteDialog}
-              onStatusMenuOpen={handleStatusMenuOpen}
-              onStatusMenuClose={handleStatusMenuClose}
-              onStatusChange={handleStatusChange}
-              onOpenColumnOrderDialog={candidateColumnOrderDialog.open}
-              onOpenAddCandidateDialog={handleOpenAddCandidateDialog}
-              onColumnOrderChange={persistCandidatesColumnOrder}
-              onCandidateStatusMenuOpen={handleCandidateStatusMenuOpen}
-              onCandidateStatusMenuClose={handleCandidateStatusMenuClose}
-              onCandidateStatusChange={handleCandidateStatusChange}
-              onRemoveCandidate={handleRemoveCandidate}
-              onNavigateToContact={handleNavigateToContact}
-              onNavigateToAccount={handleNavigateToAccount}
-              onCandidatesLoaded={handleCandidatesLoaded}
-            />
+              id={`assignment-card-${assignment.id}`}
+              sx={{ scrollMarginTop: 80 }}
+            >
+              <AssignmentCard
+                assignment={assignment}
+                currentStatus={currentStatus}
+                statusLabel={statusLabel}
+                isExpanded={expandedAssignments.has(assignment.id)}
+                assignmentCandidates={
+                  localCandidateAssignments[assignment.id] || []
+                }
+                expandedNotesImages={expandedNotesImages}
+                candidatesColumnOrder={candidatesColumnOrder}
+                candidateStatusMenuAnchor={candidateStatusMenuAnchor}
+                statusMenuAnchorEl={statusMenuAnchor[assignment.id] ?? null}
+                onToggleExpanded={toggleExpanded}
+                onToggleNotesImageExpanded={toggleNotesImageExpanded}
+                onOpenEditDialog={handleOpenEditDialog}
+                onDeleteAssignment={handleOpenDeleteDialog}
+                onStatusMenuOpen={handleStatusMenuOpen}
+                onStatusMenuClose={handleStatusMenuClose}
+                onStatusChange={handleStatusChange}
+                onOpenColumnOrderDialog={candidateColumnOrderDialog.open}
+                onOpenAddCandidateDialog={handleOpenAddCandidateDialog}
+                onColumnOrderChange={persistCandidatesColumnOrder}
+                onCandidateStatusMenuOpen={handleCandidateStatusMenuOpen}
+                onCandidateStatusMenuClose={handleCandidateStatusMenuClose}
+                onCandidateStatusChange={handleCandidateStatusChange}
+                onRemoveCandidate={handleRemoveCandidate}
+                onNavigateToContact={handleNavigateToContact}
+                onNavigateToAccount={handleNavigateToAccount}
+                onCandidatesLoaded={handleCandidatesLoaded}
+              />
+            </Box>
           );
         })}
 

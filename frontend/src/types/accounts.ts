@@ -1,16 +1,11 @@
+import type { Contact } from "./contacts";
+
 export type AccountContact = {
   id: number;
   contact_id: number;
-  contact?: {
-    uid: string;
-    first_name: string;
-    last_name: string;
-    name: string;
-    email?: string;
-    phone?: string;
-    company_role?: string;
-    network_roles?: string[];
-  };
+  // Backend eager-loads the full Contact (incl. work_experiences) via
+  // `contacts.contact.workExperiences`, so the detail modal can render everything.
+  contact?: Contact;
   created_at?: string;
   updated_at?: string;
 };
