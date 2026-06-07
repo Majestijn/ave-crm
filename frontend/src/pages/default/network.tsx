@@ -1138,7 +1138,8 @@ export default function NetworkPage() {
         }),
         ...(data.benefits?.length && { benefits: data.benefits }),
         ...(data.education && { education: data.education }),
-        ...(data.availability_date && { availability_date: data.availability_date }),
+        ...(data.network_roles?.includes("interimmer") &&
+          data.availability_date && { availability_date: data.availability_date }),
         ...(data.email && { email: data.email }),
         ...(data.phone && { phone: data.phone }),
         ...(data.linkedin_url && { linkedin_url: data.linkedin_url }),
@@ -1340,7 +1341,9 @@ export default function NetworkPage() {
         bonus_percentage: data.bonus_percentage ?? null,
         benefits: data.benefits?.length ? data.benefits : null,
         ...(data.education != null && { education: data.education }),
-        ...(data.availability_date != null && { availability_date: data.availability_date }),
+        availability_date: data.network_roles?.includes("interimmer")
+          ? data.availability_date || null
+          : null,
         ...(data.email != null && { email: data.email }),
         ...(data.phone != null && { phone: data.phone }),
         ...(data.linkedin_url != null && { linkedin_url: data.linkedin_url }),
@@ -2389,15 +2392,17 @@ export default function NetworkPage() {
                   </TextField>
                 )}
               />
-              <TextField
-                label="Beschikbaarheidsdatum"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                error={!!errors.availability_date}
-                helperText={errors.availability_date?.message ?? " "}
-                {...register("availability_date")}
-                sx={{ width: 200 }}
-              />
+              {watch("network_roles")?.includes("interimmer") && (
+                <TextField
+                  label="Beschikbaarheidsdatum"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.availability_date}
+                  helperText={errors.availability_date?.message ?? " "}
+                  {...register("availability_date")}
+                  sx={{ width: 200 }}
+                />
+              )}
             </Stack>
 
             <Stack direction="row" spacing={2}>
@@ -2942,15 +2947,17 @@ export default function NetworkPage() {
                   </TextField>
                 )}
               />
-              <TextField
-                label="Beschikbaarheidsdatum"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                error={!!editErrors.availability_date}
-                helperText={editErrors.availability_date?.message ?? " "}
-                {...editRegister("availability_date")}
-                sx={{ width: 200 }}
-              />
+              {editWatch("network_roles")?.includes("interimmer") && (
+                <TextField
+                  label="Beschikbaarheidsdatum"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  error={!!editErrors.availability_date}
+                  helperText={editErrors.availability_date?.message ?? " "}
+                  {...editRegister("availability_date")}
+                  sx={{ width: 200 }}
+                />
+              )}
             </Stack>
 
             <Stack direction="row" spacing={2}>
