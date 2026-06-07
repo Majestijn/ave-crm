@@ -47,6 +47,7 @@ function accountToForm(account: Account): UpdateAccountData {
   return {
     name: account.name,
     parent_company: account.parent_company || "",
+    parent_logo_url: account.parent_logo_url || "",
     logo_url: account.logo_url || "",
     location: account.location || "",
     website: account.website || "",
@@ -112,6 +113,7 @@ export default function CompanyDetailsCard({ account }: Props) {
     const dataToSubmit: UpdateAccountData = {
       name: data.name,
       parent_company: data.parent_company?.trim() || null,
+      parent_logo_url: data.parent_logo_url?.trim() || null,
       logo_url: data.logo_url || null,
       location: data.location || null,
       website: data.website || null,
@@ -345,6 +347,14 @@ export default function CompanyDetailsCard({ account }: Props) {
                 {...register("parent_company")}
                 fullWidth
                 placeholder="Vrij veld, bijv. naam van de holding"
+              />
+
+              <TextField
+                label="Moederbedrijf logo URL"
+                {...register("parent_logo_url")}
+                fullWidth
+                placeholder="https://example.com/holding-logo.png"
+                type="url"
               />
 
               <TextField

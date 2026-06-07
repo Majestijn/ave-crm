@@ -17,6 +17,7 @@ class Account extends Model
         'uid',
         'name',
         'parent_company',
+        'parent_logo_url',
         'logo_url',
         'location',
         'website',

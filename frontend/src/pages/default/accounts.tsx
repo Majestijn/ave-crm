@@ -99,6 +99,7 @@ function AccountCardLogo({
 const AccountSchema = z.object({
   name: z.string().min(1, "Bedrijfsnaam is verplicht"),
   parent_company: z.string().optional().or(z.literal("")),
+  parent_logo_url: z.string().optional().or(z.literal("")),
   logo_url: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
@@ -201,6 +202,7 @@ export default function AccountsPage() {
     defaultValues: {
       name: "",
       parent_company: "",
+      parent_logo_url: "",
       logo_url: "",
       location: "",
       website: "",
@@ -223,6 +225,8 @@ export default function AccountsPage() {
       const submitData = {
         ...data,
         parent_company: data.parent_company?.trim() || undefined,
+        parent_logo_url: data.parent_logo_url?.trim() || undefined,
+        logo_url: data.logo_url?.trim() || undefined,
         secondary_category: data.secondary_category || undefined,
         tertiary_category: data.tertiary_category?.length
           ? data.tertiary_category
@@ -568,6 +572,15 @@ export default function AccountsPage() {
               {...register("parent_company")}
               fullWidth
               placeholder="Optioneel, vrij tekstveld"
+            />
+
+            <TextField
+              label="Moederbedrijf logo URL"
+              error={!!errors.parent_logo_url}
+              helperText={errors.parent_logo_url?.message ?? " "}
+              {...register("parent_logo_url")}
+              fullWidth
+              placeholder="https://example.com/holding-logo.png"
             />
 
             <TextField

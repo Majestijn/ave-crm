@@ -10,6 +10,7 @@ export type AddContactToAccountData = {
 export type UpdateAccountData = {
   name?: string;
   parent_company?: string | null;
+  parent_logo_url?: string | null;
   logo_url?: string | null;
   location?: string | null;
   website?: string | null;
