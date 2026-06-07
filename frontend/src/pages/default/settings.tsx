@@ -17,8 +17,10 @@ import {
   IconButton,
   InputAdornment,
   Collapse,
+  Divider,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -31,6 +33,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import API from "../../../axios-client";
 import type { Paginated, User } from "../../types/users";
 import DropdownOptionsTab from "../../components/features/settings/DropdownOptionsTab";
+import { downloadExport, type ExportKind } from "../../api/exports";
 
 const a11yProps = (index: number) => ({
   id: `settings-tab-${index}`,
@@ -341,6 +344,8 @@ const SettingsPage = () => {
 
         <TabPanel value={currentTab} index={0}>
           <ChangePasswordSection />
+          <Divider sx={{ my: 1 }} />
+          <ExportDataSection currentUser={currentUser} />
         </TabPanel>
         <TabPanel value={currentTab} index={1}>
           <Typography variant="body1">Placeholder submenu 2</Typography>
@@ -357,6 +362,66 @@ const SettingsPage = () => {
 };
 
 export default SettingsPage;
+
+const EXPORT_ROLES = ["owner", "admin", "management"];
+
+const EXPORT_OPTIONS: { kind: ExportKind; label: string }[] = [
+  { kind: "contacts", label: "Netwerkcontacten" },
+  { kind: "accounts", label: "Klanten" },
+  { kind: "assignments", label: "Opdrachten" },
+];
+
+const ExportDataSection = ({ currentUser }: { currentUser: User | null }) => {
+  const [loadingKind, setLoadingKind] = useState<ExportKind | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!currentUser || !EXPORT_ROLES.includes(currentUser.role)) {
+    return null;
+  }
+
+  const handleExport = async (kind: ExportKind) => {
+    setLoadingKind(kind);
+    setError(null);
+    try {
+      await downloadExport(kind);
+    } catch {
+      setError("Exporteren is mislukt. Probeer het opnieuw.");
+    } finally {
+      setLoadingKind(null);
+    }
+  };
+
+  return (
+    <Box sx={{ p: 2, maxWidth: 480 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Data exporteren
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Download alle gegevens als Excel-bestand (.xlsx). Netwerkcontacten,
+        klanten en opdrachten worden elk als een apart bestand gedownload.
+      </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      <Stack spacing={1.5}>
+        {EXPORT_OPTIONS.map(({ kind, label }) => (
+          <Button
+            key={kind}
+            variant="outlined"
+            startIcon={<FileDownloadOutlinedIcon />}
+            onClick={() => handleExport(kind)}
+            disabled={loadingKind !== null}
+            sx={{ justifyContent: "flex-start" }}
+          >
+            {loadingKind === kind ? "Bezig met exporteren…" : label}
+          </Button>
+        ))}
+      </Stack>
+    </Box>
+  );
+};
 
 const UsersTab = ({ currentUser }: { currentUser: User | null }) => {
   const addUser = useDisclosure();

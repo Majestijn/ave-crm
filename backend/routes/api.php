@@ -47,6 +47,11 @@ Route::prefix('/v1')->group(function () {
 
         Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index']);
 
+        // Excel exports (owner/admin/management only — gated in the controller)
+        Route::get('/exports/contacts', [App\Http\Controllers\ExportController::class, 'contacts']);
+        Route::get('/exports/accounts', [App\Http\Controllers\ExportController::class, 'accounts']);
+        Route::get('/exports/assignments', [App\Http\Controllers\ExportController::class, 'assignments']);
+
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/{user}', [UserController::class, 'show']);
 
