@@ -496,9 +496,14 @@ class AssignmentController extends Controller
     /**
      * Remove the specified assignment.
      */
-    public function destroy(string $uid): JsonResponse
+    public function destroy(Request $request, string $uid): JsonResponse
     {
         $assignment = Assignment::where('uid', $uid)->firstOrFail();
+
+        if (! $request->user()->can('delete', $assignment)) {
+            abort(403, 'This action is unauthorized.');
+        }
+
         $assignment->delete();
 
         return response()->json(['message' => 'Opdracht succesvol verwijderd']);

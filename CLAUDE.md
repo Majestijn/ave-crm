@@ -42,11 +42,13 @@ docker-compose exec backend-php php artisan migrate --path=database/migrations/l
 docker-compose exec backend-php php artisan tenants:migrate
 ```
 
-**Fresh migrate** — het project draait nog niet in productie. De tenant-migraties zijn gesquasht tot 4 create-bestanden; er zijn géén losse `add_*`/`change_*`-migraties meer. Schema wijzigen = de bestaande create-migratie aanpassen en daarna fresh migraten:
+**Fresh migrate (alleen lokaal!)** — productie is sinds 2026-05-28 live op Laravel Forge mét echte data, dus `migrate:fresh` is daar destructief. De tenant-migraties zijn gesquasht tot 4 create-bestanden; er zijn géén losse `add_*`/`change_*`-migraties meer. Schema wijzigen = de bestaande create-migratie aanpassen en daarna **lokaal** fresh migraten:
 
 ```bash
 docker-compose exec backend-php php artisan tenants:artisan "migrate:fresh --path=database/migrations/tenant --database=tenant --force"
 ```
+
+> **Productie** draait op Laravel Forge + DigitalOcean (site `/home/forge/avecrm.nl`, zero-downtime releases, landlord-DB `avecrm`, tenant-DB's `tenant_*`). Deploy = push naar de deploy-branch → Forge draait `migrate` + `tenants:migrate`. Zie `DEPLOYMENT_STAPPEN.md`.
 
 ### Demo-data seeden
 
@@ -59,6 +61,12 @@ docker-compose exec backend-php php artisan demo:reset
 ```
 
 Demo-login na `demo:seed-accounts`: `stijn@aveconsult.nl` / `Aveconsult1!` (alle `@aveconsult.nl`-gebruikers; `@demo.nl`-gebruikers hebben wachtwoord `password`).
+
+De canonieke dropdown-set (NL) staat in `Database\Seeders\DropdownOptionSeeder` (statische `seed()`); zowel `demo:seed-accounts` als de legacy-import delegeren ernaar. Dit is de enige bron van waarheid voor dropdown-opties.
+
+### Legacy-data import
+
+`php artisan legacy:import` zet de geëxporteerde JSON uit het oude `public`-schema (map `/old_data/`, gitignored — PII) terug in een tenant-DB onder verse ID's, met FK-remapping en behoud van `uid`. Opties: `--tenant`, `--path`, `--with-dropdowns`, `--force`. **Volledige productie-procedure (Forge): `docs/legacy-import.md`.** Op Forge wijst `storage_path()` naar de release-map, dus draai met `--path=/home/forge/avecrm.nl/shared/storage/app/legacy_import`.
 
 ### Frontend
 
@@ -74,6 +82,10 @@ npm run lint        # ESLint
 
 - Application: `http://localhost:8080`
 - Adminer (DB admin): `http://localhost:8081`
+
+### Production-readiness rapport
+
+Een uitgebreide audit van het hele systeem (security, performance, UI/UX, devops) staat in `docs/production-readiness-2026-06-01.md` (bron) + `.docx` (pandoc). 10 critical blockers — pak file:line uit het rapport bij elke "fix X uit de audit"-vraag i.p.v. opnieuw scannen. Productie is live met klantdata sinds 2026-05-28; fixes moeten dat respecteren.
 
 ## Architecture
 
@@ -104,18 +116,25 @@ npm run lint        # ESLint
 ### Key Patterns
 
 - **Authentication:** Laravel Sanctum (token-based)
-- **Authorization:** Laravel Policies with gates (e.g., `can:manage-users`)
+- **Authorization:** Laravel Policies (auto-discovered: `App\Models\X` → `App\Policies\XPolicy`; only `UserPolicy` is explicitly mapped). Convention: write/delete allowed for `owner/admin/management/recruiter`, denied for `viewer`. Policies exist for Account, Contact, Assignment, User. NB: not all controllers gate every action yet — e.g. `AssignmentController::destroy` is gated (via `AssignmentPolicy`), but `store`/`update` there and several other controllers still lack checks.
+- **Assignment status:** "closed/afgerond" is centralized in `App\Support\AssignmentStatus` (`CLOSED` set + `isClosed()`); used by AccountController/LinkedInImportController/DashboardController/seeder. Don't hardcode status lists.
 - **Form handling:** React Hook Form + Zod validation
 - **Data fetching:** Custom hooks (`useAccounts`, `useContacts`, etc.) wrapping Axios
 - **IDs:** ULIDs for all public-facing identifiers (prevents enumeration)
 - **Soft deletes:** Enabled on sensitive models (Account, Candidate/Contact)
 - **Sector/classification fields:** `category`, `secondary_category`, `tertiary_category`, `merken`, `labels` exist on both Account and Contact, validated via `App\Support\ClassificationRules` against `sector_*` dropdown types. Frontend uses the shared `ClassificationFields` component (`components/features/`).
+- **Conditional Contact fields:** `availability_date` is only rendered (and only sent to the API) when `network_roles` includes the interim role. In edit mode, unchecking interim clears the value on save.
+
+### Known gotchas
+
+- **Dropdown-value drift in `network.tsx:108`:** the static `networkRoleOptions` fallback list uses old values `"interim"` and `"candidate"`, but `DropdownOptionSeeder.php` seeds the DB with `"interimmer"` and `"kandidaat"`. Active code paths (filters, conditional rendering) match on the DB-seeded values. The fallback is only reached on a tenant with empty dropdowns. When writing any `network_roles?.includes(...)` check, always use the DB value — verify with `php artisan tinker` → `DropdownOption::where('type','network_role')->pluck('value')`.
+- **Soft-delete leaves R2 files orphaned:** Assignment/Account soft-delete does not clean up `role_profile_path` / `notes_image_path` / contact CV documents in R2. Either acknowledge or fix per case.
 
 ### Core Entities
 
 - **Tenant** (landlord DB): Organization with own database
-- **User** (tenant): Roles: `admin`, `recruiter`, `viewer`
-- **Account**: Client companies
-- **Contact**: Candidates/people (formerly called Candidate)
+- **User** (tenant): Roles: `owner`, `admin`, `management`, `recruiter`, `viewer` (helpers `isAdmin/isManagement/isRecruiter/isViewer` on the model; new tenants register their first user as `owner`). The first four are "writers"; `viewer` is read-only.
+- **Account**: Client companies. Holding-relatie via free-text `parent_company` + bijhorende `parent_logo_url` naast de eigen `logo_url`. `AccountHeader` rendert beide logo's naast elkaar met een grijze chevron `›` ertussen (holding 48px + opacity 0.85, brand 60px). Lijstkaart toont alleen de brand-logo. Geen FK-relatie tussen accounts — bewuste vrije-tekst keuze.
+- **Contact**: Candidates/people (formerly called Candidate). Heeft `work_experiences` (hasMany `ContactWorkExperience`); `current_company` + `company_role` worden gesynct vanuit de meest recente werkervaring via `syncCurrentRoleFromWorkExperiences()`. Demo-seeder (`SeedAccountsAndAssignments::buildWorkExperiences`) geeft elk contact 2–4 werkervaringen uit een top-20 NL-bedrijven lijst — gedeeld met de Account-seeder zodat de "Heeft gewerkt bij"-filter op `/network` overlap heeft.
 - **Assignment**: Links accounts to contacts
 - **AccountActivity**: Activity log for accounts

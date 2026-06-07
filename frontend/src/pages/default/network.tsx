@@ -524,6 +524,10 @@ export default function NetworkPage() {
   const [minAgeInput, setMinAgeInput] = useState("");
   const [maxAgeInput, setMaxAgeInput] = useState("");
 
+  // "Heeft gewerkt bij" filter state (client-side: matches current_company + work_experiences)
+  const [showCompanyFilter, setShowCompanyFilter] = useState(false);
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+
   // Column order (persisted in localStorage)
   const defaultColumnOrder = NETWORK_COLUMN_META.map((c) => c.field);
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
@@ -1024,6 +1028,20 @@ export default function NetworkPage() {
     }
   }, [editingContact, editReset]);
 
+  // Unieke bedrijfsnamen uit current_company + work_experiences voor de "Heeft gewerkt bij" filter
+  const companyOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of contacts) {
+      const cur = c.current_company?.trim();
+      if (cur) set.add(cur);
+      for (const we of c.work_experiences || []) {
+        const name = we.company_name?.trim();
+        if (name) set.add(name);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "nl"));
+  }, [contacts]);
+
   // Filter contacts based on search query and kandidaten filter
   const filteredContacts = useMemo(() => {
     let result = contacts;
@@ -1031,6 +1049,16 @@ export default function NetworkPage() {
     // Filter op alleen kandidaten (netwerkrol "candidate")
     if (candidatesOnlyFilter) {
       result = result.filter((c) => c.network_roles?.includes("candidate"));
+    }
+
+    if (companyFilter) {
+      const needle = companyFilter.toLowerCase();
+      result = result.filter((c) => {
+        if (c.current_company?.toLowerCase().includes(needle)) return true;
+        return (c.work_experiences || []).some((we) =>
+          we.company_name?.toLowerCase().includes(needle)
+        );
+      });
     }
 
     if (!searchQuery.trim()) return result;
@@ -1051,7 +1079,7 @@ export default function NetworkPage() {
         location.includes(query)
       );
     });
-  }, [contacts, searchQuery, candidatesOnlyFilter]);
+  }, [contacts, searchQuery, candidatesOnlyFilter, companyFilter]);
 
   const normalizeWorkExperiences = (
     items: ContactForm["work_experiences"]
@@ -1110,7 +1138,8 @@ export default function NetworkPage() {
         }),
         ...(data.benefits?.length && { benefits: data.benefits }),
         ...(data.education && { education: data.education }),
-        ...(data.availability_date && { availability_date: data.availability_date }),
+        ...(data.network_roles?.includes("interimmer") &&
+          data.availability_date && { availability_date: data.availability_date }),
         ...(data.email && { email: data.email }),
         ...(data.phone && { phone: data.phone }),
         ...(data.linkedin_url && { linkedin_url: data.linkedin_url }),
@@ -1312,7 +1341,9 @@ export default function NetworkPage() {
         bonus_percentage: data.bonus_percentage ?? null,
         benefits: data.benefits?.length ? data.benefits : null,
         ...(data.education != null && { education: data.education }),
-        ...(data.availability_date != null && { availability_date: data.availability_date }),
+        availability_date: data.network_roles?.includes("interimmer")
+          ? data.availability_date || null
+          : null,
         ...(data.email != null && { email: data.email }),
         ...(data.phone != null && { phone: data.phone }),
         ...(data.linkedin_url != null && { linkedin_url: data.linkedin_url }),
@@ -2038,6 +2069,15 @@ export default function NetworkPage() {
               : "Leeftijd"}
           </Button>
           <Button
+            variant={showCompanyFilter || companyFilter ? "contained" : "outlined"}
+            size="small"
+            startIcon={<WorkOutlineIcon />}
+            onClick={() => setShowCompanyFilter(!showCompanyFilter)}
+            color={companyFilter ? "primary" : "inherit"}
+          >
+            {companyFilter ? `@ ${companyFilter}` : "Heeft gewerkt bij"}
+          </Button>
+          <Button
             variant={candidatesOnlyFilter ? "contained" : "outlined"}
             size="small"
             startIcon={<PeopleOutlineIcon />}
@@ -2202,6 +2242,55 @@ export default function NetworkPage() {
         </Paper>
       </Collapse>
 
+      {/* "Heeft gewerkt bij" Filter Panel */}
+      <Collapse in={showCompanyFilter}>
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Autocomplete
+              freeSolo
+              size="small"
+              options={companyOptions}
+              value={companyFilter ?? ""}
+              inputValue={companyFilter ?? ""}
+              onInputChange={(_, value) =>
+                setCompanyFilter(value.trim() || null)
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Bedrijfsnaam..."
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <WorkOutlineIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+              sx={{ minWidth: 280 }}
+            />
+            {companyFilter && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ClearIcon />}
+                onClick={() => setCompanyFilter(null)}
+              >
+                Wissen
+              </Button>
+            )}
+          </Stack>
+          {companyFilter && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Toont contacten die (ooit) bij <strong>{companyFilter}</strong>{" "}
+              hebben gewerkt — match op huidig bedrijf én werkervaring.
+            </Alert>
+          )}
+        </Paper>
+      </Collapse>
+
       {/* Smart CV Import Dialog */}
       <SmartBulkImportDialog
         open={smartImport.isOpen}
@@ -2303,15 +2392,17 @@ export default function NetworkPage() {
                   </TextField>
                 )}
               />
-              <TextField
-                label="Beschikbaarheidsdatum"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                error={!!errors.availability_date}
-                helperText={errors.availability_date?.message ?? " "}
-                {...register("availability_date")}
-                sx={{ width: 200 }}
-              />
+              {watch("network_roles")?.includes("interimmer") && (
+                <TextField
+                  label="Beschikbaarheidsdatum"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.availability_date}
+                  helperText={errors.availability_date?.message ?? " "}
+                  {...register("availability_date")}
+                  sx={{ width: 200 }}
+                />
+              )}
             </Stack>
 
             <Stack direction="row" spacing={2}>
@@ -2856,15 +2947,17 @@ export default function NetworkPage() {
                   </TextField>
                 )}
               />
-              <TextField
-                label="Beschikbaarheidsdatum"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                error={!!editErrors.availability_date}
-                helperText={editErrors.availability_date?.message ?? " "}
-                {...editRegister("availability_date")}
-                sx={{ width: 200 }}
-              />
+              {editWatch("network_roles")?.includes("interimmer") && (
+                <TextField
+                  label="Beschikbaarheidsdatum"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  error={!!editErrors.availability_date}
+                  helperText={editErrors.availability_date?.message ?? " "}
+                  {...editRegister("availability_date")}
+                  sx={{ width: 200 }}
+                />
+              )}
             </Stack>
 
             <Stack direction="row" spacing={2}>

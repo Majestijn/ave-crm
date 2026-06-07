@@ -31,8 +31,25 @@ export default function AccountHeader({
         borderRadius: 2,
       }}
     >
-      {/* Logo */}
+      {/* Logo (holding + brand wanneer beide ingesteld) */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        {account.parent_logo_url && (
+          <>
+            <Tooltip title={account.parent_company || "Holding"}>
+              <img
+                src={account.parent_logo_url}
+                alt={account.parent_company || "Holding"}
+                style={{ height: 48, objectFit: "contain", opacity: 0.85 }}
+              />
+            </Tooltip>
+            <Typography
+              variant="h4"
+              sx={{ color: "text.disabled", fontWeight: 300, lineHeight: 1 }}
+            >
+              ›
+            </Typography>
+          </>
+        )}
         {account.logo_url ? (
           <img
             src={account.logo_url}

@@ -29,6 +29,7 @@ export type Account = {
   uid: string;
   name: string;
   parent_company?: string | null;
+  parent_logo_url?: string | null;
   logo_url?: string;
   location?: string;
   website?: string;

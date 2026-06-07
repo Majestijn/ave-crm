@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->ulid('uid')->unique();
             $table->string('name');
             $table->string('parent_company')->nullable();
+            $table->string('parent_logo_url')->nullable();
             $table->string('logo_url')->nullable();
             $table->string('location')->nullable();
             $table->string('website')->nullable();

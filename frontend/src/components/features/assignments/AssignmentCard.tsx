@@ -16,6 +16,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Edit as EditIcon,
+  DeleteOutline as DeleteOutlineIcon,
   SwapVert as SwapVertIcon,
 } from "@mui/icons-material";
 import type { CandidateAssignment } from "../../../api/queries/assignments";
@@ -44,6 +45,7 @@ type AssignmentCardProps = {
   onToggleExpanded: (id: number) => void;
   onToggleNotesImageExpanded: (id: number) => void;
   onOpenEditDialog: (assignment: AssignmentWithDetails) => void;
+  onDeleteAssignment: (assignment: AssignmentWithDetails) => void;
   onStatusMenuOpen: (id: number, e: React.MouseEvent<HTMLElement>) => void;
   onStatusMenuClose: (id: number) => void;
   onStatusChange: (id: number, status: string) => void;
@@ -83,6 +85,7 @@ const AssignmentCard = React.memo(function AssignmentCard({
   onToggleExpanded,
   onToggleNotesImageExpanded,
   onOpenEditDialog,
+  onDeleteAssignment,
   onStatusMenuOpen,
   onStatusMenuClose,
   onStatusChange,
@@ -191,45 +194,52 @@ const AssignmentCard = React.memo(function AssignmentCard({
             )}
           </Box>
           <Stack direction="row" spacing={2} alignItems="center">
-            <Tooltip title="Bewerk opdracht">
-              <IconButton
-                size="small"
+            {/* Status button first: its width varies per status, so keeping the
+                fixed-width action icons to its right keeps them vertically
+                aligned across cards. */}
+            <Tooltip title={statusLabel}>
+              <Button
+                variant="contained"
+                color={getStatusColor(currentStatus)}
+                endIcon={<SwapVertIcon />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onOpenEditDialog(assignment);
+                  onStatusMenuOpen(assignment.id, e);
                 }}
-                sx={{ color: "text.secondary" }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Button
-              variant="contained"
-              color={getStatusColor(currentStatus)}
-              endIcon={<SwapVertIcon />}
-              onClick={(e) => {
-                e.stopPropagation();
-                onStatusMenuOpen(assignment.id, e);
-              }}
-              sx={{
-                bgcolor:
-                  currentStatus === "proposed"
-                    ? "#d32f2f"
-                    : currentStatus === "hired"
-                      ? "#2e7d32"
-                      : undefined,
-                "&:hover": {
+                sx={{
+                  width: 220,
+                  flexShrink: 0,
+                  justifyContent: "space-between",
+                  "& .MuiButton-endIcon": { ml: 1, flexShrink: 0 },
                   bgcolor:
                     currentStatus === "proposed"
-                      ? "#b71c1c"
+                      ? "#d32f2f"
                       : currentStatus === "hired"
-                        ? "#1b5e20"
+                        ? "#2e7d32"
                         : undefined,
-                },
-              }}
-            >
-              {statusLabel}
-            </Button>
+                  "&:hover": {
+                    bgcolor:
+                      currentStatus === "proposed"
+                        ? "#b71c1c"
+                        : currentStatus === "hired"
+                          ? "#1b5e20"
+                          : undefined,
+                  },
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    minWidth: 0,
+                  }}
+                >
+                  {statusLabel}
+                </Box>
+              </Button>
+            </Tooltip>
             <Menu
               anchorEl={statusMenuAnchorEl}
               open={Boolean(statusMenuAnchorEl)}
@@ -245,6 +255,30 @@ const AssignmentCard = React.memo(function AssignmentCard({
                 </MenuItem>
               ))}
             </Menu>
+            <Tooltip title="Bewerk opdracht">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEditDialog(assignment);
+                }}
+                sx={{ color: "text.secondary" }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Verwijder opdracht">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteAssignment(assignment);
+                }}
+                sx={{ color: "text.secondary", "&:hover": { color: "error.main" } }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </Stack>
         </Stack>

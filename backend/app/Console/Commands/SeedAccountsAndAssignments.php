@@ -25,22 +25,28 @@ class SeedAccountsAndAssignments extends Command
 
     protected $description = 'Zet demo dropdown-opties (export CSV + salesdoelen) in de tenant-DB, daarna demo: klanten, opdrachten en contacten';
 
+    /** Top-20 bekendste Nederlandse bedrijven — gedeeld door accounts, contact `current_company` en werkervaringen. */
     private array $companyNames = [
         'Albert Heijn',
-        'Jumbo Supermarkten',
-        'Lidl Nederland',
-        'Plus Retail',
-        'Aldi Nederland',
-        'Spar Nederland',
-        'Dirk van den Broek',
-        'Deen Supermarkten',
-        'Jan Linders',
-        'Hoogvliet',
-        'Vomar',
-        'Boni Supermarkten',
-        'Dekamarkt',
-        'Poiesz Supermarkten',
-        'MCD Supermarkten',
+        'Heineken',
+        'Shell',
+        'Philips',
+        'ASML',
+        'Unilever',
+        'ING',
+        'Rabobank',
+        'ABN AMRO',
+        'KLM',
+        'KPN',
+        'Ahold Delhaize',
+        'Jumbo',
+        'Bol.com',
+        'Coolblue',
+        'HEMA',
+        'PostNL',
+        'NS',
+        'TomTom',
+        'Booking.com',
     ];
 
     // private array $categories = ['FMCG', 'Foodservice', 'Overig'];
@@ -142,9 +148,13 @@ class SeedAccountsAndAssignments extends Command
             $merkenPick = $this->randomSubset($brandPool, 0, 2);
             $labelsPick = $this->randomSubset($labelPool, count($labelPool) > 0 ? 1 : 0, min(4, max(1, count($labelPool))));
 
+            $parentCompany = $faker->optional(0.4)->company();
+
             $accounts[] = Account::create([
                 'name' => $name,
-                'parent_company' => $faker->optional(0.25)->company(),
+                'parent_company' => $parentCompany,
+                'parent_logo_url' => $parentCompany ? $this->placeholderLogoUrl($parentCompany) : null,
+                'logo_url' => $this->placeholderLogoUrl($name),
                 'location' => $this->randomLocation(),
                 'website' => 'https://www.' . Str::slug($name) . '.nl',
                 'phone' => $this->randomPhone(),
@@ -453,6 +463,12 @@ class SeedAccountsAndAssignments extends Command
         return '0' . rand(6, 9) . rand(1000000, 9999999);
     }
 
+    /** Placeholder logo via placehold.co — toont de bedrijfsnaam in een grijs vlak. */
+    private function placeholderLogoUrl(string $companyName): string
+    {
+        return 'https://placehold.co/240x80/EEEEEE/333333?text=' . rawurlencode($companyName);
+    }
+
     private function seedContacts(int $count): void
     {
         $faker = \Faker\Factory::create('nl_NL');
@@ -485,7 +501,9 @@ class SeedAccountsAndAssignments extends Command
                 }
             }
 
-            Contact::create([
+            $workExps = $this->buildWorkExperiences($faker, $cities);
+
+            $contact = Contact::create([
                 'first_name' => $faker->firstName(),
                 'prefix' => $prefix,
                 'last_name' => $faker->lastName(),
@@ -496,8 +514,8 @@ class SeedAccountsAndAssignments extends Command
                 'email' => 'seed.' . $i . '.' . Str::random(6) . '@example.com',
                 'phone' => $faker->optional(0.8)->numerify('06########'),
                 'location' => $faker->optional(0.6)->randomElement($cities) . ', Nederland',
-                'current_company' => $faker->optional(0.5)->company(),
-                'company_role' => $faker->optional(0.6)->jobTitle(),
+                'current_company' => $workExps[0]['company_name'],
+                'company_role' => $workExps[0]['job_title'],
                 'category' => $this->randomFromPool($catPool, 'andere'),
                 'secondary_category' => $this->optionalRandomElement($faker, 0.65, $secPool),
                 'tertiary_category' => $this->randomSubset($terPool, 0, 2),
@@ -512,14 +530,50 @@ class SeedAccountsAndAssignments extends Command
                 'education' => $educationPool !== []
                     ? $this->optionalRandomElement($faker, 0.5, $educationPool)
                     : null,
-                'availability_date' => $faker->optional(0.3)->dateTimeBetween('now', '+6 months'),
+                'availability_date' => in_array('interimmer', $roles, true)
+                    ? $faker->optional(0.6)->dateTimeBetween('now', '+6 months')
+                    : null,
                 'notes' => $faker->optional(0.2)->sentence(),
             ]);
+
+            foreach ($workExps as $exp) {
+                $contact->workExperiences()->create($exp);
+            }
 
             $bar->advance();
         }
 
         $bar->finish();
         $this->newLine();
+    }
+
+    /**
+     * Bouw 2-4 werkervaringen voor een contact uit de top-20 NL-bedrijven.
+     * Index 0 = huidige rol (geen end_date); rest is chronologisch terug.
+     *
+     * @return list<array{company_name:string,job_title:string,start_date:Carbon,end_date:?Carbon,location:?string,sort_order:int}>
+     */
+    private function buildWorkExperiences(\Faker\Generator $faker, array $cities): array
+    {
+        $companies = $this->randomSubset($this->companyNames, 2, 4);
+        $cursor = Carbon::today();
+        $exps = [];
+
+        foreach ($companies as $idx => $company) {
+            $roleMonths = rand(12, 60);
+            $startDate = $cursor->copy()->subMonths($roleMonths);
+            $endDate = $idx === 0 ? null : $cursor->copy()->subDays(rand(1, 60));
+            $exps[] = [
+                'company_name' => $company,
+                'job_title' => $faker->jobTitle(),
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'location' => $faker->optional(0.6)->randomElement($cities),
+                'sort_order' => $idx,
+            ];
+            $cursor = $startDate;
+        }
+
+        return $exps;
     }
 }
