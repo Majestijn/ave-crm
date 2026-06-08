@@ -93,7 +93,9 @@ export default function AssignmentsPage() {
 
   const activeStatusOptions = React.useMemo(() => {
     if (dbStatusOptions) {
-      return dbStatusOptions.filter(o => o.is_active).map(o => ({ value: o.value, label: o.label }));
+      return dbStatusOptions
+        .filter((o) => o.is_active)
+        .map((o) => ({ value: o.value, label: o.label, color: o.color }));
     }
     return statusOptions;
   }, [dbStatusOptions]);

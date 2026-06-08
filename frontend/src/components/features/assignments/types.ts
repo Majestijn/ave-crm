@@ -143,12 +143,22 @@ export const getStatusColor = (
   status: string,
 ): "inherit" | "primary" | "success" | "error" | "warning" => {
   switch (status) {
+    // Positief/afgerond — assignment_status (NL) + candidate status (EN) + legacy
+    case "aangenomen":
+    case "voltooid":
+    case "administratief_voltooid":
     case "hired":
     case "completed":
       return "success";
+    // Negatief/afgewezen
+    case "afgewezen":
     case "cancelled":
     case "rejected":
       return "error";
+    // Geparkeerd
+    case "opdracht_on_hold":
+      return "warning";
+    // In behandeling / voorgesteld
     case "proposed":
       return "primary";
     default:
