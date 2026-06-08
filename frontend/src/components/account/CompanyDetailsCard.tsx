@@ -32,6 +32,11 @@ import {
 } from "../../utils/dropdownValidation";
 import ClassificationFields from "../features/ClassificationFields";
 
+/** Minimale vorm van een axios-foutrespons met een backend-bericht. */
+type ApiError = {
+  response?: { data?: { message?: string } };
+};
+
 /** Normaliseert API-waarde (legacy string of array) naar opgeslagen waarden. */
 function accountSalesTargetsAsValues(
   value: string | string[] | null | undefined,
@@ -330,7 +335,9 @@ export default function CompanyDetailsCard({ account }: Props) {
             <Stack spacing={3} sx={{ mt: 1 }}>
               {updateAccountMutation.isError && (
                 <Alert severity="error">
-                  Er ging iets mis bij het opslaan. Probeer het opnieuw.
+                  {(updateAccountMutation.error as ApiError)?.response?.data
+                    ?.message ||
+                    "Er ging iets mis bij het opslaan. Probeer het opnieuw."}
                 </Alert>
               )}
 
