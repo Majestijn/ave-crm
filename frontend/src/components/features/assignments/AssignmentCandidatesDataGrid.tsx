@@ -22,8 +22,8 @@ import {
   SwapVert as SwapVertIcon,
 } from "@mui/icons-material";
 import type { CandidateAssignment } from "../../../api/queries/assignments";
+import { useDropdownOptions } from "../../../api/queries/dropdownOptions";
 import { networkRoleLabels } from "../../../utils/formatters";
-import { getCandidateStatusColor } from "./types";
 
 type AssignmentCandidatesDataGridProps = {
   assignmentId: number;
@@ -64,6 +64,23 @@ export default function AssignmentCandidatesDataGrid({
   candidateStatusOptions,
   getCandidateStatusColor: getStatusColor,
 }: AssignmentCandidatesDataGridProps) {
+  // DB-driven candidate statuses (configurable via Settings); the hardcoded
+  // prop is the fallback while loading or when none are seeded.
+  const { data: dbCandidateStatusOptions } = useDropdownOptions(
+    "candidate_assignment_status",
+  );
+  const activeCandidateStatusOptions = useMemo(() => {
+    if (dbCandidateStatusOptions && dbCandidateStatusOptions.length > 0) {
+      return dbCandidateStatusOptions
+        .filter((o) => o.is_active)
+        .map((o) => ({
+          value: o.value as CandidateAssignment["status"],
+          label: o.label,
+        }));
+    }
+    return candidateStatusOptions;
+  }, [dbCandidateStatusOptions, candidateStatusOptions]);
+
   const onNavigateToContactRef = React.useRef(onNavigateToContact);
   React.useEffect(() => {
     onNavigateToContactRef.current = onNavigateToContact;
@@ -251,7 +268,7 @@ export default function AssignmentCandidatesDataGrid({
                   onStatusMenuCloseRef.current(assignmentId, row.id)
                 }
               >
-                {candidateStatusOptions.map((option) => (
+                {activeCandidateStatusOptions.map((option) => (
                   <MenuItem
                     key={option.value}
                     onClick={() =>
@@ -356,7 +373,7 @@ export default function AssignmentCandidatesDataGrid({
     [
       assignmentId,
       candidateStatusMenuAnchor,
-      candidateStatusOptions,
+      activeCandidateStatusOptions,
       getStatusColor,
     ],
   );
