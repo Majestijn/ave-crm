@@ -42,10 +42,18 @@ class NormalizeClassification extends Command
             $tenant->makeCurrent();
             $this->info("Tenant: {$tenant->name} (id: {$tenant->id})" . ($dryRun ? ' [dry-run]' : ''));
 
-            $accounts = $this->normalizeModels(Account::query(), $dryRun);
-            $contacts = $this->normalizeModels(Contact::query(), $dryRun);
+            $orphans = [];
+            $accounts = $this->normalizeModels(Account::query(), $dryRun, $orphans);
+            $contacts = $this->normalizeModels(Contact::query(), $dryRun, $orphans);
 
             $this->line("  accounts gewijzigd: {$accounts}, contacten gewijzigd: {$contacts}");
+
+            if ($orphans !== []) {
+                $this->warn('  Onbekende legacy-waarden (geen match op value/label/alias) — voeg een alias toe in ClassificationRules::LEGACY_ALIASES:');
+                foreach ($orphans as $field => $values) {
+                    $this->line('    ' . $field . ': ' . implode(', ', array_keys(array_count_values($values))));
+                }
+            }
         }
 
         return self::SUCCESS;
@@ -55,13 +63,14 @@ class NormalizeClassification extends Command
      * Normaliseer de classificatievelden van elk record in de query.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<\Illuminate\Database\Eloquent\Model>  $query
+     * @param  array<string, list<string>>  $orphans  Verzamelt onoplosbare waarden per veld.
      * @return int  Aantal gewijzigde records.
      */
-    private function normalizeModels($query, bool $dryRun): int
+    private function normalizeModels($query, bool $dryRun, array &$orphans): int
     {
         $changed = 0;
 
-        $query->chunkById(200, function ($records) use (&$changed, $dryRun) {
+        $query->chunkById(200, function ($records) use (&$changed, &$orphans, $dryRun) {
             foreach ($records as $record) {
                 $current = [];
                 foreach (self::FIELDS as $field) {
@@ -82,6 +91,12 @@ class NormalizeClassification extends Command
                     $changed++;
                     if (!$dryRun) {
                         $record->saveQuietly();
+                    }
+                }
+
+                foreach (ClassificationRules::orphans($current) as $field => $values) {
+                    foreach ($values as $value) {
+                        $orphans[$field][] = $value;
                     }
                 }
             }
