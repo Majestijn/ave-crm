@@ -22,7 +22,6 @@ import {
 import type { CandidateAssignment } from "../../../api/queries/assignments";
 import type { AssignmentWithDetails } from "./types";
 import {
-  statusOptions,
   getStatusColor,
   candidateStatusOptions,
   getCandidateStatusColor,
@@ -36,6 +35,9 @@ type AssignmentCardProps = {
   assignment: AssignmentWithDetails;
   currentStatus: string;
   statusLabel: string;
+  // DB-driven assignment_status options (parent resolves these); the status
+  // menu must use these, not a hardcoded list, or it sends invalid values.
+  statusOptions: { value: string; label: string }[];
   isExpanded: boolean;
   assignmentCandidates: CandidateAssignment[];
   expandedNotesImages: Set<number>;
@@ -76,6 +78,7 @@ const AssignmentCard = React.memo(function AssignmentCard({
   assignment,
   currentStatus,
   statusLabel,
+  statusOptions,
   isExpanded,
   assignmentCandidates,
   expandedNotesImages,
