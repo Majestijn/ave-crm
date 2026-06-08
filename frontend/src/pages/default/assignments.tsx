@@ -811,6 +811,7 @@ export default function AssignmentsPage() {
                 assignment={assignment}
                 currentStatus={currentStatus}
                 statusLabel={statusLabel}
+                statusOptions={activeStatusOptions}
                 isExpanded={expandedAssignments.has(assignment.id)}
                 assignmentCandidates={
                   localCandidateAssignments[assignment.id] || []
