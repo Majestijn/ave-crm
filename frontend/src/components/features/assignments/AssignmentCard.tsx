@@ -37,7 +37,8 @@ type AssignmentCardProps = {
   statusLabel: string;
   // DB-driven assignment_status options (parent resolves these); the status
   // menu must use these, not a hardcoded list, or it sends invalid values.
-  statusOptions: { value: string; label: string }[];
+  // `color` is the optional per-status color configured on the dropdown option.
+  statusOptions: { value: string; label: string; color?: string | null }[];
   isExpanded: boolean;
   assignmentCandidates: CandidateAssignment[];
   expandedNotesImages: Set<number>;
@@ -112,6 +113,11 @@ const AssignmentCard = React.memo(function AssignmentCard({
     assignment.end_date,
   );
 
+  // Prefer a per-status color configured on the dropdown option; fall back to
+  // the semantic default mapping (getStatusColor) when none is set.
+  const dbStatusColor =
+    statusOptions.find((o) => o.value === currentStatus)?.color || undefined;
+
   return (
     <React.Fragment>
       <AssignmentCandidatesLoader
@@ -143,8 +149,9 @@ const AssignmentCard = React.memo(function AssignmentCard({
               variant="body2"
               onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
-                assignment.account?.uid &&
+                if (assignment.account?.uid) {
                   onNavigateToAccount(assignment.account.uid);
+                }
               }}
               sx={{
                 textDecoration: "underline",
@@ -203,7 +210,7 @@ const AssignmentCard = React.memo(function AssignmentCard({
             <Tooltip title={statusLabel}>
               <Button
                 variant="contained"
-                color={getStatusColor(currentStatus)}
+                color={dbStatusColor ? "inherit" : getStatusColor(currentStatus)}
                 endIcon={<SwapVertIcon />}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -214,20 +221,11 @@ const AssignmentCard = React.memo(function AssignmentCard({
                   flexShrink: 0,
                   justifyContent: "space-between",
                   "& .MuiButton-endIcon": { ml: 1, flexShrink: 0 },
-                  bgcolor:
-                    currentStatus === "proposed"
-                      ? "#d32f2f"
-                      : currentStatus === "hired"
-                        ? "#2e7d32"
-                        : undefined,
-                  "&:hover": {
-                    bgcolor:
-                      currentStatus === "proposed"
-                        ? "#b71c1c"
-                        : currentStatus === "hired"
-                          ? "#1b5e20"
-                          : undefined,
-                  },
+                  ...(dbStatusColor && {
+                    bgcolor: dbStatusColor,
+                    color: "#fff",
+                    "&:hover": { bgcolor: dbStatusColor, filter: "brightness(0.92)" },
+                  }),
                 }}
               >
                 <Box
