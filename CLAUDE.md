@@ -44,7 +44,13 @@ docker-compose exec backend-php php artisan migrate --path=database/migrations/l
 docker-compose exec backend-php php artisan tenants:migrate
 ```
 
-**Fresh migrate (alleen lokaal!)** — productie is sinds 2026-05-28 live op Laravel Forge mét echte data, dus `migrate:fresh` is daar destructief. De tenant-migraties zijn gesquasht tot 4 create-bestanden; er zijn géén losse `add_*`/`change_*`-migraties meer. Schema wijzigen = de bestaande create-migratie aanpassen en daarna **lokaal** fresh migraten:
+**Schema wijzigen = ALTIJD een nieuwe additieve migratie (productie is live!)** — sinds 2026-05-28 draait productie op Laravel Forge mét echte data. Het **bewerken van een bestaande create-migratie propageert NIET naar productie**: die migratie is daar al gedraaid en draait nooit opnieuw, dus de wijziging mist op productie. Dat gaf o.a. de ontbrekende `parent_logo_url`-kolom → 500 bij het opslaan van een account (zie migratie `2026_06_08_000001_add_parent_logo_url_to_accounts`). 
+
+Een kolom-/schemawijziging is dus **altijd** een nieuw migratiebestand in `database/migrations/tenant/` (bv. `add_x_to_y`), idempotent met `Schema::hasColumn`/`hasTable`, zodat Forge het bij deploy via `tenants:migrate` toepast én het lokaal een no-op is. De create-migraties zijn gesquasht tot 4 bestanden — pas die **niet** meer aan voor wijzigingen.
+
+> ⚠️ Tegen-intuïtief t.o.v. oudere instructies: vroeger was de regel "create-migratie bewerken + fresh migraten". Dat geldt **niet meer** nu productie live is — gebruik additieve migraties.
+
+`migrate:fresh` is op productie destructief; gebruik het **alleen lokaal** voor een schone reset (en daarna `demo:seed-accounts`):
 
 ```bash
 docker-compose exec backend-php php artisan tenants:artisan "migrate:fresh --path=database/migrations/tenant --database=tenant --force"
