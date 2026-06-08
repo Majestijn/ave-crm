@@ -49,6 +49,17 @@ class ClassificationRules
     ];
 
     /**
+     * Legacy-waarden die in de canonieke set zijn hernoemd en dus niet meer als
+     * value óf label bestaan, met hun huidige equivalent. Per type; key =
+     * lowercased oude waarde. Vul aan zodra `classification:normalize` nieuwe
+     * orphans op productie rapporteert.
+     */
+    private const LEGACY_ALIASES = [
+        self::TYPE_CATEGORY => ['overig' => 'andere'],
+        self::TYPE_SECONDARY_CATEGORY => ['overig' => 'andere'],
+    ];
+
+    /**
      * Normaliseer classificatiewaarden naar de dropdown-option `value`.
      *
      * Legacy-data (o.a. uit de oude seeder en de legacy-import) bewaarde de
@@ -103,12 +114,48 @@ class ClassificationRules
             $byLabel[mb_strtolower(trim((string) $option->label))] = $option->value;
         }
 
-        return static function ($value) use ($values, $byLabel) {
+        $aliases = self::LEGACY_ALIASES[$type] ?? [];
+
+        return static function ($value) use ($values, $byLabel, $aliases) {
             if (!is_string($value) || in_array($value, $values, true)) {
                 return $value;
             }
 
-            return $byLabel[mb_strtolower(trim($value))] ?? $value;
+            $key = mb_strtolower(trim($value));
+
+            // 1) match op (case-insensitive) label  2) bekende legacy-alias
+            return $byLabel[$key] ?? $aliases[$key] ?? $value;
         };
+    }
+
+    /**
+     * Geef de classificatiewaarden terug die ná normalisatie nog steeds geen
+     * geldige dropdown-value zijn (orphans), gegroepeerd per veld. Voor de
+     * `--report` van het normalize-commando, zodat onbekende legacy-waarden
+     * zichtbaar worden i.p.v. stil te falen op validatie.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, list<string>>
+     */
+    public static function orphans(array $input): array
+    {
+        $normalized = self::normalize($input);
+        $orphans = [];
+
+        foreach (self::FIELD_TYPES as $field => $type) {
+            if (!array_key_exists($field, $normalized) || $normalized[$field] === null) {
+                continue;
+            }
+
+            $validValues = DropdownOption::where('type', $type)->pluck('value')->all();
+
+            foreach ((array) $normalized[$field] as $value) {
+                if (is_string($value) && !in_array($value, $validValues, true)) {
+                    $orphans[$field][] = $value;
+                }
+            }
+        }
+
+        return $orphans;
     }
 }
