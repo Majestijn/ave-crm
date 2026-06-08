@@ -150,6 +150,8 @@ class ContactController extends Controller
             abort(403, 'This action is unauthorized.');
         }
 
+        $request->merge(ClassificationRules::normalize($request->all()));
+
         $data = $request->validate([
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],
             'prefix' => ['nullable', 'string', 'max:32'],

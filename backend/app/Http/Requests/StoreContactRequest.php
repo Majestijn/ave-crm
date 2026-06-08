@@ -18,6 +18,14 @@ class StoreContactRequest extends FormRequest
     }
 
     /**
+     * Normaliseer legacy classificatie-labels naar dropdown-values vóór validatie.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge(ClassificationRules::normalize($this->all()));
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
