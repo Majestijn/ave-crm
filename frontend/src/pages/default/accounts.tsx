@@ -102,7 +102,9 @@ const AccountSchema = z.object({
   parent_logo_url: z.string().optional().or(z.literal("")),
   logo_url: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
-  website: z.string().url().optional().or(z.literal("")),
+  // Geen strikte url()-check: de backend normaliseert een kale domeinnaam
+  // (bijv. "www.example.nl") naar https:// — anders faalt opslaan onnodig.
+  website: z.string().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   industry: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),

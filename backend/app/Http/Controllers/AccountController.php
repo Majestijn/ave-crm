@@ -63,6 +63,10 @@ class AccountController extends Controller
             abort(403, 'This action is unauthorized.');
         }
 
+        if ($request->has('website')) {
+            $request->merge(['website' => $this->normalizeWebsite($request->input('website'))]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'parent_company' => ['nullable', 'string', 'max:255'],
@@ -121,6 +125,10 @@ class AccountController extends Controller
             abort(403, 'This action is unauthorized.');
         }
 
+        if ($request->has('website')) {
+            $request->merge(['website' => $this->normalizeWebsite($request->input('website'))]);
+        }
+
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'parent_company' => ['nullable', 'string', 'max:255'],
@@ -144,6 +152,26 @@ class AccountController extends Controller
         $accountModel->fill($data)->save();
 
         return response()->json($accountModel);
+    }
+
+    /**
+     * Prefix a bare domain (e.g. "www.example.nl") with https:// so it passes
+     * the `url` validation rule. Empty values become null; values that already
+     * have an http(s) scheme are left untouched.
+     */
+    private function normalizeWebsite(?string $website): ?string
+    {
+        if (!is_string($website)) {
+            return $website;
+        }
+
+        $website = trim($website);
+
+        if ($website === '') {
+            return null;
+        }
+
+        return preg_match('~^https?://~i', $website) ? $website : 'https://' . $website;
     }
 
     /**
