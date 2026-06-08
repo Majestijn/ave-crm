@@ -38,4 +38,77 @@ class ClassificationRules
             'labels.*' => ['string', DropdownOption::validationRule(self::TYPE_LABEL)],
         ];
     }
+
+    /** Classificatieveld => bijbehorend dropdown-type. */
+    private const FIELD_TYPES = [
+        'category' => self::TYPE_CATEGORY,
+        'secondary_category' => self::TYPE_SECONDARY_CATEGORY,
+        'tertiary_category' => self::TYPE_TERTIARY_CATEGORY,
+        'merken' => self::TYPE_BRAND,
+        'labels' => self::TYPE_LABEL,
+    ];
+
+    /**
+     * Normaliseer classificatiewaarden naar de dropdown-option `value`.
+     *
+     * Legacy-data (o.a. uit de oude seeder en de legacy-import) bewaarde de
+     * zichtbare *label* ("Non-food", "Overig") terwijl de huidige opties
+     * geslugificeerde values gebruiken ("non_food", "overig"). Een waarde die
+     * exact matcht met een label (case-insensitive) wordt omgezet naar de
+     * bijbehorende value; een waarde die al een geldige value is, of nergens
+     * mee matcht, blijft ongewijzigd (validatie vangt dat laatste alsnog af).
+     *
+     * Geeft alleen de velden terug die in $input aanwezig zijn.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function normalize(array $input): array
+    {
+        $normalized = [];
+
+        foreach (self::FIELD_TYPES as $field => $type) {
+            if (!array_key_exists($field, $input)) {
+                continue;
+            }
+
+            $value = $input[$field];
+
+            if ($value === null) {
+                $normalized[$field] = null;
+                continue;
+            }
+
+            $resolve = self::valueResolver($type);
+
+            $normalized[$field] = is_array($value)
+                ? array_values(array_map($resolve, $value))
+                : $resolve($value);
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Bouw een resolver voor één dropdown-type: laat geldige values door en
+     * zet een (case-insensitive) label om naar de bijbehorende value.
+     */
+    private static function valueResolver(string $type): callable
+    {
+        $options = DropdownOption::where('type', $type)->get(['value', 'label']);
+        $values = $options->pluck('value')->all();
+
+        $byLabel = [];
+        foreach ($options as $option) {
+            $byLabel[mb_strtolower(trim((string) $option->label))] = $option->value;
+        }
+
+        return static function ($value) use ($values, $byLabel) {
+            if (!is_string($value) || in_array($value, $values, true)) {
+                return $value;
+            }
+
+            return $byLabel[mb_strtolower(trim($value))] ?? $value;
+        };
+    }
 }

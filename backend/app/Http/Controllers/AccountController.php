@@ -67,6 +67,8 @@ class AccountController extends Controller
             $request->merge(['website' => $this->normalizeWebsite($request->input('website'))]);
         }
 
+        $request->merge(ClassificationRules::normalize($request->all()));
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'parent_company' => ['nullable', 'string', 'max:255'],
@@ -128,6 +130,8 @@ class AccountController extends Controller
         if ($request->has('website')) {
             $request->merge(['website' => $this->normalizeWebsite($request->input('website'))]);
         }
+
+        $request->merge(ClassificationRules::normalize($request->all()));
 
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
