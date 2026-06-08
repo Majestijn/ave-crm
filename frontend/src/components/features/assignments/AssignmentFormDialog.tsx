@@ -235,8 +235,10 @@ export default function AssignmentFormDialog(props: AssignmentFormDialogProps) {
   const activeBenefits = useMemo(
     () =>
       dbBenefitsOptions
-        ? dbBenefitsOptions.filter((o) => o.is_active).map((o) => o.value)
-        : defaultBenefitsOptions,
+        ? dbBenefitsOptions
+            .filter((o) => o.is_active)
+            .map((o) => ({ value: o.value, label: o.label }))
+        : defaultBenefitsOptions.map((b) => ({ value: b, label: b })),
     [dbBenefitsOptions]
   );
 
@@ -828,19 +830,19 @@ export default function AssignmentFormDialog(props: AssignmentFormDialogProps) {
                   <>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                       {activeBenefits.map((benefit) => {
-                        const isSelected = selected.includes(benefit);
+                        const isSelected = selected.includes(benefit.value);
                         return (
                           <Chip
-                            key={benefit}
-                            label={benefit}
+                            key={benefit.value}
+                            label={benefit.label}
                             size="small"
                             variant={isSelected ? "filled" : "outlined"}
                             color={isSelected ? "primary" : "default"}
                             onClick={() =>
                               field.onChange(
                                 isSelected
-                                  ? selected.filter((b) => b !== benefit)
-                                  : [...selected, benefit]
+                                  ? selected.filter((b) => b !== benefit.value)
+                                  : [...selected, benefit.value]
                               )
                             }
                             sx={{
