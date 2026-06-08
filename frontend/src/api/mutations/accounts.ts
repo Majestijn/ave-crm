@@ -65,12 +65,17 @@ export const useUpdateAccount = () => {
           queryKeys.accounts.detail(variables.uid),
           updatedAccount
         );
+        // exact:true so we only touch the list query (["accounts"]) and not
+        // the detail query (["accounts", uid]), whose cached value is a single
+        // Account object — mapping over that threw "old.map is not a function".
         queryClient.setQueriesData(
-          { queryKey: queryKeys.accounts.all },
+          { queryKey: queryKeys.accounts.all, exact: true },
           (old: Account[] | undefined) =>
-            old?.map((a) =>
-              a.uid === variables.uid ? { ...a, ...updatedAccount } : a
-            )
+            Array.isArray(old)
+              ? old.map((a) =>
+                  a.uid === variables.uid ? { ...a, ...updatedAccount } : a
+                )
+              : old
         );
       } else {
         queryClient.invalidateQueries({
