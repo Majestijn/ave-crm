@@ -70,7 +70,11 @@ docker-compose exec backend-php php artisan demo:reset
 
 Demo-login na `demo:seed-accounts`: `stijn@aveconsult.nl` / `Aveconsult1!` (alle `@aveconsult.nl`-gebruikers; `@demo.nl`-gebruikers hebben wachtwoord `password`).
 
-De canonieke dropdown-set (NL) staat in `Database\Seeders\DropdownOptionSeeder` (statische `seed()`); zowel `demo:seed-accounts` als de legacy-import delegeren ernaar. Dit is de enige bron van waarheid voor dropdown-opties.
+De canonieke dropdown-set (NL) staat in `Database\Seeders\DropdownOptionSeeder` (statische `seed()`, idempotent via `updateOrCreate` — voegt toe/werkt bij, verwijdert nooit); zowel `demo:seed-accounts` als de legacy-import delegeren ernaar. Dit is de enige bron van waarheid voor dropdown-opties.
+
+**Dropdown-opties naar productie uitrollen** (bv. een nieuw dropdown-type toegevoegd aan de seeder): `php artisan dropdowns:sync [--tenant=]` draait alleen `DropdownOptionSeeder::seed()` per tenant — geen demo-data, geen import. Dit is dé manier om nieuwe opties op productie te krijgen, want de seeder draait niet vanzelf bij deploy.
+
+**Legacy classificatie opschonen:** `php artisan classification:normalize [--tenant=] [--dry-run]` zet op bestaande accounts/contacten classificatie-*labels* om naar dropdown-*values* (label→value, plus `ClassificationRules::LEGACY_ALIASES` voor hernoemde waarden zoals `overig`→`andere`) en rapporteert orphans die nergens aan matchen. Zie de classificatie-gotcha hieronder.
 
 ### Legacy-data import
 
@@ -140,6 +144,9 @@ Een uitgebreide audit van het hele systeem (security, performance, UI/UX, devops
 
 - **Dropdown-value drift in `network.tsx:108`:** the static `networkRoleOptions` fallback list uses old values `"interim"` and `"candidate"`, but `DropdownOptionSeeder.php` seeds the DB with `"interimmer"` and `"kandidaat"`. Active code paths (filters, conditional rendering) match on the DB-seeded values. The fallback is only reached on a tenant with empty dropdowns. When writing any `network_roles?.includes(...)` check, always use the DB value — verify with `php artisan tinker` → `DropdownOption::where('type','network_role')->pluck('value')`.
 - **Soft-delete leaves R2 files orphaned:** Assignment/Account soft-delete does not clean up `role_profile_path` / `notes_image_path` / contact CV documents in R2. Either acknowledge or fix per case.
+- **Dropdown drift is a recurring prod-bug class (2026-06-08/09):** the frontend has hardcoded option lists that MUST stay fallbacks only — the DB dropdown set is the source of truth, and the backend validates against it (`DropdownOption::validationRule($type)`). When a status/classification UI sends a value, it has to come from the DB options, not a hardcoded list. Fixed cases: `AssignmentCard` status menu (sent English `hired` vs DB `aangenomen`), `AssignmentCandidatesDataGrid` candidate status (now reads `candidate_assignment_status` from DB), `getStatusColor` (covers NL assignment + EN candidate values). When adding any select that validates server-side, drive it from `useDropdownOptions(type)` and pass `{value,label,color}` down — never map a hardcoded list into a request.
+- **Legacy classification stored as labels:** legacy-imported accounts/contacts stored classification as the display *label* ("Overig", "Non-food") while the canonical options use slug *values* ("andere", "non_food"). `ClassificationRules::normalize()` (called in Account/Contact store+update + `StoreContactRequest`) self-heals label→value before validation; renamed values need an entry in `LEGACY_ALIASES`. Run `classification:normalize` once per environment to clean stored data in bulk. NB `category "Overig"` was renamed to `andere` in the canonical set — not just a label diff.
+- **Validation falls back to `max:255` for unseeded dropdown types:** `DropdownOption::validationRule($type)` returns `max:255` (accept anything) when a type has zero options. So an unseeded type silently accepts any value until it's seeded — then it starts enforcing `in:...`. Seed new types with values that MATCH existing stored data or you get surprise 422s (see `candidate_assignment_status`).
 
 ### Core Entities
 

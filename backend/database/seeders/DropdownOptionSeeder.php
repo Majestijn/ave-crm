@@ -114,6 +114,14 @@ class DropdownOptionSeeder extends Seeder
             ['type' => 'assignment_status', 'value' => 'administratief_voltooid', 'label' => 'Administratief voltooid', 'color' => null, 'sort_order' => 12, 'is_active' => true],
             ['type' => 'assignment_status', 'value' => 'schaduwmanagement', 'label' => 'Schaduwmanagement', 'color' => null, 'sort_order' => 13, 'is_active' => true],
             ['type' => 'assignment_status', 'value' => 'voltooid', 'label' => 'Voltooid', 'color' => null, 'sort_order' => 14, 'is_active' => true],
+            // Kandidaat-status op een opdracht (assignment_contact.pivot.status). Values MOETEN
+            // matchen met bestaande pivot-data + de frontend, anders 422 bij status wijzigen.
+            ['type' => 'candidate_assignment_status', 'value' => 'called', 'label' => 'Gebeld', 'color' => null, 'sort_order' => 0, 'is_active' => true],
+            ['type' => 'candidate_assignment_status', 'value' => 'proposed', 'label' => 'Voorgesteld', 'color' => null, 'sort_order' => 1, 'is_active' => true],
+            ['type' => 'candidate_assignment_status', 'value' => 'first_interview', 'label' => '1e gesprek', 'color' => null, 'sort_order' => 2, 'is_active' => true],
+            ['type' => 'candidate_assignment_status', 'value' => 'second_interview', 'label' => '2e gesprek', 'color' => null, 'sort_order' => 3, 'is_active' => true],
+            ['type' => 'candidate_assignment_status', 'value' => 'hired', 'label' => 'Aangenomen', 'color' => null, 'sort_order' => 4, 'is_active' => true],
+            ['type' => 'candidate_assignment_status', 'value' => 'rejected', 'label' => 'Afgewezen', 'color' => null, 'sort_order' => 5, 'is_active' => true],
             ['type' => 'benefit', 'value' => 'reiskostenvergoeding', 'label' => 'Reiskostenvergoeding', 'color' => null, 'sort_order' => 0, 'is_active' => true],
             ['type' => 'benefit', 'value' => 'pensioen', 'label' => 'Pensioen', 'color' => null, 'sort_order' => 1, 'is_active' => true],
             ['type' => 'benefit', 'value' => 'dienstreizen_vergoeding', 'label' => 'Dienstreizen vergoeding', 'color' => null, 'sort_order' => 2, 'is_active' => true],
