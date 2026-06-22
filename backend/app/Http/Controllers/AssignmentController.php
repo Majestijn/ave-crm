@@ -6,6 +6,7 @@ use App\Models\Assignment;
 use App\Models\Account;
 use App\Models\DropdownOption;
 use App\Models\User;
+use App\Support\AssignmentStatus;
 use App\Services\CvParsingService;
 use App\Services\FileStorageService;
 use Illuminate\Http\Request;
@@ -109,6 +110,12 @@ class AssignmentController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Heel legacy lifecycle-statussen ('active', 'hired', ...) naar geldige
+        // funnel-waarden vóór validatie, zodat ze niet op de in:-regel breken.
+        if ($request->filled('status')) {
+            $request->merge(['status' => AssignmentStatus::normalize($request->input('status'))]);
+        }
+
         $validated = $request->validate([
             'account_uid' => 'required|string',
             'recruiter_uid' => 'nullable|string',
@@ -172,7 +179,7 @@ class AssignmentController extends Controller
             'recruiter_id' => $recruiterId,
             'title' => $validated['title'],
             'description' => $description,
-            'status' => $validated['status'] ?? 'active',
+            'status' => $validated['status'] ?? AssignmentStatus::DEFAULT,
             'salary_min' => $validated['salary_min'] ?? null,
             'salary_max' => $validated['salary_max'] ?? null,
             'vacation_days' => $validated['vacation_days'] ?? null,
@@ -242,6 +249,10 @@ class AssignmentController extends Controller
     public function update(Request $request, string $uid): JsonResponse
     {
         $assignment = Assignment::where('uid', $uid)->firstOrFail();
+
+        if ($request->filled('status')) {
+            $request->merge(['status' => AssignmentStatus::normalize($request->input('status'))]);
+        }
 
         $validated = $request->validate([
             'account_uid' => 'sometimes|string',
