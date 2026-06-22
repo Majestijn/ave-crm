@@ -35,4 +35,28 @@ class AssignmentStatusTest extends TestCase
     {
         $this->assertFalse(AssignmentStatus::isClosed(null));
     }
+
+    public function test_legacy_statuses_normalize_to_funnel_values(): void
+    {
+        $this->assertSame('1e_contact_moment', AssignmentStatus::normalize('active'));
+        $this->assertSame('1e_contact_moment', AssignmentStatus::normalize('proposed'));
+        $this->assertSame('aangenomen', AssignmentStatus::normalize('hired'));
+        $this->assertSame('voltooid', AssignmentStatus::normalize('completed'));
+        $this->assertSame('afgewezen', AssignmentStatus::normalize('cancelled'));
+        $this->assertSame('schaduwmanagement', AssignmentStatus::normalize('shadow_management'));
+    }
+
+    public function test_valid_and_unknown_statuses_pass_through_normalize_unchanged(): void
+    {
+        $this->assertSame('aangenomen', AssignmentStatus::normalize('aangenomen'));
+        $this->assertSame('1e_contact_moment', AssignmentStatus::normalize('1e_contact_moment'));
+        $this->assertSame('iets_onbekends', AssignmentStatus::normalize('iets_onbekends'));
+        $this->assertNull(AssignmentStatus::normalize(null));
+    }
+
+    public function test_default_status_is_a_valid_funnel_value(): void
+    {
+        $this->assertSame('1e_contact_moment', AssignmentStatus::DEFAULT);
+        $this->assertFalse(AssignmentStatus::isClosed(AssignmentStatus::DEFAULT));
+    }
 }
