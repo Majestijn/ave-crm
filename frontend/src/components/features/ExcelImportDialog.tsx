@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -14,7 +14,12 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
+import { useAssignments, type AssignmentFromAPI } from "../../api/queries/assignments";
 import {
   TableChart as TableChartIcon,
   Error as ErrorIcon,
@@ -23,8 +28,21 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   CloudUpload as CloudUploadIcon,
+  Link as LinkIcon,
 } from "@mui/icons-material";
 import API from "../../api/client";
+
+/** Opdrachten die niet als afgesloten worden beschouwd (voltooid / geannuleerd). */
+const CLOSED_ASSIGNMENT_STATUSES = new Set(["completed", "cancelled"]);
+
+function isOngoingAssignment(a: AssignmentFromAPI): boolean {
+  return !CLOSED_ASSIGNMENT_STATUSES.has(a.status);
+}
+
+function formatAssignmentLabel(a: AssignmentFromAPI): string {
+  const client = a.account?.name?.trim() || "Klant";
+  return `${a.title} — ${client}`;
+}
 
 interface ExcelImportDialogProps {
   open: boolean;
@@ -54,6 +72,8 @@ interface ImportResult {
   success: SuccessRow[];
   failed: FailedRow[];
   skipped: SkippedRow[];
+  linked_count?: number;
+  assignment?: { uid: string; title: string } | null;
 }
 
 type ImportState = "idle" | "uploading" | "complete";
@@ -70,7 +90,14 @@ export default function ExcelImportDialog({
   const [showFailed, setShowFailed] = useState(false);
   const [showSkipped, setShowSkipped] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [assignmentUid, setAssignmentUid] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments();
+  const ongoingAssignments = useMemo(
+    () => assignments.filter(isOngoingAssignment).sort((a, b) => a.title.localeCompare(b.title, "nl")),
+    [assignments]
+  );
 
   const validTypes = [
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -135,6 +162,9 @@ export default function ExcelImportDialog({
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
+      if (assignmentUid) {
+        formData.append("assignment_uid", assignmentUid);
+      }
 
       const data = await API.post<ImportResult>("/contacts/excel-import", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -167,6 +197,7 @@ export default function ExcelImportDialog({
     setShowFailed(false);
     setShowSkipped(false);
     setShowSuccess(false);
+    setAssignmentUid("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -221,6 +252,29 @@ export default function ExcelImportDialog({
           </Typography>
         </Box>
       )}
+
+      <FormControl fullWidth disabled={assignmentsLoading} sx={{ mt: 3 }}>
+        <InputLabel id="excel-import-assignment-label">Koppelen aan opdracht (optioneel)</InputLabel>
+        <Select
+          labelId="excel-import-assignment-label"
+          label="Koppelen aan opdracht (optioneel)"
+          value={assignmentUid}
+          onChange={(e) => setAssignmentUid(e.target.value as string)}
+        >
+          <MenuItem value="">
+            <em>Geen — alleen contacten importeren</em>
+          </MenuItem>
+          {ongoingAssignments.map((a) => (
+            <MenuItem key={a.uid} value={a.uid}>
+              {formatAssignmentLabel(a)}
+            </MenuItem>
+          ))}
+        </Select>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+          Alle kandidaten uit het bestand (ook bestaande contacten) worden aan deze opdracht gekoppeld. Toont
+          opdrachten die niet op voltooid of geannuleerd staan.
+        </Typography>
+      </FormControl>
     </>
   );
 
@@ -264,6 +318,13 @@ export default function ExcelImportDialog({
         <Alert severity={alertSeverity} sx={{ mb: 2 }}>
           {alertMessage}
         </Alert>
+
+        {result.assignment && (result.linked_count ?? 0) > 0 && (
+          <Alert severity="info" icon={<LinkIcon fontSize="inherit" />} sx={{ mb: 2 }}>
+            {result.linked_count} {result.linked_count === 1 ? "kandidaat" : "kandidaten"} gekoppeld aan opdracht
+            &quot;{result.assignment.title}&quot;.
+          </Alert>
+        )}
 
         {/* Mislukt - rood */}
         {failed.length > 0 && (
