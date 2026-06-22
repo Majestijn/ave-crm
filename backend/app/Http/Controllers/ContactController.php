@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Assignment;
 use App\Models\Contact;
 use App\Models\DropdownOption;
+use App\Support\AssignmentStatus;
 use App\Support\ClassificationRules;
 use App\Jobs\ProcessCvImport;
 use App\Services\ExcelImportService;
@@ -324,13 +326,32 @@ class ContactController extends Controller
 
         $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,csv', 'max:10240'], // 10MB
+            'assignment_uid' => ['nullable', 'string', 'max:26'],
         ]);
+
+        $assignmentUid = trim((string) $request->input('assignment_uid', ''));
+        $assignment = null;
+        if ($assignmentUid !== '') {
+            $assignment = Assignment::where('uid', $assignmentUid)->first();
+            if (!$assignment) {
+                return response()->json(['message' => 'Opdracht niet gevonden'], 404);
+            }
+            if (AssignmentStatus::isClosed($assignment->status)) {
+                return response()->json([
+                    'message' => 'Deze opdracht is afgerond of geannuleerd; kies een andere opdracht of laat leeg.',
+                ], 422);
+            }
+        }
 
         $file = $request->file('file');
         $path = $file->getRealPath();
         $filename = $file->getClientOriginalName();
 
-        $result = $excelImport->import($path, $filename);
+        $result = $excelImport->import($path, $filename, $assignment);
+
+        if ($assignment) {
+            $result['assignment'] = ['uid' => $assignment->uid, 'title' => $assignment->title];
+        }
 
         return response()->json($result);
     }

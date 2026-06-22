@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Assignment;
 use App\Models\Contact;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -40,9 +41,13 @@ class ExcelImportService
      * Import contacts from an Excel or CSV file.
      * Duplicates (same first+last name) are skipped, not updated.
      *
-     * @return array{success_count: int, success: array, failed: array, skipped: array}
+     * When $assignment is given, every contact from the file — both newly
+     * created and existing duplicates — is linked to that assignment (pivot
+     * status 'called', without detaching/overwriting existing links).
+     *
+     * @return array{success_count: int, success: array, failed: array, skipped: array, linked_count: int}
      */
-    public function import(string $filePath, string $originalFilename): array
+    public function import(string $filePath, string $originalFilename, ?Assignment $assignment = null): array
     {
         $reader = $this->createReader($filePath, $originalFilename);
         if (!$reader) {
@@ -51,6 +56,7 @@ class ExcelImportService
                 'success' => [],
                 'failed' => [['row' => 0, 'reason' => 'Bestandsformaat niet ondersteund. Gebruik .xlsx of .csv.']],
                 'skipped' => [],
+                'linked_count' => 0,
             ];
         }
 
@@ -62,6 +68,7 @@ class ExcelImportService
             $success = [];
             $failed = [];
             $skipped = [];
+            $linkedCount = 0;
 
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
@@ -102,6 +109,14 @@ class ExcelImportService
                         } else {
                             $success[] = ['row' => $rowIndex, 'name' => $name];
                         }
+
+                        // Link both new and existing contacts to the chosen assignment.
+                        if ($assignment) {
+                            $assignment->candidates()->syncWithoutDetaching([
+                                $result['contact']->id => ['status' => 'called'],
+                            ]);
+                            $linkedCount++;
+                        }
                     } catch (\Exception $e) {
                         Log::warning('Excel import row failed', ['row' => $rowIndex, 'error' => $e->getMessage()]);
                         $failed[] = [
@@ -119,6 +134,7 @@ class ExcelImportService
                 'success' => $success,
                 'failed' => $failed,
                 'skipped' => $skipped,
+                'linked_count' => $linkedCount,
             ];
         } finally {
             $reader->close();
